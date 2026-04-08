@@ -14,7 +14,6 @@ const TwoDecadesSection = () => {
     const yearEl = yearRef.current;
     if (!section || !yearEl) return;
 
-    // Animate year counter from 2005 to 2026
     const counter = { value: 2005 };
     gsap.to(counter, {
       value: 2026,
@@ -31,17 +30,23 @@ const TwoDecadesSection = () => {
       },
     });
 
-    // Fade in overlay content
-    gsap.from(overlayRef.current, {
-      y: 80,
-      opacity: 0,
-      scrollTrigger: {
-        trigger: section,
-        start: "top 40%",
-        end: "center center",
-        scrub: 1,
-      },
-    });
+    // Overlay content reveal
+    const children = overlayRef.current?.children;
+    if (children) {
+      gsap.from(Array.from(children), {
+        y: 60,
+        opacity: 0,
+        duration: 1.2,
+        ease: "power3.out",
+        stagger: 0.15,
+        scrollTrigger: {
+          trigger: section,
+          start: "top 40%",
+          end: "center center",
+          scrub: 1,
+        },
+      });
+    }
 
     return () => {
       ScrollTrigger.getAll().forEach((t) => t.kill());
@@ -53,14 +58,22 @@ const TwoDecadesSection = () => {
       ref={sectionRef}
       className="relative min-h-screen flex items-center justify-center bg-background overflow-hidden"
     >
-      {/* Giant background year */}
+      {/* Giant background year — stroke only, 80vw */}
       <span
         ref={yearRef}
-        className="absolute font-serif text-[20vw] md:text-[25vw] font-bold leading-none select-none pointer-events-none"
+        className="absolute select-none pointer-events-none"
         style={{
-          WebkitTextStroke: "1px hsl(var(--gold) / 0.15)",
+          fontFamily: "'Playfair Display', serif",
+          fontSize: "clamp(200px, 25vw, 500px)",
+          fontWeight: 200,
+          lineHeight: 1,
+          WebkitTextStroke: "2px hsl(40 46% 56% / 0.12)",
           color: "transparent",
           zIndex: 0,
+          /* Video-clip fallback: CSS background-clip on the text */
+          backgroundImage: "linear-gradient(135deg, hsl(40 46% 56% / 0.06), hsl(40 46% 56% / 0.02))",
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
         }}
       >
         2005
@@ -74,7 +87,10 @@ const TwoDecadesSection = () => {
         <p className="font-sans text-xs tracking-[0.4em] uppercase text-gold mb-6">
           Two Decades of Excellence
         </p>
-        <h2 className="font-serif text-3xl md:text-5xl lg:text-6xl font-light text-gallery leading-tight mb-8">
+        <h2
+          className="text-3xl md:text-5xl lg:text-6xl font-light text-gallery leading-tight mb-8"
+          style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}
+        >
           From Private Banking
           <br />
           <span className="gold-text-gradient">to Global Real Estate</span>
@@ -92,7 +108,10 @@ const TwoDecadesSection = () => {
             { value: "37460", label: "RERA ID" },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
-              <div className="font-serif text-3xl md:text-4xl gold-text-gradient font-light">
+              <div
+                className="text-3xl md:text-4xl gold-text-gradient font-light"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
                 {stat.value}
               </div>
               <div className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground mt-2">
