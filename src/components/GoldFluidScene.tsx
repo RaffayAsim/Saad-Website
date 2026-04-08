@@ -1,5 +1,5 @@
 import { useRef, useMemo, useEffect } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 /* ---------- Reactive Gold Marble Plane ---------- */
@@ -9,7 +9,6 @@ const vertexShader = `
   varying vec2 vUv;
   varying float vElevation;
 
-  // simplex noise
   vec3 mod289(vec3 x){return x-floor(x*(1./289.))*289.;}
   vec4 mod289(vec4 x){return x-floor(x*(1./289.))*289.;}
   vec4 perm(vec4 x){return mod289(((x*34.)+1.)*x);}
@@ -27,15 +26,12 @@ const vertexShader = `
   void main(){
     vUv = uv;
     vec3 pos = position;
-
-    float mouseInfluence = 1.0 - smoothstep(0.0, 0.6, distance(uv, uMouse * 0.5 + 0.5));
-    float n = noise(vec3(pos.xy * 2.0, uTime * 0.3)) * 0.35;
-    n += noise(vec3(pos.xy * 4.0, uTime * 0.5)) * 0.15;
-    n += mouseInfluence * 0.25;
-
+    float mouseInfluence = 1.0 - smoothstep(0.0, 0.7, distance(uv, uMouse * 0.5 + 0.5));
+    float n = noise(vec3(pos.xy * 1.8, uTime * 0.2)) * 0.5;
+    n += noise(vec3(pos.xy * 3.5, uTime * 0.35)) * 0.25;
+    n += mouseInfluence * 0.4;
     pos.z += n;
     vElevation = n;
-
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   }
 `;
@@ -46,20 +42,24 @@ const fragmentShader = `
   varying float vElevation;
 
   void main(){
-    // Gold marble tones
-    vec3 deep = vec3(0.12, 0.10, 0.06);
+    vec3 deep = vec3(0.06, 0.05, 0.02);
     vec3 gold = vec3(0.77, 0.63, 0.35);
     vec3 bright = vec3(0.95, 0.85, 0.55);
+    vec3 warm = vec3(0.55, 0.40, 0.18);
 
-    float t = smoothstep(-0.1, 0.5, vElevation);
-    vec3 color = mix(deep, gold, t);
-    color = mix(color, bright, smoothstep(0.35, 0.55, vElevation));
+    float t = smoothstep(-0.15, 0.55, vElevation);
+    vec3 color = mix(deep, warm, t * 0.6);
+    color = mix(color, gold, smoothstep(0.2, 0.5, vElevation));
+    color = mix(color, bright, smoothstep(0.45, 0.7, vElevation));
 
-    // Subtle vignette
-    float vig = 1.0 - smoothstep(0.3, 1.0, distance(vUv, vec2(0.5)));
-    color *= 0.5 + vig * 0.5;
+    float vig = 1.0 - smoothstep(0.2, 1.1, distance(vUv, vec2(0.5)));
+    color *= 0.4 + vig * 0.6;
 
-    gl_FragColor = vec4(color, 0.85);
+    float shimmer = sin(vUv.x * 40.0 + uTime * 2.0) * 0.5 + 0.5;
+    shimmer *= smoothstep(0.4, 0.65, vElevation);
+    color += bright * shimmer * 0.08;
+
+    gl_FragColor = vec4(color, 0.9);
   }
 `;
 
@@ -67,13 +67,10 @@ function FluidPlane() {
   const meshRef = useRef<THREE.Mesh>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
 
-  const uniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uMouse: { value: new THREE.Vector2(0, 0) },
-    }),
-    []
-  );
+  const uniforms = useMemo(() => ({
+    uTime: { value: 0 },
+    uMouse: { value: new THREE.Vector2(0, 0) },
+  }), []);
 
   useEffect(() => {
     const onMouse = (e: MouseEvent) => {
@@ -90,13 +87,13 @@ function FluidPlane() {
     uniforms.uTime.value = state.clock.elapsedTime;
     uniforms.uMouse.value.lerp(
       new THREE.Vector2(mouseRef.current.x, mouseRef.current.y),
-      0.05
+      0.04
     );
   });
 
   return (
-    <mesh ref={meshRef} rotation={[-Math.PI / 3, 0, 0]} position={[0, -1.5, -2]}>
-      <planeGeometry args={[10, 10, 128, 128]} />
+    <mesh ref={meshRef} rotation={[-Math.PI / 2.8, 0, 0]} position={[0, -2, -2.5]}>
+      <planeGeometry args={[14, 14, 160, 160]} />
       <shaderMaterial
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
@@ -108,7 +105,7 @@ function FluidPlane() {
   );
 }
 
-/* ---------- Floating golden geometric shapes ---------- */
+/* ---------- Floating golden geometries ---------- */
 function FloatingShapes() {
   const groupRef = useRef<THREE.Group>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
@@ -127,86 +124,101 @@ function FloatingShapes() {
   useFrame((state) => {
     if (!groupRef.current) return;
     const t = state.clock.elapsedTime;
-    groupRef.current.rotation.y = t * 0.05 + mouseRef.current.x * 0.3;
-    groupRef.current.rotation.x = mouseRef.current.y * 0.15;
+    groupRef.current.rotation.y = t * 0.03 + mouseRef.current.x * 0.2;
+    groupRef.current.rotation.x = mouseRef.current.y * 0.1;
     groupRef.current.children.forEach((child, i) => {
-      child.position.y = Math.sin(t * 0.3 + i * 1.5) * 0.4;
-      child.rotation.x = t * 0.1 * (i % 2 === 0 ? 1 : -1);
-      child.rotation.z = t * 0.08 * (i % 3 === 0 ? 1 : -1);
+      child.position.y = Math.sin(t * 0.25 + i * 2.0) * 0.5;
+      child.rotation.x = t * 0.08 * (i % 2 === 0 ? 1 : -1);
+      child.rotation.z = t * 0.06 * (i % 3 === 0 ? 1 : -1);
     });
   });
 
-  const goldMaterial = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: "#C5A059",
-        metalness: 0.9,
-        roughness: 0.2,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.3,
-      }),
-    []
-  );
+  const goldMat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: "#C5A059",
+    metalness: 0.95,
+    roughness: 0.15,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.25,
+  }), []);
+
+  const solidGoldMat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: "#C5A059",
+    metalness: 0.95,
+    roughness: 0.1,
+    transparent: true,
+    opacity: 0.15,
+  }), []);
 
   return (
     <group ref={groupRef}>
-      <mesh position={[-3, 1, -1]} material={goldMaterial}>
-        <torusGeometry args={[0.6, 0.15, 16, 32]} />
+      <mesh position={[-4, 1.5, -2]} material={goldMat}>
+        <torusGeometry args={[0.8, 0.2, 16, 48]} />
       </mesh>
-      <mesh position={[3.5, 0.5, -2]} material={goldMaterial}>
-        <octahedronGeometry args={[0.5, 0]} />
+      <mesh position={[4.5, 0.8, -3]} material={goldMat}>
+        <octahedronGeometry args={[0.7, 0]} />
       </mesh>
-      <mesh position={[1, -0.5, -3]} material={goldMaterial}>
-        <icosahedronGeometry args={[0.4, 0]} />
+      <mesh position={[1.5, -0.8, -4]} material={solidGoldMat}>
+        <icosahedronGeometry args={[0.5, 1]} />
       </mesh>
-      <mesh position={[-2, -1, -2.5]} material={goldMaterial}>
-        <torusKnotGeometry args={[0.3, 0.08, 64, 8]} />
+      <mesh position={[-2.5, -1.2, -3]} material={goldMat}>
+        <torusKnotGeometry args={[0.4, 0.1, 80, 12]} />
+      </mesh>
+      <mesh position={[3, 2, -5]} material={solidGoldMat}>
+        <dodecahedronGeometry args={[0.6, 0]} />
+      </mesh>
+      <mesh position={[-1, 2.5, -4]} material={goldMat}>
+        <ringGeometry args={[0.3, 0.6, 6]} />
       </mesh>
     </group>
   );
 }
 
-/* ---------- Gold dust particles ---------- */
-const PARTICLE_COUNT = 400;
+/* ---------- Enhanced Gold Dust ---------- */
+const PARTICLE_COUNT = 600;
 function GoldDust() {
   const ref = useRef<THREE.Points>(null);
   const positions = useMemo(() => {
     const arr = new Float32Array(PARTICLE_COUNT * 3);
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      arr[i * 3] = (Math.random() - 0.5) * 14;
-      arr[i * 3 + 1] = (Math.random() - 0.5) * 10;
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 8;
+      arr[i * 3] = (Math.random() - 0.5) * 18;
+      arr[i * 3 + 1] = (Math.random() - 0.5) * 12;
+      arr[i * 3 + 2] = (Math.random() - 0.5) * 10;
+    }
+    return arr;
+  }, []);
+
+  const sizes = useMemo(() => {
+    const arr = new Float32Array(PARTICLE_COUNT);
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      arr[i] = Math.random() * 0.06 + 0.02;
     }
     return arr;
   }, []);
 
   useFrame((state) => {
     if (!ref.current) return;
-    const arr = (ref.current.geometry.attributes.position as THREE.BufferAttribute).array as Float32Array;
+    const posArr = (ref.current.geometry.attributes.position as THREE.BufferAttribute).array as Float32Array;
     const t = state.clock.elapsedTime;
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      arr[i * 3 + 1] += Math.sin(t * 0.2 + i) * 0.001;
-      arr[i * 3] += Math.cos(t * 0.15 + i * 0.5) * 0.0008;
+      posArr[i * 3 + 1] += Math.sin(t * 0.15 + i * 0.7) * 0.002;
+      posArr[i * 3] += Math.cos(t * 0.1 + i * 0.3) * 0.001;
+      posArr[i * 3 + 2] += Math.sin(t * 0.08 + i * 1.1) * 0.0005;
     }
     ref.current.geometry.attributes.position.needsUpdate = true;
+    ref.current.rotation.y = t * 0.01;
   });
 
   return (
     <points ref={ref}>
       <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={PARTICLE_COUNT}
-          array={positions}
-          itemSize={3}
-        />
+        <bufferAttribute attach="attributes-position" count={PARTICLE_COUNT} array={positions} itemSize={3} />
       </bufferGeometry>
       <pointsMaterial
-        size={0.04}
-        color="#C5A059"
+        size={0.05}
+        color="#D4AF5A"
         transparent
-        opacity={0.6}
+        opacity={0.7}
         sizeAttenuation
         blending={THREE.AdditiveBlending}
         depthWrite={false}
@@ -219,14 +231,16 @@ function GoldDust() {
 const GoldFluidScene = () => (
   <div className="absolute inset-0" style={{ zIndex: 1 }}>
     <Canvas
-      camera={{ position: [0, 0, 5], fov: 55 }}
+      camera={{ position: [0, 0, 6], fov: 50 }}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       style={{ background: "transparent" }}
       dpr={[1, 1.5]}
     >
-      <ambientLight intensity={0.4} />
-      <pointLight position={[5, 5, 5]} intensity={0.8} color="#C5A059" />
-      <pointLight position={[-5, -3, 3]} intensity={0.3} color="#8B6914" />
+      <ambientLight intensity={0.3} />
+      <pointLight position={[5, 5, 5]} intensity={1} color="#C5A059" />
+      <pointLight position={[-5, -3, 3]} intensity={0.4} color="#8B6914" />
+      <pointLight position={[0, 3, 2]} intensity={0.3} color="#D4AF5A" />
+      <spotLight position={[0, 8, 0]} angle={0.5} penumbra={1} intensity={0.5} color="#C5A059" />
       <FluidPlane />
       <FloatingShapes />
       <GoldDust />

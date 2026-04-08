@@ -1,5 +1,9 @@
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { motion, useInView } from "framer-motion";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const partners = [
   { name: "Savills", subtitle: "Global Real Estate" },
@@ -8,156 +12,195 @@ const partners = [
   { name: "RERA Dubai", subtitle: "Regulatory Authority" },
 ];
 
-// Duplicate for seamless loop
-const marqueeItems = [...partners, ...partners, ...partners];
-
 const PartnersCarousel = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(sectionRef, { once: true, margin: "-15%" });
+  const isInView = useInView(sectionRef, { once: true, margin: "-10%" });
+  const cardsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const ctx = gsap.context(() => {
+      if (cardsRef.current) {
+        const cards = Array.from(cardsRef.current.children);
+        cards.forEach((card, i) => {
+          const speed = [0.3, 0.6, 0.45, 0.7][i % 4];
+          gsap.to(card, {
+            y: -60 * speed,
+            ease: "none",
+            scrollTrigger: {
+              trigger: section,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: 1.5,
+            },
+          });
+        });
+
+        gsap.from(cards, {
+          y: 100,
+          opacity: 0,
+          scale: 0.9,
+          duration: 1.2,
+          stagger: 0.15,
+          ease: "power3.out",
+          scrollTrigger: { trigger: section, start: "top 60%" },
+        });
+      }
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
 
   return (
     <section
       ref={sectionRef}
-      className="relative py-32 md:py-40 overflow-hidden"
+      className="relative py-32 md:py-48 overflow-hidden"
       style={{
-        background: "linear-gradient(180deg, hsl(0 0% 4%) 0%, hsl(0 0% 6%) 50%, hsl(0 0% 4%) 100%)",
+        background: `
+          radial-gradient(ellipse at 50% 0%, hsl(40 46% 20% / 0.1) 0%, transparent 50%),
+          radial-gradient(ellipse at 50% 100%, hsl(40 46% 20% / 0.05) 0%, transparent 50%),
+          linear-gradient(180deg, hsl(0 0% 3%), hsl(0 0% 5%) 40%, hsl(0 0% 4%) 70%, hsl(0 0% 3%))
+        `,
       }}
       data-section="partners"
     >
-      {/* Ambient glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[500px] pointer-events-none" style={{
-        background: "radial-gradient(ellipse, hsl(40 46% 56% / 0.04) 0%, transparent 60%)",
-        filter: "blur(80px)",
-      }} />
-
-      <motion.div
-        className="text-center mb-20"
-        initial={{ y: 40, opacity: 0 }}
-        animate={isInView ? { y: 0, opacity: 1 } : {}}
-        transition={{ duration: 1.2 }}
-      >
-        <p className="font-sans text-xs tracking-[0.5em] uppercase mb-6" style={{ color: "hsl(40 46% 56%)" }}>
-          Global Retail Partners
-        </p>
-        <h2
-          className="text-4xl md:text-6xl text-gallery"
-          style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}
+      <div className="container mx-auto px-6 md:px-16 max-w-[1400px]">
+        <motion.div
+          className="text-center mb-20 md:mb-28"
+          initial={{ opacity: 0, y: 50 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
         >
-          Trusted by the <span className="gold-text-gradient">Best</span>
-        </h2>
-      </motion.div>
+          <p className="font-sans text-[10px] md:text-xs tracking-[0.6em] uppercase text-gold mb-8">
+            Trusted Network
+          </p>
+          <h2
+            className="text-4xl md:text-6xl lg:text-7xl text-gallery leading-[0.95]"
+            style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}
+          >
+            Global Retail
+            <br />
+            <span className="gold-text-gradient">Partners</span>
+          </h2>
+        </motion.div>
 
-      {/* Infinite Marquee — Row 1 */}
-      <div className="relative mb-6">
-        {/* Fade edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-32 z-10" style={{ background: "linear-gradient(90deg, hsl(0 0% 5%), transparent)" }} />
-        <div className="absolute right-0 top-0 bottom-0 w-32 z-10" style={{ background: "linear-gradient(-90deg, hsl(0 0% 5%), transparent)" }} />
-
-        <div className="flex animate-marquee">
-          {marqueeItems.map((p, i) => (
-            <div
-              key={i}
-              className="group flex-shrink-0 mx-4 md:mx-6"
-              data-cursor="View"
-            >
-              <div
-                className="px-10 md:px-16 py-8 md:py-10 text-center transition-all duration-700"
-                style={{
-                  backdropFilter: "blur(16px)",
-                  WebkitBackdropFilter: "blur(16px)",
-                  background: "hsl(0 0% 6% / 0.5)",
-                  border: "1px solid hsl(40 46% 56% / 0.1)",
-                  borderRadius: "2px",
-                }}
-                onMouseEnter={(e) => {
-                  const el = e.currentTarget;
-                  el.style.borderColor = "hsl(40 46% 56% / 0.4)";
-                  el.style.boxShadow = "0 0 60px hsl(40 46% 56% / 0.12), 0 20px 40px hsl(0 0% 0% / 0.3)";
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget;
-                  el.style.borderColor = "hsl(40 46% 56% / 0.1)";
-                  el.style.boxShadow = "none";
-                }}
-              >
-                <span
-                  className="block text-2xl md:text-4xl text-gallery/40 tracking-wide transition-all duration-700 group-hover:text-gold"
-                  style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontWeight: 300,
-                    filter: "grayscale(100%)",
-                    transition: "filter 0.7s, color 0.7s",
-                  }}
-                  onMouseEnter={(e) => { (e.target as HTMLElement).style.filter = "grayscale(0%) drop-shadow(0 0 20px hsl(40 46% 56% / 0.5))"; }}
-                  onMouseLeave={(e) => { (e.target as HTMLElement).style.filter = "grayscale(100%)"; }}
-                >
-                  {p.name}
-                </span>
-                <span className="block font-sans text-[10px] tracking-[0.3em] uppercase text-muted-foreground mt-3 group-hover:text-gold/50 transition-colors duration-500">
-                  {p.subtitle}
-                </span>
-              </div>
-            </div>
+        {/* 3D Depth Grid */}
+        <div
+          ref={cardsRef}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8"
+          style={{ perspective: "1200px" }}
+        >
+          {partners.map((partner, i) => (
+            <PartnerCard key={partner.name} partner={partner} index={i} />
           ))}
         </div>
       </div>
 
-      {/* Infinite Marquee — Row 2 (reverse) */}
-      <div className="relative">
-        <div className="absolute left-0 top-0 bottom-0 w-32 z-10" style={{ background: "linear-gradient(90deg, hsl(0 0% 5%), transparent)" }} />
-        <div className="absolute right-0 top-0 bottom-0 w-32 z-10" style={{ background: "linear-gradient(-90deg, hsl(0 0% 5%), transparent)" }} />
-
-        <div className="flex animate-marquee-reverse">
-          {marqueeItems.map((p, i) => (
-            <div
-              key={i}
-              className="group flex-shrink-0 mx-4 md:mx-6"
-              data-cursor="View"
-            >
-              <div
-                className="px-10 md:px-16 py-8 md:py-10 text-center transition-all duration-700"
-                style={{
-                  backdropFilter: "blur(16px)",
-                  WebkitBackdropFilter: "blur(16px)",
-                  background: "hsl(0 0% 6% / 0.5)",
-                  border: "1px solid hsl(40 46% 56% / 0.1)",
-                  borderRadius: "2px",
-                }}
-                onMouseEnter={(e) => {
-                  const el = e.currentTarget;
-                  el.style.borderColor = "hsl(40 46% 56% / 0.4)";
-                  el.style.boxShadow = "0 0 60px hsl(40 46% 56% / 0.12), 0 20px 40px hsl(0 0% 0% / 0.3)";
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget;
-                  el.style.borderColor = "hsl(40 46% 56% / 0.1)";
-                  el.style.boxShadow = "none";
-                }}
-              >
-                <span
-                  className="block text-2xl md:text-4xl text-gallery/40 tracking-wide transition-all duration-700 group-hover:text-gold"
-                  style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontWeight: 300,
-                    filter: "grayscale(100%)",
-                    transition: "filter 0.7s, color 0.7s",
-                  }}
-                  onMouseEnter={(e) => { (e.target as HTMLElement).style.filter = "grayscale(0%) drop-shadow(0 0 20px hsl(40 46% 56% / 0.5))"; }}
-                  onMouseLeave={(e) => { (e.target as HTMLElement).style.filter = "grayscale(100%)"; }}
-                >
-                  {p.name}
-                </span>
-                <span className="block font-sans text-[10px] tracking-[0.3em] uppercase text-muted-foreground mt-3 group-hover:text-gold/50 transition-colors duration-500">
-                  {p.subtitle}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="w-24 h-px gold-gradient mx-auto mt-24" />
+      <div className="absolute bottom-0 left-0 right-0 h-px" style={{
+        background: "linear-gradient(90deg, transparent 10%, hsl(40 46% 56% / 0.1) 50%, transparent 90%)",
+      }} />
     </section>
+  );
+};
+
+const PartnerCard = ({
+  partner,
+  index,
+}: {
+  partner: { name: string; subtitle: string };
+  index: number;
+}) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [hovering, setHovering] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0.5, y: 0.5 });
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    setMousePos({ x, y });
+    gsap.to(cardRef.current, {
+      rotateY: (x - 0.5) * 15,
+      rotateX: -(y - 0.5) * 10,
+      duration: 0.4,
+      ease: "power2.out",
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setHovering(false);
+    if (cardRef.current) {
+      gsap.to(cardRef.current, {
+        rotateX: 0, rotateY: 0,
+        duration: 0.8,
+        ease: "elastic.out(1, 0.5)",
+      });
+    }
+  };
+
+  const depthOffsets = [0, 20, -10, 30];
+
+  return (
+    <div style={{ perspective: "800px", marginTop: `${depthOffsets[index % 4]}px` }}>
+      <div
+        ref={cardRef}
+        className="relative p-8 md:p-10 rounded-2xl cursor-pointer group"
+        style={{
+          transformStyle: "preserve-3d",
+          background: "hsl(0 0% 5% / 0.8)",
+          backdropFilter: "blur(20px)",
+          border: "1px solid hsl(40 46% 56% / 0.1)",
+          boxShadow: hovering
+            ? "0 30px 60px hsl(0 0% 0% / 0.5), 0 0 40px hsl(40 46% 56% / 0.08)"
+            : "0 10px 30px hsl(0 0% 0% / 0.3)",
+          transition: "box-shadow 0.5s, border-color 0.5s",
+          borderColor: hovering ? "hsl(40 46% 56% / 0.3)" : "hsl(40 46% 56% / 0.1)",
+        }}
+        onMouseEnter={() => setHovering(true)}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        data-cursor="View"
+      >
+        <div
+          className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-500"
+          style={{
+            opacity: hovering ? 1 : 0,
+            background: `radial-gradient(400px circle at ${mousePos.x * 100}% ${mousePos.y * 100}%, hsl(40 46% 56% / 0.12), transparent 50%)`,
+          }}
+        />
+
+        <div className="w-10 h-10 rounded-lg mb-6 flex items-center justify-center transition-all duration-500" style={{
+          background: hovering
+            ? "linear-gradient(135deg, hsl(40 46% 56% / 0.2), hsl(40 46% 56% / 0.08))"
+            : "hsl(0 0% 10% / 0.5)",
+          border: "1px solid hsl(40 46% 56% / 0.12)",
+        }}>
+          <span className="text-gold text-xs transition-transform duration-500 group-hover:scale-125">✦</span>
+        </div>
+
+        <h3
+          className="text-xl md:text-2xl text-gallery mb-2 transition-colors duration-500"
+          style={{
+            fontFamily: "'Playfair Display', serif",
+            fontWeight: 300,
+            color: hovering ? "hsl(40 46% 70%)" : undefined,
+          }}
+        >
+          {partner.name}
+        </h3>
+        <p className="font-sans text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
+          {partner.subtitle}
+        </p>
+
+        <div className="absolute bottom-0 left-4 right-4 h-px transition-opacity duration-500" style={{
+          background: "linear-gradient(90deg, transparent, hsl(40 46% 56% / 0.2), transparent)",
+          opacity: hovering ? 1 : 0,
+        }} />
+      </div>
+    </div>
   );
 };
 
