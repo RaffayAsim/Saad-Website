@@ -1,92 +1,98 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 
 const CustomCursor = () => {
-  const cursorX = useMotionValue(-100);
-  const cursorY = useMotionValue(-100);
-  const springX = useSpring(cursorX, { damping: 25, stiffness: 700 });
-  const springY = useSpring(cursorY, { damping: 25, stiffness: 700 });
+  const cursorX = useMotionValue(0);
+  const cursorY = useMotionValue(0);
+  const springX = useSpring(cursorX, { stiffness: 500, damping: 40 });
+  const springY = useSpring(cursorY, { stiffness: 500, damping: 40 });
   const [hoverLabel, setHoverLabel] = useState<string | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    const move = (e: MouseEvent) => {
+    if ("ontouchstart" in window) {
+      setIsVisible(false);
+      return;
+    }
+
+    const onMove = (e: MouseEvent) => {
       cursorX.set(e.clientX);
       cursorY.set(e.clientY);
-      setIsVisible(true);
     };
 
-    const handleHover = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const interactive = target.closest("[data-cursor]");
-      if (interactive) {
-        setHoverLabel(interactive.getAttribute("data-cursor") || "Enter");
-      } else {
-        setHoverLabel(null);
-      }
+    const onOver = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest("[data-cursor]");
+      if (target) setHoverLabel(target.getAttribute("data-cursor"));
     };
 
-    const leave = () => setIsVisible(false);
+    const onOut = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest("[data-cursor]");
+      if (target) setHoverLabel(null);
+    };
 
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseover", handleHover);
-    window.addEventListener("mouseout", leave);
+    window.addEventListener("mousemove", onMove, { passive: true });
+    window.addEventListener("mouseover", onOver, { passive: true });
+    window.addEventListener("mouseout", onOut, { passive: true });
+
     return () => {
-      window.removeEventListener("mousemove", move);
-      window.removeEventListener("mouseover", handleHover);
-      window.removeEventListener("mouseout", leave);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseover", onOver);
+      window.removeEventListener("mouseout", onOut);
     };
   }, [cursorX, cursorY]);
 
-  // Hide on touch devices
-  if (typeof window !== "undefined" && "ontouchstart" in window) return null;
+  if (!isVisible) return null;
 
   return (
     <>
-      {/* Outer ring */}
       <motion.div
-        className="fixed top-0 left-0 pointer-events-none z-[9999] mix-blend-difference"
-        style={{ x: springX, y: springY }}
+        className="fixed top-0 left-0 z-[9999] pointer-events-none flex items-center justify-center"
+        style={{ x: springX, y: springY, translateX: "-50%", translateY: "-50%" }}
       >
         <motion.div
-          className="flex items-center justify-center -translate-x-1/2 -translate-y-1/2 rounded-full border border-gold/60"
           animate={{
-            width: hoverLabel ? 100 : 40,
-            height: hoverLabel ? 100 : 40,
-            opacity: isVisible ? 1 : 0,
-            backgroundColor: hoverLabel
-              ? "hsl(40 46% 56% / 0.15)"
+            width: hoverLabel ? 80 : 36,
+            height: hoverLabel ? 80 : 36,
+            opacity: hoverLabel ? 0.95 : 0.5,
+            background: hoverLabel
+              ? "radial-gradient(circle, hsl(40 46% 56% / 0.2), hsl(40 46% 56% / 0.05))"
               : "transparent",
           }}
-          transition={{ type: "spring", damping: 20, stiffness: 300 }}
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          className="rounded-full flex items-center justify-center"
+          style={{
+            border: `1px solid hsl(40 46% 56% / ${hoverLabel ? 0.5 : 0.25})`,
+            backdropFilter: hoverLabel ? "blur(4px)" : "none",
+          }}
         >
           {hoverLabel && (
             <motion.span
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="text-gold text-[10px] tracking-[0.2em] uppercase font-sans font-medium"
+              className="text-[8px] tracking-[0.2em] uppercase font-sans text-gold"
             >
               {hoverLabel}
             </motion.span>
           )}
         </motion.div>
       </motion.div>
-      {/* Inner dot */}
+
       <motion.div
-        className="fixed top-0 left-0 pointer-events-none z-[9999]"
-        style={{ x: cursorX, y: cursorY }}
+        className="fixed top-0 left-0 z-[9999] pointer-events-none"
+        style={{ x: cursorX, y: cursorY, translateX: "-50%", translateY: "-50%" }}
       >
         <motion.div
-          className="-translate-x-1/2 -translate-y-1/2 rounded-full bg-gold"
           animate={{
-            width: hoverLabel ? 6 : 8,
-            height: hoverLabel ? 6 : 8,
-            opacity: isVisible ? 1 : 0,
+            width: hoverLabel ? 4 : 6,
+            height: hoverLabel ? 4 : 6,
+            opacity: hoverLabel ? 0.8 : 0.9,
           }}
-          transition={{ type: "spring", damping: 30, stiffness: 500 }}
+          className="rounded-full"
+          style={{ background: "hsl(40 46% 56%)" }}
         />
       </motion.div>
-      <style>{`* { cursor: none !important; }`}</style>
+
+      <style>{`@media (hover: hover) { * { cursor: none !important; } }`}</style>
     </>
   );
 };
