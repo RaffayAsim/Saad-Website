@@ -1,86 +1,128 @@
 import { useEffect, useRef } from "react";
+import { motion, useInView } from "framer-motion";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const partners = [
-  { name: "Savills", subtitle: "Global Real Estate" },
-  { name: "Cushman & Wakefield", subtitle: "Commercial Excellence" },
-  { name: "ABN AMRO", subtitle: "Private Banking" },
-  { name: "Savills", subtitle: "Global Real Estate" },
-  { name: "Cushman & Wakefield", subtitle: "Commercial Excellence" },
-  { name: "ABN AMRO", subtitle: "Private Banking" },
-  { name: "Savills", subtitle: "Global Real Estate" },
-  { name: "Cushman & Wakefield", subtitle: "Commercial Excellence" },
-  { name: "ABN AMRO", subtitle: "Private Banking" },
+  { name: "Savills", subtitle: "Global Real Estate", depth: 0 },
+  { name: "Cushman & Wakefield", subtitle: "Commercial Excellence", depth: 1 },
+  { name: "ABN AMRO", subtitle: "Private Banking", depth: 2 },
+  { name: "RERA Dubai", subtitle: "Regulatory Authority", depth: 0.5 },
+  { name: "Savills", subtitle: "Global Real Estate", depth: 1.5 },
+  { name: "Cushman & Wakefield", subtitle: "Commercial Excellence", depth: 0.3 },
 ];
 
 const PartnersCarousel = () => {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLParagraphElement>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(sectionRef, { once: true, margin: "-20%" });
+  const itemsRef = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
+    const section = sectionRef.current;
+    if (!section) return;
 
-    const totalWidth = track.scrollWidth / 3;
-    gsap.to(track, {
-      x: -totalWidth,
-      duration: 30,
-      ease: "none",
-      repeat: -1,
-    });
-
-    // Title reveal
-    if (titleRef.current) {
-      gsap.from(titleRef.current, {
-        y: 30,
-        opacity: 0,
-        duration: 1.2,
-        ease: "power3.out",
-        scrollTrigger: { trigger: titleRef.current, start: "top 80%" },
+    // Parallax at different speeds based on depth
+    itemsRef.current.forEach((el, i) => {
+      if (!el) return;
+      const depth = partners[i % partners.length].depth;
+      gsap.to(el, {
+        y: -40 * (1 + depth * 0.5),
+        scrollTrigger: {
+          trigger: section,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: 1 + depth,
+        },
       });
-    }
+    });
 
     return () => ScrollTrigger.getAll().forEach((t) => t.kill());
   }, []);
 
   return (
-    <section className="relative py-24 bg-background overflow-hidden">
-      <p
-        ref={titleRef}
-        className="font-sans text-xs tracking-[0.4em] uppercase text-gold text-center mb-12"
+    <section
+      ref={sectionRef}
+      className="relative py-32 bg-background overflow-hidden"
+      data-section="partners"
+    >
+      {/* Ambient lighting */}
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse, hsl(40 46% 56% / 0.05) 0%, transparent 70%)",
+          filter: "blur(60px)",
+        }}
+      />
+
+      <motion.p
+        className="font-sans text-xs tracking-[0.5em] uppercase text-gold text-center mb-20"
+        initial={{ y: 30, opacity: 0 }}
+        animate={isInView ? { y: 0, opacity: 1 } : {}}
+        transition={{ duration: 1 }}
       >
         Global Retail Partners
-      </p>
+      </motion.p>
 
-      <div className="relative overflow-hidden">
-        {/* Edge fades */}
-        <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-background to-transparent z-10" />
-        <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-background to-transparent z-10" />
+      {/* 3D Floating Logos Grid */}
+      <div className="max-w-6xl mx-auto px-6" style={{ perspective: "1200px" }}>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-8 md:gap-12">
+          {partners.map((p, i) => {
+            const depthScale = 1 - p.depth * 0.08;
+            const blur = p.depth * 1.5;
 
-        <div ref={trackRef} className="flex gap-0 whitespace-nowrap">
-          {partners.map((p, i) => (
-            <div
-              key={i}
-              className="group flex-shrink-0 w-80 md:w-96 px-8 py-12 border-r border-border/20 flex flex-col items-center justify-center cursor-pointer transition-all duration-500"
-            >
-              <span
-                className="text-2xl md:text-3xl text-gallery font-light tracking-wide grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 group-hover:text-gold group-hover:drop-shadow-[0_0_20px_hsl(40_46%_56%/0.4)] transition-all duration-700"
-                style={{ fontFamily: "'Playfair Display', serif" }}
+            return (
+              <motion.div
+                key={i}
+                ref={(el) => { itemsRef.current[i] = el; }}
+                className="group relative"
+                initial={{ y: 60 + p.depth * 20, opacity: 0, scale: depthScale }}
+                animate={
+                  isInView
+                    ? { y: 0, opacity: 1, scale: depthScale }
+                    : {}
+                }
+                transition={{
+                  duration: 1.2,
+                  ease: [0.16, 1, 0.3, 1],
+                  delay: 0.1 * i,
+                }}
+                style={{
+                  filter: `blur(${blur}px)`,
+                  transformStyle: "preserve-3d",
+                  transform: `translateZ(${-p.depth * 60}px)`,
+                }}
+                data-cursor="View"
               >
-                {p.name}
-              </span>
-              <span className="font-sans text-xs tracking-[0.3em] uppercase text-muted-foreground mt-3 group-hover:text-gold/70 transition-colors duration-500">
-                {p.subtitle}
-              </span>
-            </div>
-          ))}
+                <div className="backdrop-blur-[16px] bg-[hsl(0_0%_8%/0.5)] border border-[hsl(40_46%_56%/0.15)] rounded-sm p-8 md:p-12 text-center transition-all duration-700 group-hover:border-gold/50 group-hover:shadow-[0_0_40px_hsl(40_46%_56%/0.15)]">
+                  <span
+                    className="text-2xl md:text-3xl lg:text-4xl text-gallery/50 font-light tracking-wide transition-all duration-700 group-hover:text-gold group-hover:drop-shadow-[0_0_30px_hsl(40_46%_56%/0.5)]"
+                    style={{
+                      fontFamily: "'Playfair Display', serif",
+                      filter: "grayscale(100%)",
+                      transition: "filter 0.7s, color 0.7s",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.target as HTMLElement).style.filter = "grayscale(0%)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.target as HTMLElement).style.filter = "grayscale(100%)";
+                    }}
+                  >
+                    {p.name}
+                  </span>
+                  <span className="block font-sans text-xs tracking-[0.3em] uppercase text-muted-foreground mt-4 group-hover:text-gold/60 transition-colors duration-500">
+                    {p.subtitle}
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
 
-      <div className="w-16 h-px gold-gradient mx-auto mt-16" />
+      <div className="w-20 h-px gold-gradient mx-auto mt-20" />
     </section>
   );
 };
