@@ -255,18 +255,6 @@ function GlassSlabPortrait({
   );
 }
 
-function PortraitTexturePlane() {
-  const portraitTexture = useTexture(saadImage);
-
-  useMemo(() => {
-    portraitTexture.colorSpace = THREE.SRGBColorSpace;
-    portraitTexture.minFilter = THREE.LinearFilter;
-    portraitTexture.magFilter = THREE.LinearFilter;
-  }, [portraitTexture]);
-
-  return <primitive object={portraitTexture} />;
-}
-
 function AtriumScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
   const textParallaxRef = useRef<THREE.Group>(null);
   const spotlightRef = useRef<THREE.SpotLight>(null);
@@ -284,9 +272,9 @@ function AtriumScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number
       slabRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.45) * 0.04;
     }
 
-    state.camera.position.x = ease(state.camera.position.x, mouse.current.x * 0.14, 0.02);
-    state.camera.position.y = ease(state.camera.position.y, 0.08 + mouse.current.y * 0.08, 0.02);
-    state.camera.lookAt(0.52, -0.08, 0);
+    state.camera.position.x = ease(state.camera.position.x, 0.08 + mouse.current.x * 0.12, 0.02);
+    state.camera.position.y = ease(state.camera.position.y, 0.02 + mouse.current.y * 0.07, 0.02);
+    state.camera.lookAt(0.7, -0.02, 0.18);
 
     if (spotlightRef.current) {
       spotlightRef.current.position.x = ease(spotlightRef.current.position.x, 1.1 + mouse.current.x * 1.4, 0.05);
@@ -312,7 +300,7 @@ function AtriumScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number
         decay={1.2}
         color="#e6c483"
       />
-      <pointLight position={[2.9, 0.85, 1.2]} intensity={0.16} color="#dcb06a" distance={6} />
+      <pointLight position={[2.3, 0.55, 1.6]} intensity={0.14} color="#e5bf82" distance={5.5} />
       <Environment preset="warehouse" blur={0.95} />
 
       <mesh position={[0, 0.4, -5]}>
@@ -327,8 +315,8 @@ function AtriumScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number
         <LightRibbons />
       </group>
 
-      <group ref={slabRef} position={[2.15, 0.24, 0.4]}>
-        <GlassSlabPortrait mouse={mouse} position={[0, 0, 0]} rotation={[0.02, -0.18, 0]} scale={[1, 1, 1]} delay={0.4} />
+      <group ref={slabRef} position={[1.62, -0.06, 0.62]}>
+        <GlassSlabPortrait mouse={mouse} position={[0, 0, 0]} rotation={[0.01, -0.16, 0]} scale={[0.94, 0.94, 0.94]} delay={0.4} />
       </group>
 
       <DustField />
@@ -473,9 +461,9 @@ const HeroSection = () => {
       <div className="pointer-events-none absolute inset-0 z-[3] bg-[linear-gradient(90deg,rgba(4,4,4,0.9)_0%,rgba(4,4,4,0.7)_32%,rgba(4,4,4,0.16)_56%,rgba(4,4,4,0.52)_100%)]" />
       <div className="pointer-events-none absolute inset-0 z-[4] bg-[linear-gradient(180deg,rgba(4,4,4,0.82)_0%,rgba(4,4,4,0.14)_30%,rgba(4,4,4,0.12)_68%,rgba(4,4,4,0.88)_100%)]" />
 
-      <div ref={contentRef} className="relative z-10 h-full px-6 md:px-10 lg:px-14" style={{ paddingTop: `${NAVBAR_HEIGHT}px` }}>
-        <div className="mx-auto grid h-full max-w-[1200px] grid-cols-1 items-center gap-10 lg:grid-cols-[60%_40%]">
-          <div ref={textColumnRef} className="max-w-[42rem] pt-8 lg:pt-0">
+      <div ref={contentRef} className="relative z-10 px-6 md:px-10 lg:px-14" style={{ height: `calc(100vh - ${NAVBAR_HEIGHT}px)`, marginTop: `${NAVBAR_HEIGHT}px` }}>
+        <div className="mx-auto grid h-full max-w-[1200px] grid-cols-1 items-center gap-8 lg:grid-cols-[60%_40%] lg:gap-12">
+          <div ref={textColumnRef} className="max-w-[42rem] self-center">
             <p className="text-[clamp(0.7rem,1vw,0.82rem)] uppercase tracking-[0.5em]" style={{ color: "rgba(214,184,132,0.9)", fontFamily: "'Inter', sans-serif" }}>
               SAAD BIN ZAIN
             </p>
@@ -501,7 +489,7 @@ const HeroSection = () => {
                 </span>
               ))}
             </div>
-            <div className="mt-10 grid max-w-[30rem] grid-cols-2 gap-6 border-t border-[rgba(214,184,132,0.12)] pt-6">
+            <div className="mt-8 grid max-w-[30rem] grid-cols-2 gap-6 border-t border-[rgba(214,184,132,0.12)] pt-5">
               <div>
                 <div className="text-[clamp(1.8rem,3vw,2.5rem)] gold-text-gradient" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}>
                   20+
@@ -521,8 +509,8 @@ const HeroSection = () => {
             </div>
           </div>
 
-          <div className="relative hidden h-full items-center justify-end lg:flex">
-            <div ref={slabShellRef} className="relative ml-auto flex w-[30vw] max-w-[360px] min-w-[280px] items-center justify-center" style={{ height: "70vh", maxHeight: "70vh" }}>
+          <div className="relative hidden h-full items-center justify-end self-center lg:flex">
+            <div ref={slabShellRef} className="relative ml-auto flex w-[30vw] max-w-[400px] min-w-[300px] items-center justify-center" style={{ height: "70vh", maxHeight: "70vh" }}>
               <div className="absolute inset-0 rounded-[2rem] border border-[rgba(214,184,132,0.14)] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] backdrop-blur-[2px]" />
               <div className="absolute inset-x-8 top-6 h-px bg-[linear-gradient(90deg,transparent,rgba(214,184,132,0.76),transparent)]" />
               <div className="absolute inset-x-8 bottom-6 h-px bg-[linear-gradient(90deg,transparent,rgba(214,184,132,0.42),transparent)]" />
