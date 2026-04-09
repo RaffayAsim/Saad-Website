@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import saadPortrait from "../assets/saad-bin-zain-2.jpg";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -157,8 +156,8 @@ function createGlobalRouteTexture() {
     context.strokeStyle = index === 0 ? "rgba(233, 190, 112, 0.34)" : index < 4 ? "rgba(214, 171, 103, 0.24)" : "rgba(214, 171, 103, 0.16)";
     context.lineWidth = index === 0 ? 2.8 : index < 4 ? 2.1 : 1.5;
     context.beginPath();
-    arc.forEach(([x, y], pointIndex) => {
-      if (pointIndex === 0) {
+    arc.forEach(([x, y], index) => {
+      if (index === 0) {
         context.moveTo(x, y);
       } else {
         context.lineTo(x, y);
@@ -577,120 +576,51 @@ function SilkScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }
   );
 }
 
-function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; y: number; inside: boolean }> }) {
-  const items = useMemo(
+function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
+  const labels = useMemo(
     () => [
-      { label: "JUMEIRAH", left: "12%", top: "19%", color: "gold" },
-      { label: "CITY WALK", left: "20%", top: "26%", color: "white" },
-      { label: "SATWA", left: "10%", top: "39%", color: "white" },
-      { label: "DOWNTOWN", left: "29%", top: "31%", color: "gold" },
-      { label: "DIFC", left: "38%", top: "37%", color: "white" },
-      { label: "ZAABEEL", left: "21%", top: "56%", color: "white" },
-      { label: "MEYDAN", left: "27%", top: "73%", color: "white" },
-      { label: "DUBAI DESIGN DISTRICT", left: "36%", top: "81%", color: "white" },
-      { label: "AL WASL", left: "43%", top: "52%", color: "gold" },
-      { label: "BUSINESS BAY", left: "49%", top: "45%", color: "gold" },
-      { label: "DUBAI", left: "60%", top: "34%", color: "gold" },
-      { label: "DUBAI MARINA", left: "79%", top: "36%", color: "white" },
-      { label: "BLUEWATERS", left: "71%", top: "28%", color: "white" },
-      { label: "DUBAI HILLS", left: "77%", top: "49%", color: "white" },
-      { label: "PALM JUMEIRAH", left: "83%", top: "13%", color: "gold" },
-      { label: "CREEK HARBOUR", left: "56%", top: "74%", color: "white" },
-      { label: "EMIRATES HILLS", left: "85%", top: "57%", color: "white" },
-      { label: "EXPO CITY", left: "85%", top: "78%", color: "gold" },
-      { label: "25.2048 N 55.2708 E", left: "7%", top: "10%", color: "white" },
-      { label: "24.7136 N 46.6753 E", left: "8%", top: "86%", color: "white" },
-      { label: "51.5072 N 0.1276 W", left: "86%", top: "9%", color: "white" },
-      { label: "1.3521 N 103.8198 E", left: "84%", top: "88%", color: "white" },
-      { label: "TRACE VECTOR 07", left: "70%", top: "16%", color: "gold" },
-      { label: "COORD GRID A3", left: "14%", top: "67%", color: "white" },
+      { name: "JUMEIRAH", left: "12%", top: "19%", size: "0.74rem", tone: "soft", pointer: new THREE.Vector2(-0.78, 0.58) },
+      { name: "CITY WALK", left: "21%", top: "26%", size: "0.68rem", tone: "soft", pointer: new THREE.Vector2(-0.56, 0.36) },
+      { name: "SATWA", left: "12%", top: "39%", size: "0.62rem", tone: "soft", pointer: new THREE.Vector2(-0.7, 0.12) },
+      { name: "DOWNTOWN", left: "29%", top: "31%", size: "0.88rem", tone: "strong", pointer: new THREE.Vector2(-0.42, 0.34) },
+      { name: "DIFC", left: "38%", top: "37%", size: "0.84rem", tone: "strong", pointer: new THREE.Vector2(-0.18, 0.22) },
+      { name: "ZAABEEL", left: "22%", top: "56%", size: "0.62rem", tone: "soft", pointer: new THREE.Vector2(-0.34, -0.02) },
+      { name: "MEYDAN", left: "27%", top: "73%", size: "0.62rem", tone: "soft", pointer: new THREE.Vector2(-0.18, -0.26) },
+      { name: "DUBAI DESIGN DISTRICT", left: "37%", top: "81%", size: "0.58rem", tone: "soft", pointer: new THREE.Vector2(0.02, -0.4) },
+      { name: "AL WASL", left: "42%", top: "52%", size: "0.66rem", tone: "soft", pointer: new THREE.Vector2(-0.06, -0.02) },
+      { name: "BUSINESS BAY", left: "48%", top: "45%", size: "0.76rem", tone: "strong", pointer: new THREE.Vector2(0.04, 0.06) },
+      { name: "DUBAI", left: "60%", top: "34%", size: "1.12rem", tone: "primary", pointer: new THREE.Vector2(0.22, 0.26) },
+      { name: "DUBAI MARINA", left: "79%", top: "36%", size: "0.82rem", tone: "strong", pointer: new THREE.Vector2(0.64, 0.18) },
+      { name: "BLUEWATERS", left: "72%", top: "28%", size: "0.66rem", tone: "soft", pointer: new THREE.Vector2(0.58, 0.28) },
+      { name: "DUBAI HILLS", left: "77%", top: "49%", size: "0.68rem", tone: "soft", pointer: new THREE.Vector2(0.7, -0.08) },
+      { name: "PALM JUMEIRAH", left: "83%", top: "13%", size: "0.7rem", tone: "soft", pointer: new THREE.Vector2(0.82, 0.66) },
+      { name: "CREEK HARBOUR", left: "56%", top: "74%", size: "0.7rem", tone: "soft", pointer: new THREE.Vector2(0.12, -0.48) },
+      { name: "EMIRATES HILLS", left: "86%", top: "57%", size: "0.66rem", tone: "soft", pointer: new THREE.Vector2(0.76, -0.04) },
+      { name: "EXPO CITY", left: "86%", top: "78%", size: "0.62rem", tone: "soft", pointer: new THREE.Vector2(0.9, -0.54) },
     ],
     [],
   );
-  const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
-  const dotRefs = useRef<Array<HTMLSpanElement | null>>([]);
-  const charRefs = useRef<Array<Array<HTMLSpanElement | null>>>([]);
+  const [activeLabel, setActiveLabel] = useState<string | null>(null);
 
   useEffect(() => {
-    const itemSetters = itemRefs.current.map((element, index) => {
-      const colorValue = items[index]?.color === "gold" ? "#C5A059" : "#F5F3EE";
-      return element
-        ? {
-            opacity: gsap.quickTo(element, "opacity", { duration: 0.22, ease: "power2.out" }),
-            y: gsap.quickTo(element, "y", { duration: 0.26, ease: "back.out(1.8)" }),
-            color: colorValue,
-          }
-        : null;
-    });
-
-    const dotSetters = dotRefs.current.map((element) =>
-      element
-        ? {
-            scale: gsap.quickTo(element, "scale", { duration: 0.24, ease: "back.out(2.1)" }),
-            opacity: gsap.quickTo(element, "opacity", { duration: 0.2, ease: "power2.out" }),
-          }
-        : null,
-    );
-
-    const characterSetters = charRefs.current.map((characters) =>
-      characters.map((character) =>
-        character
-          ? {
-              scale: gsap.quickTo(character, "scale", { duration: 0.26, ease: "back.out(2.4)" }),
-              y: gsap.quickTo(character, "y", { duration: 0.24, ease: "back.out(2)" }),
-            }
-          : null,
-      ),
-    );
-
     let frameId = 0;
 
     const tick = () => {
-      const pointer = mouse.current;
-
-      itemRefs.current.forEach((element, index) => {
-        if (!element) {
-          return;
-        }
-
-        const dot = dotRefs.current[index];
-        const pointRect = dot?.getBoundingClientRect() ?? element.getBoundingClientRect();
-        const pointX = pointRect.left + pointRect.width / 2;
-        const pointY = pointRect.top + pointRect.height / 2;
-        const pointDistance = pointer.inside ? Math.hypot(pointer.x - pointX, pointer.y - pointY) : Number.POSITIVE_INFINITY;
-        const activation = pointer.inside ? THREE.MathUtils.clamp(1 - pointDistance / 150, 0, 1) : 0;
-        const baseColor = items[index].color === "gold" ? "rgba(197,160,89,0.18)" : "rgba(245,243,238,0.16)";
-
-        if (itemSetters[index]) {
-          itemSetters[index]?.opacity(0.1 + activation * 0.9);
-          itemSetters[index]?.y((1 - activation) * 2.5);
-          gsap.to(element, {
-            color: activation > 0.04 ? itemSetters[index]?.color : baseColor,
-            duration: 0.18,
-            ease: "power2.out",
-            overwrite: true,
-          });
-        }
-
-        if (dotSetters[index]) {
-          dotSetters[index]?.scale(0.7 + activation * 1.15);
-          dotSetters[index]?.opacity(0.12 + activation * 0.88);
-        }
-
-        characterSetters[index]?.forEach((setter, charIndex) => {
-          const character = charRefs.current[index]?.[charIndex];
-          if (!setter || !character) {
-            return;
+      const currentPointer = new THREE.Vector2(mouse.current.x, mouse.current.y);
+      const nearest = labels.reduce(
+        (best, label) => {
+          const distance = label.pointer.distanceTo(currentPointer);
+          if (distance < best.distance) {
+            return { name: label.name, distance };
           }
+          return best;
+        },
+        { name: labels[5].name, distance: Number.POSITIVE_INFINITY },
+      );
 
-          const rect = character.getBoundingClientRect();
-          const charX = rect.left + rect.width / 2;
-          const charY = rect.top + rect.height / 2;
-          const charDistance = pointer.inside ? Math.hypot(pointer.x - charX, pointer.y - charY) : Number.POSITIVE_INFINITY;
-          const charActivation = activation * THREE.MathUtils.clamp(1 - charDistance / 110, 0, 1);
-          setter.scale(0.92 + activation * 0.12 + charActivation * 0.82);
-          setter.y(-(activation * 1.2 + charActivation * 4.6));
-        });
+      setActiveLabel((previous) => {
+        const next = nearest.distance < 0.24 ? nearest.name : null;
+        return previous === next ? previous : next;
       });
 
       frameId = window.requestAnimationFrame(tick);
@@ -698,10 +628,10 @@ function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; 
 
     frameId = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(frameId);
-  }, [items, mouse]);
+  }, [labels, mouse]);
 
   return (
-    <div className="pointer-events-none absolute bottom-[8%] left-[4%] z-[6] hidden lg:block" style={{ top: `calc(${NAVBAR_GUARD}px + 6%)`, width: "56%" }} aria-hidden="true">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] hidden lg:block" style={{ top: `${NAVBAR_GUARD}px` }} aria-hidden="true">
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
         <defs>
           <linearGradient id="district-route" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -737,56 +667,37 @@ function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; 
         <circle cx="95" cy="79" r="0.18" fill="rgba(214,184,132,0.18)" />
       </svg>
 
-      {items.map((item, index) => (
+      {labels.map((label) => (
         <div
-          key={item.label}
-          ref={(element) => {
-            itemRefs.current[index] = element;
-          }}
+          key={label.name}
           className="absolute uppercase"
           style={{
-            left: item.left,
-            top: item.top,
+            left: label.left,
+            top: label.top,
             fontFamily: "'Inter', sans-serif",
-            fontSize: "12px",
-            letterSpacing: "0.3rem",
-            color: item.color === "gold" ? "rgba(197,160,89,0.24)" : "rgba(245,243,238,0.2)",
-            opacity: 0.14,
+            fontSize: label.size,
+            letterSpacing: label.tone === "primary" ? "0.38rem" : label.tone === "strong" ? "0.2rem" : "0.15rem",
+            color: activeLabel === label.name ? "rgba(236,196,118,0.88)" : "rgba(214,184,132,0.14)",
+            opacity: activeLabel === label.name ? 1 : 0.38,
+            filter: activeLabel === label.name ? "blur(0px)" : "blur(6px)",
+            transform: activeLabel === label.name ? "scale(1)" : "scale(0.985)",
+            transition: "opacity 180ms ease, filter 220ms ease, color 180ms ease, transform 220ms ease",
+            textShadow: activeLabel === label.name ? "0 0 24px rgba(236,196,118,0.12)" : "none",
             whiteSpace: "nowrap",
-            willChange: "transform, opacity",
-            textShadow: item.color === "gold" ? "0 0 18px rgba(197,160,89,0.12)" : "0 0 18px rgba(245,243,238,0.08)",
           }}
         >
-          <span
-            ref={(element) => {
-              dotRefs.current[index] = element;
-            }}
-            className="absolute left-[-14px] top-[6px] h-[4px] w-[4px] rounded-full"
-            style={{
-              background: item.color === "gold" ? "#C5A059" : "#F5F3EE",
-              opacity: 0.18,
-              willChange: "transform, opacity",
-              boxShadow: item.color === "gold" ? "0 0 12px rgba(197,160,89,0.34)" : "0 0 12px rgba(245,243,238,0.26)",
-            }}
-          />
-          {Array.from(item.label).map((character, charIndex) => (
+          {label.name.split(" ").map((word, index, words) => (
             <span
-              key={`${item.label}-${charIndex}`}
-              ref={(element) => {
-                if (!charRefs.current[index]) {
-                  charRefs.current[index] = [];
-                }
-                charRefs.current[index][charIndex] = element;
-              }}
+              key={`${label.name}-${word}-${index}`}
               style={{
                 display: "inline-block",
-                marginRight: character === " " ? "0.32rem" : 0,
-                transform: "scale(0.92) translateY(0px)",
+                marginRight: index === words.length - 1 ? 0 : "0.34rem",
+                transform: activeLabel === label.name ? "scale(1) translateY(0px)" : "scale(1.22) translateY(1px)",
                 transformOrigin: "50% 50%",
-                willChange: "transform",
+                transition: `transform 300ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 65}ms`,
               }}
             >
-              {character === " " ? "\u00A0" : character}
+              {word}
             </span>
           ))}
         </div>
@@ -801,7 +712,6 @@ const HeroSection = () => {
   const backgroundRef = useRef<HTMLDivElement>(null);
   const silkRef = useRef<HTMLDivElement>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
-  const mouseScreenRef = useRef({ x: 0, y: 0, inside: false });
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -815,12 +725,10 @@ const HeroSection = () => {
         x: THREE.MathUtils.clamp(((event.clientX - rect.left) / rect.width - 0.5) * 2, -1, 1),
         y: THREE.MathUtils.clamp(-((event.clientY - rect.top) / rect.height - 0.5) * 2, -1, 1),
       };
-      mouseScreenRef.current = { x: event.clientX, y: event.clientY, inside: true };
     };
 
     const onLeave = () => {
       mouseRef.current = { x: 0, y: 0 };
-      mouseScreenRef.current = { x: 0, y: 0, inside: false };
     };
 
     section.addEventListener("mousemove", onMove, { passive: true });
@@ -928,104 +836,77 @@ const HeroSection = () => {
           </Canvas>
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-[linear-gradient(90deg,rgba(3,3,3,0.4)_0%,rgba(3,3,3,0.12)_28%,rgba(3,3,3,0.08)_54%,rgba(3,3,3,0.52)_100%)]" style={{ top: `${NAVBAR_GUARD}px` }} />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-[linear-gradient(180deg,rgba(3,3,3,0.22)_0%,rgba(3,3,3,0.08)_16%,rgba(3,3,3,0.12)_68%,rgba(3,3,3,0.88)_100%)]" style={{ top: `${NAVBAR_GUARD}px` }} />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-[linear-gradient(90deg,rgba(3,3,3,0.72)_0%,rgba(3,3,3,0.4)_30%,rgba(3,3,3,0.16)_58%,rgba(3,3,3,0.36)_100%)]" style={{ top: `${NAVBAR_GUARD}px` }} />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-[linear-gradient(180deg,rgba(3,3,3,0.28)_0%,rgba(3,3,3,0.14)_16%,rgba(3,3,3,0.12)_68%,rgba(3,3,3,0.88)_100%)]" style={{ top: `${NAVBAR_GUARD}px` }} />
 
-        <div className="relative z-10 mx-auto h-full max-w-[1320px] px-8 md:px-12 lg:px-16" style={{ paddingTop: `${NAVBAR_GUARD}px`, boxSizing: "border-box" }}>
-          <div className="grid h-full items-center gap-10 lg:grid-cols-[1fr_0.9fr]">
-            <div className="flex items-center">
-              <div ref={textRef} className="relative max-w-[35rem]">
-                <div className="flex items-center gap-4">
-                  <span className="h-px w-12" style={{ background: "linear-gradient(90deg, rgba(208,171,110,0), rgba(208,171,110,0.78))" }} />
-                  <p
-                    className="text-[clamp(0.76rem,0.9vw,0.9rem)] uppercase"
-                    style={{
-                      fontFamily: "'Inter', sans-serif",
-                      color: "rgba(208,171,110,0.92)",
-                      letterSpacing: "0.32rem",
-                    }}
-                  >
-                    Sovereign-grade real estate advisory.
-                  </p>
-                </div>
-                <h1
-                  className="mt-7 text-white uppercase"
-                  style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontWeight: 100,
-                    fontSize: "clamp(3.1rem, 5.6vw, 5.8rem)",
-                    letterSpacing: "clamp(0.18rem, 0.7vw, 0.62rem)",
-                    lineHeight: 0.88,
-                    textShadow: "0 14px 36px rgba(0,0,0,0.28)",
-                  }}
-                >
-                  <span className="block">Luxury</span>
-                  <span className="block">Command</span>
-                </h1>
+        <div className="relative z-10 mx-auto h-full max-w-[1200px]" style={{ paddingLeft: "10%", paddingTop: `${NAVBAR_GUARD}px`, boxSizing: "border-box" }}>
+          <div className="flex h-full flex-col justify-center">
+            <div ref={textRef} className="relative max-w-[39rem]" style={{ zIndex: 10 }}>
+              <div className="flex items-center gap-4">
+                <span className="h-px w-12" style={{ background: "linear-gradient(90deg, rgba(208,171,110,0), rgba(208,171,110,0.78))" }} />
                 <p
-                  className="mt-7 max-w-[29rem] text-[clamp(1rem,1.2vw,1.1rem)] leading-[1.85] text-white/74"
+                  className="text-[clamp(0.76rem,0.9vw,0.9rem)]"
                   style={{
-                    fontFamily: "'Cormorant Garamond', serif",
-                    textShadow: "0 8px 22px rgba(0,0,0,0.22)",
+                    fontFamily: "'Inter', sans-serif",
+                    color: "rgba(208,171,110,0.92)",
+                    letterSpacing: "0.32rem",
+                    textTransform: "uppercase",
                   }}
                 >
-                  Strategic placement across Dubai&apos;s prime districts, shaped through discreet introductions, prestige positioning, and institutional-grade judgment.
+                  Sovereign-grade real estate advisory.
                 </p>
               </div>
-            </div>
-
-            <div className="flex justify-center lg:justify-end">
-              <div
-                className="relative w-full max-w-[25rem] overflow-hidden rounded-[30px] border p-5 md:p-6"
+              <h1
+                className="mt-7 text-white"
                 style={{
-                  borderColor: "rgba(208,171,110,0.16)",
-                  background: "linear-gradient(180deg, rgba(10,10,10,0.4), rgba(8,8,8,0.18))",
-                  backdropFilter: "blur(14px)",
-                  boxShadow: "0 26px 70px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.04)",
+                  fontFamily: "'Playfair Display', serif",
+                  fontWeight: 100,
+                  fontSize: "clamp(3.25rem, 6.2vw, 6rem)",
+                  letterSpacing: "clamp(0.18rem, 0.75vw, 0.72rem)",
+                  lineHeight: 0.88,
+                  textTransform: "uppercase",
+                  textShadow: "0 14px 36px rgba(0,0,0,0.28)",
                 }}
               >
-                <div className="relative overflow-hidden rounded-[24px] border" style={{ borderColor: "rgba(208,171,110,0.16)" }}>
-                  <img
-                    src={saadPortrait}
-                    alt="Saad Bin Zain"
-                    className="h-[360px] w-full object-cover object-center md:h-[420px]"
-                    style={{ filter: "grayscale(1) contrast(1.12) brightness(0.88)" }}
-                  />
-                  <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(197,160,89,0.08), rgba(197,160,89,0.18)), linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,0.46))", mixBlendMode: "screen" }} />
-                  <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
-                    <h2
-                      className="text-[clamp(2rem,3.6vw,3rem)] uppercase text-white"
-                      style={{
-                        fontFamily: "'Playfair Display', serif",
-                        fontWeight: 100,
-                        lineHeight: 0.92,
-                        letterSpacing: "0.14rem",
-                        textShadow: "0 14px 36px rgba(0,0,0,0.28)",
-                      }}
-                    >
-                      <span className="block">Saad</span>
-                      <span className="block">Bin Zain</span>
-                    </h2>
-                    <p
-                      className="mt-3 text-[0.76rem] uppercase"
-                      style={{
-                        fontFamily: "'Inter', sans-serif",
-                        color: "rgba(208,171,110,0.9)",
-                        letterSpacing: "0.28rem",
-                      }}
-                    >
-                      Private portfolio presence
-                    </p>
-                  </div>
-                </div>
+                <span className="block">Luxury</span>
+                <span className="block">Command</span>
+              </h1>
+              <p
+                className="mt-7 max-w-[31rem] text-[clamp(1rem,1.28vw,1.14rem)] leading-[1.85] text-white/74"
+                style={{
+                  fontFamily: "'Cormorant Garamond', serif",
+                  textShadow: "0 8px 22px rgba(0,0,0,0.22)",
+                }}
+              >
+                Strategic placement across Dubai&apos;s prime districts, shaped through discreet introductions, prestige positioning, and institutional-grade judgment.
+              </p>
+
+              <div className="mt-9 flex flex-wrap gap-3">
+                {["Prime Retail", "Private Office", "Cross-Border Access"].map((item) => (
+                  <button
+                    key={item}
+                    className="rounded-full border px-5 py-[0.82rem] text-[0.68rem] uppercase transition-colors"
+                    style={{
+                      borderColor: "rgba(208,171,110,0.24)",
+                      background: "linear-gradient(180deg, rgba(14,14,14,0.34), rgba(7,7,7,0.18))",
+                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03), 0 14px 28px rgba(0,0,0,0.14)",
+                      backdropFilter: "blur(10px)",
+                      color: "rgba(208,171,110,0.92)",
+                      fontFamily: "'Inter', sans-serif",
+                      letterSpacing: "0.26rem",
+                    }}
+                  >
+                    {item}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         </div>
 
-        <DubaiDistrictOverlay mouse={mouseScreenRef} />
+        <DubaiDistrictOverlay mouse={mouseRef} />
 
-        <div ref={silkRef} className="pointer-events-none absolute inset-x-0 bottom-0 z-[3]" style={{ top: `${NAVBAR_GUARD}px` }}>
+        <div ref={silkRef} className="pointer-events-none absolute inset-x-0 bottom-0 z-[5]" style={{ top: `${NAVBAR_GUARD}px` }}>
           <Canvas
             className="pointer-events-none"
             dpr={[1, 1.5]}
