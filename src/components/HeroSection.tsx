@@ -1,147 +1,61 @@
-import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import saadPortrait from "../assets/saad-bin-zain-2.jpg";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const NAVBAR_GUARD = 80;
-const SILK_WIDTH = 13.2;
-const SILK_HEIGHT = 7.8;
-const SEGMENTS = 128;
+const NAVBAR_GUARD = 88;
 
 function ease(current: number, target: number, amount: number) {
   return current + (target - current) * amount;
 }
 
-function createThreadMapTexture() {
-  const canvas = document.createElement("canvas");
-  canvas.width = 1024;
-  canvas.height = 1024;
-  const context = canvas.getContext("2d");
-
-  if (!context) {
-    return new THREE.CanvasTexture(canvas);
-  }
-
-  context.fillStyle = "#000000";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-
-  context.strokeStyle = "rgba(212, 171, 103, 0.9)";
-  context.lineWidth = 2.4;
-  context.shadowColor = "rgba(212, 171, 103, 0.45)";
-  context.shadowBlur = 14;
-
-  const routes = [
-    [
-      [0.18, 0.22],
-      [0.24, 0.28],
-      [0.31, 0.34],
-      [0.38, 0.39],
-      [0.46, 0.42],
-      [0.54, 0.42],
-    ],
-    [
-      [0.38, 0.39],
-      [0.42, 0.46],
-      [0.45, 0.55],
-      [0.49, 0.67],
-      [0.51, 0.8],
-    ],
-    [
-      [0.54, 0.42],
-      [0.61, 0.39],
-      [0.69, 0.37],
-      [0.76, 0.35],
-      [0.84, 0.34],
-    ],
-    [
-      [0.62, 0.34],
-      [0.66, 0.28],
-      [0.69, 0.23],
-      [0.72, 0.18],
-      [0.76, 0.16],
-    ],
-  ];
-
-  routes.forEach((route) => {
-    context.beginPath();
-    route.forEach(([x, y], index) => {
-      const px = x * canvas.width;
-      const py = y * canvas.height;
-      if (index === 0) {
-        context.moveTo(px, py);
-      } else {
-        context.lineTo(px, py);
-      }
-    });
-    context.stroke();
-  });
-
-  const hubs = [
-    [0.31, 0.34],
-    [0.38, 0.39],
-    [0.46, 0.42],
-    [0.54, 0.42],
-    [0.69, 0.37],
-    [0.76, 0.16],
-  ];
-
-  hubs.forEach(([x, y]) => {
-    const px = x * canvas.width;
-    const py = y * canvas.height;
-    const isDubaiCluster = Math.abs(x - 0.46) < 0.09 && Math.abs(y - 0.42) < 0.08;
-    const radius = isDubaiCluster ? 28 : 18;
-    const gradient = context.createRadialGradient(px, py, 0, px, py, radius);
-    gradient.addColorStop(0, "rgba(255, 236, 188, 0.95)");
-    gradient.addColorStop(0.3, isDubaiCluster ? "rgba(233, 192, 116, 0.92)" : "rgba(212, 171, 103, 0.8)");
-    gradient.addColorStop(1, "rgba(212, 171, 103, 0)");
-    context.fillStyle = gradient;
-    context.beginPath();
-    context.arc(px, py, radius, 0, Math.PI * 2);
-    context.fill();
-  });
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.ClampToEdgeWrapping;
-  texture.wrapT = THREE.ClampToEdgeWrapping;
-  texture.needsUpdate = true;
-
-  return texture;
-}
-
 function createGlobalRouteTexture() {
   const canvas = document.createElement("canvas");
-  canvas.width = 1600;
-  canvas.height = 900;
+  canvas.width = 1800;
+  canvas.height = 1080;
   const context = canvas.getContext("2d");
 
   if (!context) {
     return new THREE.CanvasTexture(canvas);
   }
 
-  context.fillStyle = "rgba(0,0,0,0)";
-  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.shadowColor = "rgba(223, 183, 103, 0.34)";
+  context.shadowBlur = 20;
 
   const coastline = [
-    [210, 180], [260, 238], [360, 306], [510, 366], [690, 390], [870, 385], [1050, 360], [1240, 320], [1410, 284],
-  ];
-  const corridorRoutes = [
-    [[300, 300], [420, 330], [560, 354], [720, 362], [860, 352]],
-    [[560, 354], [620, 418], [675, 502], [728, 620], [760, 748]],
-    [[860, 352], [970, 325], [1090, 298], [1205, 254], [1315, 224]],
-    [[420, 330], [360, 260], [318, 214], [282, 178], [250, 152]],
-    [[120, 252], [220, 278], [320, 312], [420, 330]],
-    [[870, 352], [980, 410], [1092, 504], [1180, 632], [1240, 808]],
-    [[1040, 170], [1130, 224], [1220, 272], [1320, 314], [1450, 336]],
-    [[520, 180], [640, 224], [760, 258], [892, 286], [1022, 308]],
-    [[170, 508], [280, 476], [402, 448], [548, 430], [690, 420]],
+    [160, 208],
+    [250, 290],
+    [386, 372],
+    [566, 434],
+    [772, 456],
+    [982, 442],
+    [1188, 400],
+    [1420, 332],
+    [1628, 284],
   ];
 
-  context.strokeStyle = "rgba(190, 151, 86, 0.16)";
-  context.lineWidth = 3;
+  const routes = [
+    [[86, 430], [230, 402], [398, 384], [564, 372], [742, 364], [928, 362]],
+    [[112, 252], [250, 296], [410, 340], [582, 374], [764, 392]],
+    [[188, 666], [338, 646], [506, 604], [680, 536], [842, 468]],
+    [[320, 812], [454, 766], [590, 696], [720, 604], [862, 502]],
+    [[598, 226], [760, 264], [930, 304], [1118, 328], [1328, 336]],
+    [[930, 362], [1104, 342], [1284, 304], [1458, 236], [1652, 92]],
+    [[928, 362], [1080, 430], [1216, 542], [1338, 680], [1456, 844]],
+    [[1184, 186], [1292, 238], [1404, 292], [1536, 338], [1714, 376]],
+    [[470, 194], [606, 258], [748, 314], [908, 346], [1076, 364]],
+    [[146, 526], [318, 520], [488, 494], [658, 454], [840, 414]],
+  ];
+
+  context.strokeStyle = "rgba(184, 144, 77, 0.22)";
+  context.lineWidth = 3.2;
   context.beginPath();
   coastline.forEach(([x, y], index) => {
     if (index === 0) {
@@ -152,12 +66,12 @@ function createGlobalRouteTexture() {
   });
   context.stroke();
 
-  corridorRoutes.forEach((arc, index) => {
-    context.strokeStyle = index === 0 ? "rgba(233, 190, 112, 0.34)" : index < 4 ? "rgba(214, 171, 103, 0.24)" : "rgba(214, 171, 103, 0.16)";
-    context.lineWidth = index === 0 ? 2.8 : index < 4 ? 2.1 : 1.5;
+  routes.forEach((route, index) => {
+    context.strokeStyle = index < 3 ? "rgba(233, 190, 112, 0.38)" : index < 7 ? "rgba(214, 171, 103, 0.25)" : "rgba(214, 171, 103, 0.16)";
+    context.lineWidth = index < 3 ? 2.5 : index < 7 ? 1.85 : 1.25;
     context.beginPath();
-    arc.forEach(([x, y], index) => {
-      if (index === 0) {
+    route.forEach(([x, y], pointIndex) => {
+      if (pointIndex === 0) {
         context.moveTo(x, y);
       } else {
         context.lineTo(x, y);
@@ -167,47 +81,105 @@ function createGlobalRouteTexture() {
   });
 
   const hubs = [
-    [420, 330, false],
-    [560, 354, false],
-    [700, 366, true],
-    [860, 352, false],
-    [1250, 222, false],
-    [748, 620, false],
-    [262, 182, false],
-    [980, 502, false],
-    [1450, 336, false],
-    [166, 500, false],
+    [572, 374, 26, false],
+    [748, 392, 30, false],
+    [928, 362, 72, true],
+    [1284, 304, 26, false],
+    [1452, 236, 22, false],
+    [856, 500, 24, false],
+    [320, 520, 24, false],
+    [506, 604, 24, false],
+    [166, 252, 20, false],
+    [1456, 844, 18, false],
   ] as const;
 
-  context.font = "500 24px Inter";
-  hubs.forEach(([x, y, isDubai]) => {
-    const radius = isDubai ? 60 : 26;
-    const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
-    gradient.addColorStop(0, "rgba(255,232,186,0.95)");
-    gradient.addColorStop(0.35, isDubai ? "rgba(236,196,118,0.9)" : "rgba(212,171,103,0.72)");
-    gradient.addColorStop(1, "rgba(212,171,103,0)");
+  hubs.forEach(([x, y, radius, isPrimary]) => {
+    const gradient = context.createRadialGradient(x, y, 0, x, y, radius * 1.8);
+    gradient.addColorStop(0, isPrimary ? "rgba(255,239,201,0.96)" : "rgba(243,214,158,0.8)");
+    gradient.addColorStop(0.26, isPrimary ? "rgba(236,196,118,0.88)" : "rgba(214,171,103,0.58)");
+    gradient.addColorStop(1, "rgba(214,171,103,0)");
     context.fillStyle = gradient;
     context.beginPath();
-    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.arc(x, y, radius * 1.8, 0, Math.PI * 2);
     context.fill();
   });
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.needsUpdate = true;
+  return texture;
+}
 
+function createSatelliteGridTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1800;
+  canvas.height = 1080;
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    return new THREE.CanvasTexture(canvas);
+  }
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.strokeStyle = "rgba(202, 178, 132, 0.08)";
+  context.lineWidth = 1;
+
+  for (let x = 0; x <= canvas.width; x += 78) {
+    context.beginPath();
+    context.moveTo(x, 0);
+    context.lineTo(x, canvas.height);
+    context.stroke();
+  }
+
+  for (let y = 0; y <= canvas.height; y += 78) {
+    context.beginPath();
+    context.moveTo(0, y);
+    context.lineTo(canvas.width, y);
+    context.stroke();
+  }
+
+  context.strokeStyle = "rgba(202, 178, 132, 0.06)";
+  context.lineWidth = 0.8;
+  const diagonals = [
+    [0, 144, 640, 0],
+    [1200, 0, 1800, 460],
+    [0, 880, 820, 500],
+    [1320, 1080, 1800, 680],
+  ];
+
+  diagonals.forEach(([x1, y1, x2, y2]) => {
+    context.beginPath();
+    context.moveTo(x1, y1);
+    context.lineTo(x2, y2);
+    context.stroke();
+  });
+
+  context.fillStyle = "rgba(226, 196, 142, 0.16)";
+  context.font = "500 14px Inter";
+  [
+    [78, 84, "SAT-01"],
+    [1480, 108, "ARC-22"],
+    [96, 980, "GRID-07"],
+    [1512, 992, "D-TRACE"],
+  ].forEach(([x, y, label]) => {
+    context.fillText(label as string, x as number, y as number);
+  });
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
   return texture;
 }
 
 function GoldDust({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
   const ref = useRef<THREE.Points>(null);
   const positions = useMemo(() => {
-    const count = 260;
+    const count = 220;
     const buffer = new Float32Array(count * 3);
 
     for (let index = 0; index < count; index += 1) {
-      buffer[index * 3] = (Math.random() - 0.5) * 16;
-      buffer[index * 3 + 1] = (Math.random() - 0.5) * 9;
+      buffer[index * 3] = (Math.random() - 0.5) * 18;
+      buffer[index * 3 + 1] = (Math.random() - 0.5) * 10;
       buffer[index * 3 + 2] = (Math.random() - 0.5) * 6;
     }
 
@@ -219,9 +191,9 @@ function GoldDust({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }>
       return;
     }
 
-    ref.current.rotation.y = state.clock.elapsedTime * 0.015;
+    ref.current.rotation.y = state.clock.elapsedTime * 0.012;
     ref.current.position.x = ease(ref.current.position.x, mouse.current.x * 0.18, 0.03);
-    ref.current.position.y = ease(ref.current.position.y, mouse.current.y * 0.12, 0.03);
+    ref.current.position.y = ease(ref.current.position.y, mouse.current.y * 0.14, 0.03);
   });
 
   return (
@@ -229,139 +201,119 @@ function GoldDust({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }>
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" array={positions} count={positions.length / 3} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial
-        color="#bf9554"
-        size={0.022}
-        transparent
-        opacity={0.38}
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-      />
+      <pointsMaterial color="#d3a860" size={0.026} transparent opacity={0.28} depthWrite={false} blending={THREE.AdditiveBlending} />
     </points>
   );
 }
 
 function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
   const lightRef = useRef<THREE.PointLight>(null);
-  const ringRef = useRef<THREE.Mesh>(null);
-  const mapTexture = useMemo(() => createGlobalRouteTexture(), []);
   const mapRef = useRef<THREE.Mesh>(null);
+  const gridRef = useRef<THREE.Mesh>(null);
   const routeRef = useRef<THREE.Line>(null);
-  const activeCityRef = useRef<THREE.Mesh>(null);
-  const districtAnchors = useMemo(
+  const activeHubRef = useRef<THREE.Mesh>(null);
+  const mapTexture = useMemo(() => createGlobalRouteTexture(), []);
+  const gridTexture = useMemo(() => createSatelliteGridTexture(), []);
+  const anchors = useMemo(
     () => [
-      { name: "Downtown", world: new THREE.Vector3(-3.05, 1.02, -2.6), pointer: new THREE.Vector2(-0.42, 0.28) },
-      { name: "DIFC", world: new THREE.Vector3(-1.7, 0.78, -2.6), pointer: new THREE.Vector2(-0.2, 0.2) },
-      { name: "Dubai", world: new THREE.Vector3(0.25, 0.58, -2.6), pointer: new THREE.Vector2(0.02, 0.16) },
-      { name: "Marina", world: new THREE.Vector3(3.3, 0.46, -2.6), pointer: new THREE.Vector2(0.46, 0.14) },
-      { name: "Palm", world: new THREE.Vector3(5.55, 2.02, -2.6), pointer: new THREE.Vector2(0.78, 0.58) },
-      { name: "Creek", world: new THREE.Vector3(0.85, -2.16, -2.6), pointer: new THREE.Vector2(0.12, -0.42) },
-      { name: "Jumeirah", world: new THREE.Vector3(-5.1, 1.92, -2.6), pointer: new THREE.Vector2(-0.8, 0.64) },
-      { name: "City Walk", world: new THREE.Vector3(-3.72, 1.14, -2.6), pointer: new THREE.Vector2(-0.52, 0.3) },
-      { name: "Satwa", world: new THREE.Vector3(-4.58, 0.34, -2.6), pointer: new THREE.Vector2(-0.68, 0.12) },
-      { name: "Zaabeel", world: new THREE.Vector3(-2.62, -0.18, -2.6), pointer: new THREE.Vector2(-0.34, -0.02) },
-      { name: "Meydan", world: new THREE.Vector3(-1.52, -1.34, -2.6), pointer: new THREE.Vector2(-0.18, -0.28) },
-      { name: "Dubai Design District", world: new THREE.Vector3(-0.48, -1.88, -2.6), pointer: new THREE.Vector2(-0.02, -0.38) },
-      { name: "Bluewaters", world: new THREE.Vector3(4.62, 0.96, -2.6), pointer: new THREE.Vector2(0.66, 0.28) },
-      { name: "Dubai Hills", world: new THREE.Vector3(4.98, -0.82, -2.6), pointer: new THREE.Vector2(0.72, -0.08) },
-      { name: "Al Wasl", world: new THREE.Vector3(-1.08, -0.18, -2.6), pointer: new THREE.Vector2(-0.08, -0.04) },
-      { name: "Expo City", world: new THREE.Vector3(6.08, -1.98, -2.6), pointer: new THREE.Vector2(0.88, -0.5) },
+      { name: "Dubai", world: new THREE.Vector3(0.18, 0.34, -2.5), pointer: new THREE.Vector2(0.02, 0.1) },
+      { name: "Jumeirah", world: new THREE.Vector3(-4.3, 0.52, -2.5), pointer: new THREE.Vector2(-0.58, 0.08) },
+      { name: "Downtown", world: new THREE.Vector3(-1.8, 0.38, -2.5), pointer: new THREE.Vector2(-0.22, 0.04) },
+      { name: "DIFC", world: new THREE.Vector3(-0.86, 0.28, -2.5), pointer: new THREE.Vector2(-0.1, 0.02) },
+      { name: "Palm", world: new THREE.Vector3(4.1, 1.06, -2.5), pointer: new THREE.Vector2(0.52, 0.22) },
+      { name: "Creek", world: new THREE.Vector3(-0.92, -1.56, -2.5), pointer: new THREE.Vector2(-0.16, -0.28) },
+      { name: "Expo", world: new THREE.Vector3(5.3, -2.12, -2.5), pointer: new THREE.Vector2(0.74, -0.42) },
     ],
     [],
   );
 
   useFrame((state) => {
     if (lightRef.current) {
-      lightRef.current.position.x = ease(lightRef.current.position.x, mouse.current.x * 2.8, 0.04);
-      lightRef.current.position.y = ease(lightRef.current.position.y, mouse.current.y * 1.8, 0.04);
-    }
-
-    if (ringRef.current) {
-      ringRef.current.rotation.z = state.clock.elapsedTime * 0.08;
-      ringRef.current.position.x = ease(ringRef.current.position.x, mouse.current.x * 0.45, 0.03);
-      ringRef.current.position.y = ease(ringRef.current.position.y, mouse.current.y * 0.3, 0.03);
+      lightRef.current.position.x = ease(lightRef.current.position.x, mouse.current.x * 3.2, 0.04);
+      lightRef.current.position.y = ease(lightRef.current.position.y, mouse.current.y * 2.2, 0.04);
     }
 
     if (mapRef.current) {
-      mapRef.current.position.x = ease(mapRef.current.position.x, 0.2 + mouse.current.x * 0.22, 0.025);
-      mapRef.current.position.y = ease(mapRef.current.position.y, -0.12 + mouse.current.y * 0.14, 0.025);
-      mapRef.current.rotation.z = ease(mapRef.current.rotation.z, mouse.current.x * -0.024, 0.02);
+      mapRef.current.position.x = ease(mapRef.current.position.x, mouse.current.x * 0.24, 0.025);
+      mapRef.current.position.y = ease(mapRef.current.position.y, -0.16 + mouse.current.y * 0.16, 0.025);
+      mapRef.current.rotation.z = ease(mapRef.current.rotation.z, mouse.current.x * -0.018, 0.02);
     }
 
-    if (routeRef.current && activeCityRef.current) {
-      const nearest = districtAnchors.reduce(
-        (best, city) => {
-          const distance = city.pointer.distanceTo(new THREE.Vector2(mouse.current.x, mouse.current.y));
+    if (gridRef.current) {
+      gridRef.current.position.x = ease(gridRef.current.position.x, mouse.current.x * 0.08, 0.02);
+      gridRef.current.position.y = ease(gridRef.current.position.y, mouse.current.y * 0.06, 0.02);
+    }
+
+    if (routeRef.current && activeHubRef.current) {
+      const pointer = new THREE.Vector2(mouse.current.x, mouse.current.y);
+      const nearest = anchors.reduce(
+        (best, anchor) => {
+          const distance = anchor.pointer.distanceTo(pointer);
           if (distance < best.distance) {
-            return { city, distance };
+            return { anchor, distance };
           }
           return best;
         },
-        { city: districtAnchors[2], distance: Number.POSITIVE_INFINITY },
+        { anchor: anchors[0], distance: Number.POSITIVE_INFINITY },
       );
 
-      const shouldShow = nearest.city.name !== "Dubai" && nearest.distance < 0.38;
-      const routeGeometry = routeRef.current.geometry as THREE.BufferGeometry;
-      const positions = routeGeometry.attributes.position.array as Float32Array;
-      const start = districtAnchors[2].world;
-      const end = nearest.city.world;
-
-      const control = new THREE.Vector3((start.x + end.x) * 0.5, Math.max(start.y, end.y) + 0.7, -2.35);
+      const shouldShow = nearest.anchor.name !== "Dubai" && nearest.distance < 0.3;
+      const geometry = routeRef.current.geometry as THREE.BufferGeometry;
+      const positions = geometry.attributes.position.array as Float32Array;
+      const start = anchors[0].world;
+      const end = nearest.anchor.world;
+      const control = new THREE.Vector3((start.x + end.x) * 0.5, Math.max(start.y, end.y) + 0.8, -2.2);
       const curve = new THREE.QuadraticBezierCurve3(start, control, end);
       const points = curve.getPoints(32);
+
       points.forEach((point, index) => {
         positions[index * 3] = point.x;
         positions[index * 3 + 1] = point.y;
         positions[index * 3 + 2] = point.z;
       });
-      routeGeometry.attributes.position.needsUpdate = true;
+      geometry.attributes.position.needsUpdate = true;
 
       routeRef.current.visible = shouldShow;
-      activeCityRef.current.visible = shouldShow;
+      activeHubRef.current.visible = shouldShow;
       if (shouldShow) {
-        activeCityRef.current.position.copy(end);
-        activeCityRef.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 3.5) * 0.08);
+        activeHubRef.current.position.copy(end);
+        activeHubRef.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 4.2) * 0.08);
       }
     }
   });
 
   return (
     <>
-      <fogExp2 attach="fog" args={["#030303", 0.16]} />
-      <ambientLight intensity={0.14} />
-      <pointLight ref={lightRef} position={[0.2, 0.3, 2.4]} intensity={0.4} distance={8} color="#d3a860" />
-      <directionalLight position={[-3.5, 2.8, 1.5]} intensity={0.12} color="#9a8f7a" />
+      <fogExp2 attach="fog" args={["#040303", 0.14]} />
+      <ambientLight intensity={0.22} />
+      <pointLight ref={lightRef} position={[0.4, 0.2, 2.6]} intensity={0.56} distance={9} color="#d7b06d" />
+      <directionalLight position={[-4, 2.6, 1.2]} intensity={0.14} color="#a28f72" />
 
-      <mesh position={[0, -0.1, -3.8]}>
-        <planeGeometry args={[18, 11]} />
-        <meshBasicMaterial color="#050505" />
+      <mesh position={[0, -0.08, -4.1]}>
+        <planeGeometry args={[19.4, 11.6]} />
+        <meshBasicMaterial color="#050404" />
       </mesh>
 
-      <mesh ref={mapRef} position={[0.2, -0.12, -2.7]}>
-        <planeGeometry args={[16.8, 8.8]} />
-        <meshBasicMaterial map={mapTexture} transparent opacity={0.52} toneMapped={false} depthWrite={false} />
+      <mesh ref={gridRef} position={[0, -0.1, -3.3]}>
+        <planeGeometry args={[20.4, 12.2]} />
+        <meshBasicMaterial map={gridTexture} transparent opacity={0.12} toneMapped={false} depthWrite={false} />
+      </mesh>
+
+      <mesh ref={mapRef} position={[0, -0.16, -2.7]}>
+        <planeGeometry args={[14.3, 8.3]} />
+        <meshBasicMaterial map={mapTexture} transparent opacity={0.72} toneMapped={false} depthWrite={false} />
       </mesh>
 
       <line ref={routeRef} visible={false}>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" array={new Float32Array(33 * 3)} count={33} itemSize={3} />
         </bufferGeometry>
-        <lineBasicMaterial color="#d7ae67" transparent opacity={0.6} />
+        <lineBasicMaterial color="#e0bb72" transparent opacity={0.74} />
       </line>
 
-      <mesh ref={activeCityRef} visible={false}>
+      <mesh ref={activeHubRef} visible={false}>
         <sphereGeometry args={[0.08, 16, 16]} />
-        <meshBasicMaterial color="#f0cd8a" transparent opacity={0.85} />
-      </mesh>
-
-      <mesh ref={ringRef} position={[1.8, -0.8, -1.2]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[3.1, 0.035, 24, 140]} />
-        <meshStandardMaterial color="#8c6a3c" emissive="#6f4e24" emissiveIntensity={0.3} transparent opacity={0.28} />
-      </mesh>
-
-      <mesh position={[-3.8, 2.3, -2.9]} rotation={[0, 0, 0.1]}>
-        <planeGeometry args={[3.6, 8.6]} />
-        <meshBasicMaterial color="#080808" transparent opacity={0.72} />
+        <meshBasicMaterial color="#f2d392" transparent opacity={0.9} />
       </mesh>
 
       <GoldDust mouse={mouse} />
@@ -369,348 +321,146 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
   );
 }
 
-function SilkMesh({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
-  const materialRef = useRef<THREE.ShaderMaterial>(null);
-  const geometryRef = useRef<THREE.PlaneGeometry>(null);
-  const threadMap = useMemo(() => createThreadMapTexture(), []);
-
-  const simulation = useMemo(() => {
-    const vertexCount = (SEGMENTS + 1) * (SEGMENTS + 1);
-    return {
-      base: new Float32Array(vertexCount * 3),
-      current: new Float32Array(vertexCount * 3),
-      velocity: new Float32Array(vertexCount * 3),
-      seeded: false,
-    };
-  }, []);
-
-  const uniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uThreadMap: { value: threadMap },
-      uMouseUv: { value: new THREE.Vector2(0.5, 0.5) },
-      uMouseLight: { value: new THREE.Vector3(0, 0, 4) },
-    }),
-    [threadMap],
-  );
+function FrostedMonolith({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const materialRef = useRef<THREE.MeshPhysicalMaterial>(null);
+  const causticMaterialRef = useRef<THREE.ShaderMaterial>(null);
 
   useEffect(() => {
-    const geometry = geometryRef.current;
-    if (!geometry || simulation.seeded) {
+    if (!materialRef.current) {
       return;
     }
 
-    const position = geometry.attributes.position.array as Float32Array;
-    simulation.base.set(position);
-    simulation.current.set(position);
-    simulation.seeded = true;
-  }, [simulation]);
+    materialRef.current.customProgramCacheKey = () => "frosted-monolith-v2";
+    materialRef.current.onBeforeCompile = (shader) => {
+      shader.uniforms.uTime = { value: 0 };
+      shader.uniforms.uMouse = { value: new THREE.Vector2(0.5, 0.5) };
+
+      shader.vertexShader = shader.vertexShader
+        .replace("#include <common>", "#include <common>\nvarying vec2 vGlassUv;")
+        .replace("#include <uv_vertex>", "#include <uv_vertex>\nvGlassUv = uv;");
+
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          "#include <common>",
+          "#include <common>\nvarying vec2 vGlassUv;\nuniform float uTime;\nuniform vec2 uMouse;\nfloat hash(vec2 point) { return fract(sin(dot(point, vec2(127.1, 311.7))) * 43758.5453123); }\nfloat noise(vec2 point) { vec2 i = floor(point); vec2 f = fract(point); float a = hash(i); float b = hash(i + vec2(1.0, 0.0)); float c = hash(i + vec2(0.0, 1.0)); float d = hash(i + vec2(1.0, 1.0)); vec2 u = f * f * (3.0 - 2.0 * f); return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y; }",
+        )
+        .replace(
+          "vec4 diffuseColor = vec4( diffuse, opacity );",
+          "vec4 diffuseColor = vec4( diffuse, opacity );\nfloat frostNoise = noise(vGlassUv * 18.0 + uTime * 0.035);\nfloat mouseGlow = 1.0 - smoothstep(0.0, 0.52, distance(vGlassUv, uMouse));\ndiffuseColor.a *= mix(0.52, 0.82, frostNoise);\ndiffuseColor.rgb += vec3(0.07, 0.055, 0.028) * mouseGlow * 0.26;",
+        )
+        .replace(
+          "#include <dithering_fragment>",
+          "float edgeRim = smoothstep(0.0, 0.16, vGlassUv.x) * smoothstep(0.0, 0.16, 1.0 - vGlassUv.x) * smoothstep(0.0, 0.16, vGlassUv.y) * smoothstep(0.0, 0.16, 1.0 - vGlassUv.y);\ngl_FragColor.rgb += vec3(0.22, 0.18, 0.1) * (1.0 - edgeRim) * 0.08;\n#include <dithering_fragment>",
+        );
+
+      materialRef.current!.userData.shader = shader;
+    };
+    materialRef.current.needsUpdate = true;
+  }, []);
 
   useFrame((state) => {
-    const geometry = geometryRef.current;
-    const material = materialRef.current;
-
-    if (!geometry || !material || !simulation.seeded) {
-      return;
+    if (groupRef.current) {
+      groupRef.current.rotation.y = ease(groupRef.current.rotation.y, mouse.current.x * 0.1, 0.04);
+      groupRef.current.rotation.x = ease(groupRef.current.rotation.x, mouse.current.y * -0.08, 0.04);
     }
 
-    const position = geometry.attributes.position as THREE.BufferAttribute;
-    const array = position.array as Float32Array;
-    const mouseX = mouse.current.x * (SILK_WIDTH * 0.24);
-    const mouseY = mouse.current.y * (SILK_HEIGHT * 0.28);
-    const radius = 1.46;
-
-    for (let row = 0; row <= SEGMENTS; row += 1) {
-      for (let column = 0; column <= SEGMENTS; column += 1) {
-        const index = row * (SEGMENTS + 1) + column;
-        const cursor = index * 3;
-
-        const baseX = simulation.base[cursor];
-        const baseY = simulation.base[cursor + 1];
-        const baseZ = simulation.base[cursor + 2];
-
-        let x = simulation.current[cursor];
-        let y = simulation.current[cursor + 1];
-        let z = simulation.current[cursor + 2];
-
-        let averageZ = z;
-        let neighborCount = 0;
-
-        if (column > 0) {
-          averageZ += simulation.current[cursor - 1];
-          neighborCount += 1;
-        }
-        if (column < SEGMENTS) {
-          averageZ += simulation.current[cursor + 5];
-          neighborCount += 1;
-        }
-        if (row > 0) {
-          averageZ += simulation.current[cursor - (SEGMENTS + 1) * 3 + 2];
-          neighborCount += 1;
-        }
-        if (row < SEGMENTS) {
-          averageZ += simulation.current[cursor + (SEGMENTS + 1) * 3 + 2];
-          neighborCount += 1;
-        }
-
-        averageZ /= neighborCount + 1;
-
-        const dx = x - mouseX;
-        const dy = y - mouseY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const influence = Math.max(0, 1 - distance / radius);
-        const force = influence * influence;
-        const directionX = distance > 0.0001 ? dx / distance : 0;
-        const directionY = distance > 0.0001 ? dy / distance : 0;
-        const wave = Math.sin(state.clock.elapsedTime * 0.52 + baseX * 1.2 + baseY * 0.7) * 0.0022;
-
-        simulation.velocity[cursor] += (baseX - x) * 0.012 + directionX * force * 0.01;
-        simulation.velocity[cursor + 1] += (baseY - y) * 0.012 + directionY * force * 0.01;
-        simulation.velocity[cursor + 2] += (averageZ - z) * 0.18 + (baseZ - z) * 0.028 + wave + force * 0.06;
-
-        simulation.velocity[cursor] *= 0.88;
-        simulation.velocity[cursor + 1] *= 0.88;
-        simulation.velocity[cursor + 2] *= 0.91;
-
-        x += simulation.velocity[cursor];
-        y += simulation.velocity[cursor + 1];
-        z += simulation.velocity[cursor + 2];
-
-        const edgeLock = row < 2 ? 0.9 : 0;
-        if (edgeLock > 0) {
-          x = ease(x, baseX, edgeLock);
-          y = ease(y, baseY, edgeLock);
-          z = ease(z, baseZ, edgeLock);
-        }
-
-        simulation.current[cursor] = x;
-        simulation.current[cursor + 1] = y;
-        simulation.current[cursor + 2] = z;
-
-        array[cursor] = x;
-        array[cursor + 1] = y;
-        array[cursor + 2] = z;
-      }
+    const compiled = materialRef.current?.userData.shader as THREE.Shader | undefined;
+    if (compiled) {
+      compiled.uniforms.uTime.value = state.clock.elapsedTime;
+      compiled.uniforms.uMouse.value.set(mouse.current.x * 0.25 + 0.5, mouse.current.y * 0.25 + 0.5);
     }
 
-    position.needsUpdate = true;
-    geometry.computeVertexNormals();
-
-    uniforms.uTime.value = state.clock.elapsedTime;
-    uniforms.uMouseUv.value.set(mouse.current.x * 0.5 + 0.5, mouse.current.y * 0.5 + 0.5);
-    uniforms.uMouseLight.value.set(mouse.current.x * 3.1, mouse.current.y * 2.2, 4.4);
+    if (causticMaterialRef.current) {
+      causticMaterialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
+      causticMaterialRef.current.uniforms.uMouse.value.set(mouse.current.x, mouse.current.y);
+    }
   });
 
   return (
-    <mesh position={[0.9, 0, 0]} rotation={[-0.06, -0.1, -0.025]}>
-      <planeGeometry ref={geometryRef} args={[SILK_WIDTH, SILK_HEIGHT, SEGMENTS, SEGMENTS]} />
-      <shaderMaterial
-        ref={materialRef}
-        uniforms={uniforms}
-        vertexShader={`
-          varying vec2 vUv;
-          varying vec3 vNormalW;
-          varying vec3 vWorldPosition;
+    <group ref={groupRef}>
+      <mesh position={[0.12, -0.02, -0.16]}>
+        <planeGeometry args={[7.4, 5.8]} />
+        <shaderMaterial
+          ref={causticMaterialRef}
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          uniforms={{ uTime: { value: 0 }, uMouse: { value: new THREE.Vector2(0, 0) } }}
+          vertexShader={`
+            varying vec2 vUv;
+            void main() {
+              vUv = uv;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `}
+          fragmentShader={`
+            uniform float uTime;
+            uniform vec2 uMouse;
+            varying vec2 vUv;
 
-          void main() {
-            vUv = uv;
-            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-            vWorldPosition = worldPosition.xyz;
-            vNormalW = normalize(mat3(modelMatrix) * normal);
-            gl_Position = projectionMatrix * viewMatrix * worldPosition;
-          }
-        `}
-        fragmentShader={`
-          uniform float uTime;
-          uniform sampler2D uThreadMap;
-          uniform vec2 uMouseUv;
-          uniform vec3 uMouseLight;
+            float band(vec2 uv, float offset) {
+              return smoothstep(0.0, 0.24, 1.0 - abs(uv.y - 0.5 - sin(uv.x * 5.8 + uTime * 0.5 + offset) * 0.08));
+            }
 
-          varying vec2 vUv;
-          varying vec3 vNormalW;
-          varying vec3 vWorldPosition;
+            void main() {
+              vec2 uv = vUv;
+              uv.x += uMouse.x * 0.06;
+              uv.y += uMouse.y * 0.04;
+              float streakA = band(uv, 0.0);
+              float streakB = band(vec2(uv.x * 1.12, uv.y + 0.08), 1.6);
+              float focus = 1.0 - smoothstep(0.14, 0.78, distance(uv, vec2(0.56 + uMouse.x * 0.05, 0.48 - uMouse.y * 0.04)));
+              vec3 color = vec3(0.91, 0.74, 0.42) * (streakA * 0.12 + streakB * 0.09 + focus * 0.1);
+              gl_FragColor = vec4(color, (streakA + streakB + focus) * 0.22);
+            }
+          `}
+        />
+      </mesh>
 
-          void main() {
-            vec3 normal = normalize(vNormalW);
-            vec3 viewDir = normalize(cameraPosition - vWorldPosition);
-            vec3 lightDir = normalize(uMouseLight - vWorldPosition);
+      <mesh>
+        <boxGeometry args={[6.88, 5.56, 0.1, 16, 16, 2]} />
+        <meshPhysicalMaterial
+          ref={materialRef}
+          color="#f5eedb"
+          transparent
+          opacity={0.22}
+          transmission={0.9}
+          ior={1.4}
+          thickness={0.18}
+          roughness={0.72}
+          metalness={0.02}
+          clearcoat={1}
+          clearcoatRoughness={0.28}
+          reflectivity={0.58}
+        />
+      </mesh>
 
-            float diffuse = max(dot(normal, lightDir), 0.0);
-            float specular = pow(max(dot(reflect(-lightDir, normal), viewDir), 0.0), 28.0);
-            float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.6);
-            float fold = smoothstep(0.12, 0.86, 1.0 - abs(normal.z));
-            float reveal = smoothstep(0.34, 0.0, distance(vUv, uMouseUv));
-
-            vec2 driftUv = vUv * 1.08 + vec2(sin(uTime * 0.06) * 0.012, cos(uTime * 0.04) * 0.008);
-            float mapSignal = texture2D(uThreadMap, driftUv).r;
-            float shimmer = mapSignal * smoothstep(0.16, 0.72, fold + reveal * 0.75) * (0.5 + 0.5 * sin(uTime * 1.1 + vUv.y * 20.0));
-
-            vec3 obsidian = vec3(0.015, 0.016, 0.02);
-            vec3 gold = vec3(0.86, 0.68, 0.36);
-            vec3 color = obsidian;
-            color += gold * specular * 1.2;
-            color += gold * diffuse * 0.08;
-            color += gold * shimmer * 0.65;
-            color += gold * fresnel * 0.12;
-
-            float alpha = 0.78 - reveal * 0.48 + fold * 0.08;
-            alpha = clamp(alpha, 0.12, 0.82);
-
-            gl_FragColor = vec4(color, alpha);
-          }
-        `}
-        transparent
-        side={THREE.DoubleSide}
-        depthWrite={false}
-      />
-    </mesh>
+      <mesh position={[0, 0, 0.056]}>
+        <planeGeometry args={[6.62, 5.3]} />
+        <meshBasicMaterial color="#f5eedb" transparent opacity={0.05} />
+      </mesh>
+    </group>
   );
 }
 
-function SilkScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
+function MonolithScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
   return (
     <>
-      <ambientLight intensity={0.04} />
-      <SilkMesh mouse={mouse} />
+      <ambientLight intensity={0.56} />
+      <pointLight position={[2.2, 1.6, 2.8]} intensity={1.6} color="#f5d9a0" />
+      <pointLight position={[-2.1, -1.2, 1.4]} intensity={0.48} color="#c79b53" />
+      <FrostedMonolith mouse={mouse} />
     </>
-  );
-}
-
-function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
-  const labels = useMemo(
-    () => [
-      { name: "JUMEIRAH", left: "12%", top: "19%", size: "0.74rem", tone: "soft", pointer: new THREE.Vector2(-0.78, 0.58) },
-      { name: "CITY WALK", left: "21%", top: "26%", size: "0.68rem", tone: "soft", pointer: new THREE.Vector2(-0.56, 0.36) },
-      { name: "SATWA", left: "12%", top: "39%", size: "0.62rem", tone: "soft", pointer: new THREE.Vector2(-0.7, 0.12) },
-      { name: "DOWNTOWN", left: "29%", top: "31%", size: "0.88rem", tone: "strong", pointer: new THREE.Vector2(-0.42, 0.34) },
-      { name: "DIFC", left: "38%", top: "37%", size: "0.84rem", tone: "strong", pointer: new THREE.Vector2(-0.18, 0.22) },
-      { name: "ZAABEEL", left: "22%", top: "56%", size: "0.62rem", tone: "soft", pointer: new THREE.Vector2(-0.34, -0.02) },
-      { name: "MEYDAN", left: "27%", top: "73%", size: "0.62rem", tone: "soft", pointer: new THREE.Vector2(-0.18, -0.26) },
-      { name: "DUBAI DESIGN DISTRICT", left: "37%", top: "81%", size: "0.58rem", tone: "soft", pointer: new THREE.Vector2(0.02, -0.4) },
-      { name: "AL WASL", left: "42%", top: "52%", size: "0.66rem", tone: "soft", pointer: new THREE.Vector2(-0.06, -0.02) },
-      { name: "BUSINESS BAY", left: "48%", top: "45%", size: "0.76rem", tone: "strong", pointer: new THREE.Vector2(0.04, 0.06) },
-      { name: "DUBAI", left: "60%", top: "34%", size: "1.12rem", tone: "primary", pointer: new THREE.Vector2(0.22, 0.26) },
-      { name: "DUBAI MARINA", left: "79%", top: "36%", size: "0.82rem", tone: "strong", pointer: new THREE.Vector2(0.64, 0.18) },
-      { name: "BLUEWATERS", left: "72%", top: "28%", size: "0.66rem", tone: "soft", pointer: new THREE.Vector2(0.58, 0.28) },
-      { name: "DUBAI HILLS", left: "77%", top: "49%", size: "0.68rem", tone: "soft", pointer: new THREE.Vector2(0.7, -0.08) },
-      { name: "PALM JUMEIRAH", left: "83%", top: "13%", size: "0.7rem", tone: "soft", pointer: new THREE.Vector2(0.82, 0.66) },
-      { name: "CREEK HARBOUR", left: "56%", top: "74%", size: "0.7rem", tone: "soft", pointer: new THREE.Vector2(0.12, -0.48) },
-      { name: "EMIRATES HILLS", left: "86%", top: "57%", size: "0.66rem", tone: "soft", pointer: new THREE.Vector2(0.76, -0.04) },
-      { name: "EXPO CITY", left: "86%", top: "78%", size: "0.62rem", tone: "soft", pointer: new THREE.Vector2(0.9, -0.54) },
-    ],
-    [],
-  );
-  const [activeLabel, setActiveLabel] = useState<string | null>(null);
-
-  useEffect(() => {
-    let frameId = 0;
-
-    const tick = () => {
-      const currentPointer = new THREE.Vector2(mouse.current.x, mouse.current.y);
-      const nearest = labels.reduce(
-        (best, label) => {
-          const distance = label.pointer.distanceTo(currentPointer);
-          if (distance < best.distance) {
-            return { name: label.name, distance };
-          }
-          return best;
-        },
-        { name: labels[5].name, distance: Number.POSITIVE_INFINITY },
-      );
-
-      setActiveLabel((previous) => {
-        const next = nearest.distance < 0.24 ? nearest.name : null;
-        return previous === next ? previous : next;
-      });
-
-      frameId = window.requestAnimationFrame(tick);
-    };
-
-    frameId = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(frameId);
-  }, [labels, mouse]);
-
-  return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] hidden lg:block" style={{ top: `${NAVBAR_GUARD}px` }} aria-hidden="true">
-      <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="district-route" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgba(214,184,132,0)" />
-            <stop offset="28%" stopColor="rgba(214,184,132,0.24)" />
-            <stop offset="62%" stopColor="rgba(236,196,118,0.52)" />
-            <stop offset="100%" stopColor="rgba(214,184,132,0.22)" />
-          </linearGradient>
-        </defs>
-        <path d="M8 22 C 14 26, 22 30, 31 36 S 42 43, 50 44" fill="none" stroke="url(#district-route)" strokeWidth="0.18" />
-        <path d="M50 44 C 59 42, 67 39, 78 35 S 88 29, 96 12" fill="none" stroke="url(#district-route)" strokeWidth="0.18" />
-        <path d="M31 36 C 37 44, 43 57, 54 74" fill="none" stroke="rgba(214,184,132,0.18)" strokeWidth="0.14" />
-        <path d="M2 46 C 12 44, 20 42, 31 40 S 44 38, 50 38" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.12" />
-        <path d="M50 38 C 62 37, 72 35, 84 32 S 93 28, 99 24" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.12" />
-        <path d="M66 28 C 72 36, 78 46, 86 58 S 92 70, 98 84" fill="none" stroke="rgba(214,184,132,0.1)" strokeWidth="0.1" />
-        <path d="M28 16 C 34 20, 42 24, 54 27 S 72 30, 86 32" fill="none" stroke="rgba(214,184,132,0.08)" strokeWidth="0.1" />
-        <path d="M6 32 C 12 35, 18 37, 25 39 S 32 42, 39 44" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.1" />
-        <path d="M10 56 C 18 56, 24 55, 31 54 S 39 52, 46 49" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.1" />
-        <path d="M18 72 C 25 70, 32 67, 40 63 S 48 57, 54 50" fill="none" stroke="rgba(214,184,132,0.1)" strokeWidth="0.1" />
-        <path d="M25 84 C 32 82, 39 78, 46 72 S 54 64, 59 56" fill="none" stroke="rgba(214,184,132,0.08)" strokeWidth="0.08" />
-        <circle cx="50" cy="44" r="0.86" fill="rgba(236,196,118,0.84)" />
-        <circle cx="31" cy="36" r="0.3" fill="rgba(214,184,132,0.46)" />
-        <circle cx="39" cy="43" r="0.28" fill="rgba(214,184,132,0.42)" />
-        <circle cx="78" cy="35" r="0.32" fill="rgba(214,184,132,0.42)" />
-        <circle cx="54" cy="74" r="0.24" fill="rgba(214,184,132,0.28)" />
-        <circle cx="22" cy="26" r="0.22" fill="rgba(214,184,132,0.26)" />
-        <circle cx="12" cy="39" r="0.2" fill="rgba(214,184,132,0.18)" />
-        <circle cx="24" cy="55" r="0.22" fill="rgba(214,184,132,0.2)" />
-        <circle cx="30" cy="72" r="0.22" fill="rgba(214,184,132,0.18)" />
-        <circle cx="40" cy="81" r="0.18" fill="rgba(214,184,132,0.16)" />
-        <circle cx="67" cy="29" r="0.24" fill="rgba(214,184,132,0.28)" />
-        <circle cx="82" cy="50" r="0.22" fill="rgba(214,184,132,0.22)" />
-        <circle cx="95" cy="79" r="0.18" fill="rgba(214,184,132,0.18)" />
-      </svg>
-
-      {labels.map((label) => (
-        <div
-          key={label.name}
-          className="absolute uppercase"
-          style={{
-            left: label.left,
-            top: label.top,
-            fontFamily: "'Inter', sans-serif",
-            fontSize: label.size,
-            letterSpacing: label.tone === "primary" ? "0.38rem" : label.tone === "strong" ? "0.2rem" : "0.15rem",
-            color: activeLabel === label.name ? "rgba(236,196,118,0.88)" : "rgba(214,184,132,0.14)",
-            opacity: activeLabel === label.name ? 1 : 0.38,
-            filter: activeLabel === label.name ? "blur(0px)" : "blur(6px)",
-            transform: activeLabel === label.name ? "scale(1)" : "scale(0.985)",
-            transition: "opacity 180ms ease, filter 220ms ease, color 180ms ease, transform 220ms ease",
-            textShadow: activeLabel === label.name ? "0 0 24px rgba(236,196,118,0.12)" : "none",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {label.name.split(" ").map((word, index, words) => (
-            <span
-              key={`${label.name}-${word}-${index}`}
-              style={{
-                display: "inline-block",
-                marginRight: index === words.length - 1 ? 0 : "0.34rem",
-                transform: activeLabel === label.name ? "scale(1) translateY(0px)" : "scale(1.22) translateY(1px)",
-                transformOrigin: "50% 50%",
-                transition: `transform 300ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 65}ms`,
-              }}
-            >
-              {word}
-            </span>
-          ))}
-        </div>
-      ))}
-    </div>
   );
 }
 
 const HeroSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
-  const textRef = useRef<HTMLDivElement>(null);
   const backgroundRef = useRef<HTMLDivElement>(null);
-  const silkRef = useRef<HTMLDivElement>(null);
+  const monolithRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const portraitRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -742,37 +492,28 @@ const HeroSection = () => {
 
   useEffect(() => {
     const section = sectionRef.current;
-    if (!section) {
+    const monolith = monolithRef.current;
+    if (!section || !monolith) {
       return undefined;
     }
 
+    const shards = Array.from(monolith.querySelectorAll<HTMLElement>(".glass-shard"));
+
     const ctx = gsap.context(() => {
-      if (textRef.current) {
-        gsap.from(textRef.current.children, {
-          opacity: 0,
-          y: 26,
-          duration: 0.95,
-          stagger: 0.1,
-          ease: "power3.out",
-          delay: 0.08,
-        });
-      }
-
       if (backgroundRef.current) {
-        gsap.from(backgroundRef.current, {
-          opacity: 0,
-          scale: 1.04,
-          duration: 1.3,
-          ease: "power3.out",
-        });
+        gsap.from(backgroundRef.current, { opacity: 0, scale: 1.06, duration: 1.3, ease: "power3.out" });
       }
 
-      if (silkRef.current) {
-        gsap.from(silkRef.current, {
+      gsap.from(monolith, { opacity: 0, y: 34, scale: 0.96, duration: 1.15, ease: "power3.out", delay: 0.08 });
+
+      if (contentRef.current) {
+        gsap.from(contentRef.current.children, {
           opacity: 0,
-          duration: 1.2,
+          y: 24,
+          duration: 0.95,
+          stagger: 0.08,
           ease: "power3.out",
-          delay: 0.14,
+          delay: 0.18,
         });
       }
 
@@ -782,23 +523,54 @@ const HeroSection = () => {
         end: "bottom top",
         scrub: 1,
         onUpdate: (self) => {
+          const progress = self.progress;
+          const dissolve = THREE.MathUtils.clamp((progress - 0.18) / 0.82, 0, 1);
+
           if (backgroundRef.current) {
             gsap.set(backgroundRef.current, {
-              opacity: 1 - self.progress * 0.65,
-              scale: 1 - self.progress * 0.06,
+              opacity: 1 - progress * 0.34,
+              scale: 1 - progress * 0.04,
             });
           }
 
-          if (silkRef.current) {
-            gsap.set(silkRef.current, {
-              opacity: 1 - self.progress * 0.72,
-              scale: 1 - self.progress * 0.08,
-              transformOrigin: "68% 48%",
+          gsap.set(monolith, {
+            y: progress * -22,
+            scale: 1 - progress * 0.05,
+            opacity: 1 - progress * 0.12,
+          });
+
+          if (contentRef.current) {
+            gsap.set(contentRef.current, {
+              y: progress * -18,
+              opacity: 1 - dissolve * 0.86,
             });
           }
 
-          if (textRef.current) {
-            gsap.set(textRef.current, { y: self.progress * -18, opacity: 1 - self.progress * 0.18 });
+          if (portraitRef.current) {
+            gsap.set(portraitRef.current, {
+              x: dissolve * 18,
+              opacity: 1 - dissolve * 0.92,
+              scale: 1 - dissolve * 0.04,
+            });
+          }
+
+          shards.forEach((shard, index) => {
+            const spread = index - (shards.length - 1) / 2;
+            gsap.set(shard, {
+              y: dissolve * (160 + index * 24),
+              x: dissolve * spread * -12,
+              rotation: dissolve * spread * 6,
+              opacity: 0.16 + dissolve * 0.44,
+              scaleY: 1 + dissolve * 1.5,
+            });
+          });
+
+          if (timelineRef.current) {
+            gsap.set(timelineRef.current, {
+              opacity: dissolve,
+              scaleY: dissolve,
+              transformOrigin: "top center",
+            });
           }
         },
       });
@@ -813,116 +585,231 @@ const HeroSection = () => {
       className="relative"
       style={{
         background:
-          "radial-gradient(circle at 22% 28%, rgba(167,126,66,0.1), transparent 24%), radial-gradient(circle at 78% 22%, rgba(167,126,66,0.1), transparent 20%), linear-gradient(180deg, #020202 0%, #050505 58%, #030303 100%)",
+          "radial-gradient(circle at 22% 28%, rgba(167,126,66,0.08), transparent 22%), radial-gradient(circle at 78% 24%, rgba(167,126,66,0.08), transparent 18%), linear-gradient(180deg, #020202 0%, #050404 54%, #030303 100%)",
       }}
       data-section="hero"
     >
-      <div className="hero-wrapper relative overflow-hidden" style={{ height: "100vh", overflow: "hidden" }}>
+      <div className="hero-wrapper relative overflow-hidden" style={{ height: "100vh" }}>
         <div ref={backgroundRef} className="pointer-events-none absolute inset-x-0 bottom-0 z-0" style={{ top: `${NAVBAR_GUARD}px` }}>
           <Canvas
             className="pointer-events-none"
             dpr={[1, 1.5]}
             gl={{ antialias: true, alpha: false }}
-            camera={{ position: [0, 0, 5.5], fov: 38 }}
+            camera={{ position: [0, 0, 5.7], fov: 36 }}
             onCreated={({ gl, scene }) => {
               gl.toneMapping = THREE.CineonToneMapping;
-              gl.toneMappingExposure = 0.92;
+              gl.toneMappingExposure = 0.98;
               gl.outputColorSpace = THREE.SRGBColorSpace;
-              gl.setClearColor("#030303", 1);
-              scene.background = new THREE.Color("#030303");
+              gl.setClearColor("#030202", 1);
+              scene.background = new THREE.Color("#030202");
             }}
           >
             <BackgroundScene mouse={mouseRef} />
           </Canvas>
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-[linear-gradient(90deg,rgba(3,3,3,0.72)_0%,rgba(3,3,3,0.4)_30%,rgba(3,3,3,0.16)_58%,rgba(3,3,3,0.36)_100%)]" style={{ top: `${NAVBAR_GUARD}px` }} />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-[linear-gradient(180deg,rgba(3,3,3,0.28)_0%,rgba(3,3,3,0.14)_16%,rgba(3,3,3,0.12)_68%,rgba(3,3,3,0.88)_100%)]" style={{ top: `${NAVBAR_GUARD}px` }} />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1]" style={{ top: `${NAVBAR_GUARD}px`, background: "linear-gradient(90deg, rgba(3,3,3,0.48) 0%, rgba(3,3,3,0.18) 32%, rgba(3,3,3,0.08) 60%, rgba(3,3,3,0.24) 100%)" }} />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1]" style={{ top: `${NAVBAR_GUARD}px`, background: "linear-gradient(180deg, rgba(3,3,3,0.2) 0%, rgba(3,3,3,0.04) 24%, rgba(3,3,3,0.14) 76%, rgba(3,3,3,0.82) 100%)" }} />
 
-        <div className="relative z-10 mx-auto h-full max-w-[1200px]" style={{ paddingLeft: "10%", paddingTop: `${NAVBAR_GUARD}px`, boxSizing: "border-box" }}>
-          <div className="flex h-full flex-col justify-center">
-            <div ref={textRef} className="relative max-w-[39rem]" style={{ zIndex: 10 }}>
-              <div className="flex items-center gap-4">
-                <span className="h-px w-12" style={{ background: "linear-gradient(90deg, rgba(208,171,110,0), rgba(208,171,110,0.78))" }} />
-                <p
-                  className="text-[clamp(0.76rem,0.9vw,0.9rem)]"
-                  style={{
-                    fontFamily: "'Inter', sans-serif",
-                    color: "rgba(208,171,110,0.92)",
-                    letterSpacing: "0.32rem",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Sovereign-grade real estate advisory.
-                </p>
-              </div>
-              <h1
-                className="mt-7 text-white"
-                style={{
-                  fontFamily: "'Playfair Display', serif",
-                  fontWeight: 100,
-                  fontSize: "clamp(3.25rem, 6.2vw, 6rem)",
-                  letterSpacing: "clamp(0.18rem, 0.75vw, 0.72rem)",
-                  lineHeight: 0.88,
-                  textTransform: "uppercase",
-                  textShadow: "0 14px 36px rgba(0,0,0,0.28)",
-                }}
-              >
-                <span className="block">Luxury</span>
-                <span className="block">Command</span>
-              </h1>
-              <p
-                className="mt-7 max-w-[31rem] text-[clamp(1rem,1.28vw,1.14rem)] leading-[1.85] text-white/74"
-                style={{
-                  fontFamily: "'Cormorant Garamond', serif",
-                  textShadow: "0 8px 22px rgba(0,0,0,0.22)",
-                }}
-              >
-                Strategic placement across Dubai&apos;s prime districts, shaped through discreet introductions, prestige positioning, and institutional-grade judgment.
-              </p>
+        <div
+          ref={monolithRef}
+          className="absolute z-[2] overflow-hidden rounded-[34px]"
+          style={{
+            left: "clamp(2rem, 5vw, 5rem)",
+            top: `calc(${NAVBAR_GUARD}px + 7vh)`,
+            width: "min(60vw, 980px)",
+            height: "min(68vh, 640px)",
+            border: "1px solid rgba(245, 238, 219, 0.16)",
+            background: "linear-gradient(180deg, rgba(245,238,219,0.05), rgba(255,255,255,0.02))",
+            boxShadow: "0 26px 70px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.08)",
+            backdropFilter: "blur(14px)",
+          }}
+        >
+          <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[34px]">
+            <Canvas
+              className="pointer-events-none"
+              dpr={[1, 1.5]}
+              gl={{ antialias: true, alpha: true }}
+              camera={{ position: [0, 0, 6.4], fov: 34 }}
+              onCreated={({ gl, scene }) => {
+                gl.toneMapping = THREE.CineonToneMapping;
+                gl.toneMappingExposure = 0.9;
+                gl.outputColorSpace = THREE.SRGBColorSpace;
+                gl.setClearAlpha(0);
+                scene.background = null;
+              }}
+            >
+              <MonolithScene mouse={mouseRef} />
+            </Canvas>
+          </div>
 
-              <div className="mt-9 flex flex-wrap gap-3">
-                {["Prime Retail", "Private Office", "Cross-Border Access"].map((item) => (
-                  <button
-                    key={item}
-                    className="rounded-full border px-5 py-[0.82rem] text-[0.68rem] uppercase transition-colors"
+          {[0, 1, 2, 3, 4].map((index) => (
+            <div
+              key={index}
+              className="glass-shard pointer-events-none absolute bottom-[-6%] top-[10%] z-[1] rounded-full"
+              style={{
+                left: `${14 + index * 14}%`,
+                width: index === 2 ? "7%" : "4.8%",
+                background: "linear-gradient(180deg, rgba(245,238,219,0.1), rgba(245,238,219,0.02))",
+                boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.05)",
+                filter: "blur(0.8px)",
+                opacity: 0.14,
+              }}
+            />
+          ))}
+
+          <div ref={contentRef} className="relative z-[3] grid h-full grid-cols-[1.7fr_0.95fr] gap-8 p-8 md:p-10 lg:p-12">
+            <div className="flex flex-col justify-between pr-2">
+              <div>
+                <div className="flex items-center gap-4">
+                  <span className="h-px w-12" style={{ background: "linear-gradient(90deg, rgba(216,182,117,0), rgba(216,182,117,0.9))" }} />
+                  <p
+                    className="text-[clamp(0.76rem,0.9vw,0.92rem)] uppercase"
                     style={{
-                      borderColor: "rgba(208,171,110,0.24)",
-                      background: "linear-gradient(180deg, rgba(14,14,14,0.34), rgba(7,7,7,0.18))",
-                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03), 0 14px 28px rgba(0,0,0,0.14)",
-                      backdropFilter: "blur(10px)",
-                      color: "rgba(208,171,110,0.92)",
                       fontFamily: "'Inter', sans-serif",
-                      letterSpacing: "0.26rem",
+                      color: "rgba(220, 187, 123, 0.92)",
+                      letterSpacing: "0.34rem",
                     }}
                   >
-                    {item}
-                  </button>
-                ))}
+                    Sovereign-grade real estate advisory
+                  </p>
+                </div>
+
+                <h1
+                  className="mt-8 uppercase"
+                  style={{
+                    fontFamily: "'Cormorant Garamond', serif",
+                    fontWeight: 500,
+                    fontSize: "clamp(3.4rem, 6.2vw, 6.25rem)",
+                    lineHeight: 0.88,
+                    letterSpacing: "1.2rem",
+                    color: "#F5EEDB",
+                    WebkitTextStroke: "1px rgba(189, 144, 74, 0.72)",
+                    textShadow: "0 18px 36px rgba(0,0,0,0.28)",
+                  }}
+                >
+                  <span className="block">Luxury</span>
+                  <span className="block">Command</span>
+                </h1>
+
+                <p
+                  className="mt-7 max-w-[29rem] text-[clamp(1rem,1.3vw,1.16rem)] leading-[1.85]"
+                  style={{
+                    fontFamily: "'Cormorant Garamond', serif",
+                    color: "rgba(245, 238, 219, 0.76)",
+                    textShadow: "0 12px 26px rgba(0,0,0,0.22)",
+                  }}
+                >
+                  Private market intelligence across Dubai&apos;s prime corridors, structured through discreet introductions, high-value positioning, and institutional-grade judgment.
+                </p>
+              </div>
+
+              <div>
+                <div className="flex flex-wrap gap-3">
+                  {["Prime Retail", "Private Office", "Cross-Border Access"].map((item) => (
+                    <span
+                      key={item}
+                      className="inline-flex items-center rounded-full border px-5 py-[0.86rem] text-[0.68rem] uppercase"
+                      style={{
+                        borderColor: "rgba(214, 181, 118, 0.22)",
+                        background: "linear-gradient(180deg, rgba(10,10,10,0.28), rgba(10,10,10,0.14))",
+                        color: "rgba(220, 187, 123, 0.92)",
+                        fontFamily: "'Inter', sans-serif",
+                        letterSpacing: "0.26rem",
+                        backdropFilter: "blur(10px)",
+                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+                      }}
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="mt-7 flex items-center gap-4">
+                  <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, rgba(214,181,118,0.28), rgba(214,181,118,0))" }} />
+                  <p
+                    className="text-[0.68rem] uppercase"
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      color: "rgba(214, 181, 118, 0.72)",
+                      letterSpacing: "0.22rem",
+                    }}
+                  >
+                    Dubai map intelligence layer
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div ref={portraitRef} className="relative flex items-end justify-end">
+              <div
+                className="absolute inset-[8%] rounded-[28px]"
+                style={{
+                  border: "1px solid rgba(245, 238, 219, 0.14)",
+                  background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+                }}
+              />
+              <div className="absolute inset-[8%] overflow-hidden rounded-[28px]">
+                <img
+                  src={saadPortrait}
+                  alt="Saad Bin Zain"
+                  className="h-full w-full object-cover object-center"
+                  style={{
+                    filter: "grayscale(1) contrast(1.18) brightness(0.78)",
+                    mixBlendMode: "screen",
+                    opacity: 0.92,
+                  }}
+                />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgba(214,181,118,0.06), rgba(214,181,118,0.18)), radial-gradient(circle at 42% 28%, rgba(214,181,118,0.28), transparent 44%), linear-gradient(90deg, rgba(5,5,5,0.06) 0%, rgba(5,5,5,0.42) 100%)",
+                    mixBlendMode: "screen",
+                  }}
+                />
+                <div className="absolute inset-x-0 bottom-0 h-[42%]" style={{ background: "linear-gradient(180deg, rgba(3,3,3,0), rgba(3,3,3,0.84))" }} />
+              </div>
+
+              <div className="absolute bottom-[12%] left-[16%] right-[12%] z-[2]">
+                <p
+                  className="text-[0.7rem] uppercase"
+                  style={{
+                    fontFamily: "'Inter', sans-serif",
+                    color: "rgba(220, 187, 123, 0.76)",
+                    letterSpacing: "0.22rem",
+                  }}
+                >
+                  Saad Bin Zain
+                </p>
+                <p
+                  className="mt-2 text-[0.96rem] leading-[1.6]"
+                  style={{
+                    fontFamily: "'Cormorant Garamond', serif",
+                    color: "rgba(245, 238, 219, 0.8)",
+                  }}
+                >
+                  Market authority shaped through luxury retail strategy, private advisory, and two decades of Dubai execution.
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        <DubaiDistrictOverlay mouse={mouseRef} />
-
-        <div ref={silkRef} className="pointer-events-none absolute inset-x-0 bottom-0 z-[5]" style={{ top: `${NAVBAR_GUARD}px` }}>
-          <Canvas
-            className="pointer-events-none"
-            dpr={[1, 1.5]}
-            gl={{ antialias: true, alpha: true }}
-            camera={{ position: [0, 0, 6.5], fov: 34 }}
-            onCreated={({ gl, scene }) => {
-              gl.toneMapping = THREE.CineonToneMapping;
-              gl.toneMappingExposure = 0.88;
-              gl.outputColorSpace = THREE.SRGBColorSpace;
-              gl.setClearAlpha(0);
-              scene.background = null;
-            }}
-          >
-            <SilkScene mouse={mouseRef} />
-          </Canvas>
-        </div>
+        <div
+          ref={timelineRef}
+          className="pointer-events-none absolute z-[3]"
+          style={{
+            left: "clamp(19rem, 34vw, 34rem)",
+            top: `calc(${NAVBAR_GUARD}px + 69vh)`,
+            width: "2px",
+            height: "34vh",
+            opacity: 0,
+            background: "linear-gradient(180deg, rgba(214,181,118,0.46), rgba(214,181,118,0.02))",
+            boxShadow: "0 0 24px rgba(214,181,118,0.18)",
+          }}
+        />
       </div>
     </section>
   );
