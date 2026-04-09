@@ -7,8 +7,8 @@ import * as THREE from "three";
 gsap.registerPlugin(ScrollTrigger);
 
 const NAVBAR_GUARD = 80;
-const SILK_WIDTH = 8.6;
-const SILK_HEIGHT = 5.4;
+const SILK_WIDTH = 13.2;
+const SILK_HEIGHT = 7.8;
 const SEGMENTS = 128;
 
 function ease(current: number, target: number, amount: number) {
@@ -35,28 +35,51 @@ function createThreadMapTexture() {
 
   const routes = [
     [
+      [0.08, 0.62],
       [0.12, 0.68],
       [0.18, 0.6],
       [0.24, 0.58],
       [0.28, 0.52],
       [0.34, 0.48],
       [0.4, 0.42],
+      [0.46, 0.4],
     ],
     [
+      [0.46, 0.32],
       [0.54, 0.28],
       [0.58, 0.3],
       [0.62, 0.36],
       [0.66, 0.4],
       [0.72, 0.44],
       [0.76, 0.5],
+      [0.84, 0.58],
     ],
     [
+      [0.18, 0.84],
       [0.26, 0.76],
       [0.33, 0.72],
       [0.41, 0.7],
       [0.48, 0.73],
       [0.54, 0.78],
       [0.61, 0.8],
+      [0.7, 0.74],
+    ],
+    [
+      [0.42, 0.44],
+      [0.48, 0.48],
+      [0.54, 0.52],
+      [0.61, 0.56],
+      [0.67, 0.62],
+      [0.74, 0.7],
+      [0.82, 0.8],
+    ],
+    [
+      [0.36, 0.44],
+      [0.34, 0.36],
+      [0.32, 0.3],
+      [0.29, 0.22],
+      [0.26, 0.16],
+      [0.24, 0.12],
     ],
   ];
 
@@ -75,9 +98,13 @@ function createThreadMapTexture() {
   });
 
   const hubs = [
+    [0.21, 0.58],
     [0.37, 0.47],
+    [0.45, 0.39],
     [0.63, 0.37],
+    [0.71, 0.67],
     [0.53, 0.77],
+    [0.83, 0.81],
   ];
 
   hubs.forEach(([x, y]) => {
@@ -95,13 +122,81 @@ function createThreadMapTexture() {
 
   context.fillStyle = "rgba(212, 171, 103, 0.8)";
   context.font = "500 30px Inter";
+  context.fillText("AMSTERDAM", canvas.width * 0.11, canvas.height * 0.57);
   context.fillText("DUBAI", canvas.width * 0.27, canvas.height * 0.43);
+  context.fillText("RIYADH", canvas.width * 0.4, canvas.height * 0.35);
   context.fillText("LONDON", canvas.width * 0.59, canvas.height * 0.33);
+  context.fillText("MONACO", canvas.width * 0.64, canvas.height * 0.63);
+  context.fillText("SINGAPORE", canvas.width * 0.73, canvas.height * 0.79);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.needsUpdate = true;
+
+  return texture;
+}
+
+function createGlobalRouteTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1600;
+  canvas.height = 900;
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    return new THREE.CanvasTexture(canvas);
+  }
+
+  context.fillStyle = "rgba(0,0,0,0)";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const arcs = [
+    [[180, 600], [420, 520], [670, 430], [910, 360], [1210, 280]],
+    [[300, 680], [530, 610], [770, 560], [980, 600], [1210, 720]],
+    [[500, 350], [620, 300], [760, 285], [910, 320], [1070, 420]],
+  ];
+
+  context.strokeStyle = "rgba(190, 151, 86, 0.22)";
+  context.lineWidth = 2;
+  arcs.forEach((arc) => {
+    context.beginPath();
+    arc.forEach(([x, y], index) => {
+      if (index === 0) {
+        context.moveTo(x, y);
+      } else {
+        context.lineTo(x, y);
+      }
+    });
+    context.stroke();
+  });
+
+  const hubs = [
+    [370, 515, "AMSTERDAM"],
+    [640, 420, "DUBAI"],
+    [860, 336, "LONDON"],
+    [1010, 595, "MONACO"],
+    [1210, 720, "SINGAPORE"],
+    [548, 314, "RIYADH"],
+  ] as const;
+
+  context.font = "500 24px Inter";
+  hubs.forEach(([x, y, label]) => {
+    const gradient = context.createRadialGradient(x, y, 0, x, y, 24);
+    gradient.addColorStop(0, "rgba(255,232,186,0.95)");
+    gradient.addColorStop(0.35, "rgba(212,171,103,0.72)");
+    gradient.addColorStop(1, "rgba(212,171,103,0)");
+    context.fillStyle = gradient;
+    context.beginPath();
+    context.arc(x, y, 24, 0, Math.PI * 2);
+    context.fill();
+
+    context.fillStyle = "rgba(196,160,102,0.3)";
+    context.fillText(label, x + 18, y - 18);
+  });
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
   texture.needsUpdate = true;
 
   return texture;
@@ -152,6 +247,8 @@ function GoldDust({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }>
 function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
   const lightRef = useRef<THREE.PointLight>(null);
   const ringRef = useRef<THREE.Mesh>(null);
+  const mapTexture = useMemo(() => createGlobalRouteTexture(), []);
+  const mapRef = useRef<THREE.Mesh>(null);
 
   useFrame((state) => {
     if (lightRef.current) {
@@ -163,6 +260,12 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
       ringRef.current.rotation.z = state.clock.elapsedTime * 0.08;
       ringRef.current.position.x = ease(ringRef.current.position.x, mouse.current.x * 0.45, 0.03);
       ringRef.current.position.y = ease(ringRef.current.position.y, mouse.current.y * 0.3, 0.03);
+    }
+
+    if (mapRef.current) {
+      mapRef.current.position.x = ease(mapRef.current.position.x, 0.4 + mouse.current.x * 0.26, 0.025);
+      mapRef.current.position.y = ease(mapRef.current.position.y, -0.08 + mouse.current.y * 0.18, 0.025);
+      mapRef.current.rotation.z = ease(mapRef.current.rotation.z, mouse.current.x * -0.035, 0.02);
     }
   });
 
@@ -178,9 +281,19 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
         <meshBasicMaterial color="#050505" />
       </mesh>
 
+      <mesh ref={mapRef} position={[0.4, -0.08, -2.7]}>
+        <planeGeometry args={[12.8, 7.2]} />
+        <meshBasicMaterial map={mapTexture} transparent opacity={0.22} toneMapped={false} depthWrite={false} />
+      </mesh>
+
       <mesh ref={ringRef} position={[2.2, -0.7, -1.2]} rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[2.4, 0.035, 24, 140]} />
         <meshStandardMaterial color="#8c6a3c" emissive="#6f4e24" emissiveIntensity={0.3} transparent opacity={0.42} />
+      </mesh>
+
+      <mesh position={[-3.8, 2.3, -2.9]} rotation={[0, 0, 0.1]}>
+        <planeGeometry args={[3.6, 8.6]} />
+        <meshBasicMaterial color="#080808" transparent opacity={0.72} />
       </mesh>
 
       <GoldDust mouse={mouse} />
@@ -237,7 +350,7 @@ function SilkMesh({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }>
     const array = position.array as Float32Array;
     const mouseX = mouse.current.x * (SILK_WIDTH * 0.24);
     const mouseY = mouse.current.y * (SILK_HEIGHT * 0.28);
-    const radius = 1.22;
+    const radius = 1.46;
 
     for (let row = 0; row <= SEGMENTS; row += 1) {
       for (let column = 0; column <= SEGMENTS; column += 1) {
@@ -321,7 +434,7 @@ function SilkMesh({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }>
   });
 
   return (
-    <mesh position={[1.1, 0.05, 0]} rotation={[-0.08, -0.22, -0.04]}>
+    <mesh position={[0.9, 0, 0]} rotation={[-0.06, -0.1, -0.025]}>
       <planeGeometry ref={geometryRef} args={[SILK_WIDTH, SILK_HEIGHT, SEGMENTS, SEGMENTS]} />
       <shaderMaterial
         ref={materialRef}
@@ -372,8 +485,8 @@ function SilkMesh({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }>
             color += gold * shimmer * 0.65;
             color += gold * fresnel * 0.12;
 
-            float alpha = 0.9 - reveal * 0.58 + fold * 0.06;
-            alpha = clamp(alpha, 0.22, 0.94);
+            float alpha = 0.86 - reveal * 0.54 + fold * 0.08;
+            alpha = clamp(alpha, 0.16, 0.9);
 
             gl_FragColor = vec4(color, alpha);
           }
@@ -525,7 +638,7 @@ const HeroSection = () => {
           </Canvas>
         </div>
 
-        <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(3,3,3,0.78)_0%,rgba(3,3,3,0.42)_42%,rgba(3,3,3,0.26)_66%,rgba(3,3,3,0.58)_100%)]" />
+        <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(3,3,3,0.72)_0%,rgba(3,3,3,0.38)_36%,rgba(3,3,3,0.18)_58%,rgba(3,3,3,0.46)_100%)]" />
         <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(3,3,3,0.72)_0%,rgba(3,3,3,0.18)_34%,rgba(3,3,3,0.12)_72%,rgba(3,3,3,0.88)_100%)]" />
 
         <div className="relative z-10 mx-auto h-full max-w-[1200px]" style={{ paddingLeft: "10%", paddingTop: `${NAVBAR_GUARD}px`, boxSizing: "border-box" }}>
