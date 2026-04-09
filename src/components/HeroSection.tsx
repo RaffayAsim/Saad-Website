@@ -133,6 +133,11 @@ function createGlobalRouteTexture() {
     [[560, 354], [620, 418], [675, 502], [728, 620], [760, 748]],
     [[860, 352], [970, 325], [1090, 298], [1205, 254], [1315, 224]],
     [[420, 330], [360, 260], [318, 214], [282, 178], [250, 152]],
+    [[120, 252], [220, 278], [320, 312], [420, 330]],
+    [[870, 352], [980, 410], [1092, 504], [1180, 632], [1240, 808]],
+    [[1040, 170], [1130, 224], [1220, 272], [1320, 314], [1450, 336]],
+    [[520, 180], [640, 224], [760, 258], [892, 286], [1022, 308]],
+    [[170, 508], [280, 476], [402, 448], [548, 430], [690, 420]],
   ];
 
   context.strokeStyle = "rgba(190, 151, 86, 0.16)";
@@ -148,8 +153,8 @@ function createGlobalRouteTexture() {
   context.stroke();
 
   corridorRoutes.forEach((arc, index) => {
-    context.strokeStyle = index === 0 ? "rgba(233, 190, 112, 0.34)" : "rgba(214, 171, 103, 0.24)";
-    context.lineWidth = index === 0 ? 2.8 : 2.1;
+    context.strokeStyle = index === 0 ? "rgba(233, 190, 112, 0.34)" : index < 4 ? "rgba(214, 171, 103, 0.24)" : "rgba(214, 171, 103, 0.16)";
+    context.lineWidth = index === 0 ? 2.8 : index < 4 ? 2.1 : 1.5;
     context.beginPath();
     arc.forEach(([x, y], index) => {
       if (index === 0) {
@@ -168,6 +173,10 @@ function createGlobalRouteTexture() {
     [860, 352, false],
     [1250, 222, false],
     [748, 620, false],
+    [262, 182, false],
+    [980, 502, false],
+    [1450, 336, false],
+    [166, 500, false],
   ] as const;
 
   context.font = "500 24px Inter";
@@ -247,6 +256,12 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
       { name: "Marina", world: new THREE.Vector3(3.3, 0.46, -2.6), pointer: new THREE.Vector2(0.46, 0.14) },
       { name: "Palm", world: new THREE.Vector3(5.55, 2.02, -2.6), pointer: new THREE.Vector2(0.78, 0.58) },
       { name: "Creek", world: new THREE.Vector3(0.85, -2.16, -2.6), pointer: new THREE.Vector2(0.12, -0.42) },
+      { name: "Jumeirah", world: new THREE.Vector3(-5.1, 1.92, -2.6), pointer: new THREE.Vector2(-0.8, 0.64) },
+      { name: "City Walk", world: new THREE.Vector3(-3.72, 1.14, -2.6), pointer: new THREE.Vector2(-0.52, 0.3) },
+      { name: "Bluewaters", world: new THREE.Vector3(4.62, 0.96, -2.6), pointer: new THREE.Vector2(0.66, 0.28) },
+      { name: "Dubai Hills", world: new THREE.Vector3(4.98, -0.82, -2.6), pointer: new THREE.Vector2(0.72, -0.08) },
+      { name: "Al Wasl", world: new THREE.Vector3(-1.08, -0.18, -2.6), pointer: new THREE.Vector2(-0.08, -0.04) },
+      { name: "Expo City", world: new THREE.Vector3(6.08, -1.98, -2.6), pointer: new THREE.Vector2(0.88, -0.5) },
     ],
     [],
   );
@@ -561,14 +576,19 @@ function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; 
   const labels = useMemo(
     () => [
       { name: "JUMEIRAH", left: "12%", top: "19%", size: "0.74rem", tone: "soft", pointer: new THREE.Vector2(-0.78, 0.58) },
+      { name: "CITY WALK", left: "21%", top: "26%", size: "0.68rem", tone: "soft", pointer: new THREE.Vector2(-0.56, 0.36) },
       { name: "DOWNTOWN", left: "29%", top: "31%", size: "0.88rem", tone: "strong", pointer: new THREE.Vector2(-0.42, 0.34) },
       { name: "DIFC", left: "38%", top: "37%", size: "0.84rem", tone: "strong", pointer: new THREE.Vector2(-0.18, 0.22) },
+      { name: "AL WASL", left: "42%", top: "52%", size: "0.66rem", tone: "soft", pointer: new THREE.Vector2(-0.06, -0.02) },
       { name: "BUSINESS BAY", left: "48%", top: "45%", size: "0.76rem", tone: "strong", pointer: new THREE.Vector2(0.04, 0.06) },
       { name: "DUBAI", left: "60%", top: "34%", size: "1.12rem", tone: "primary", pointer: new THREE.Vector2(0.22, 0.26) },
       { name: "DUBAI MARINA", left: "79%", top: "36%", size: "0.82rem", tone: "strong", pointer: new THREE.Vector2(0.64, 0.18) },
+      { name: "BLUEWATERS", left: "72%", top: "28%", size: "0.66rem", tone: "soft", pointer: new THREE.Vector2(0.58, 0.28) },
+      { name: "DUBAI HILLS", left: "77%", top: "49%", size: "0.68rem", tone: "soft", pointer: new THREE.Vector2(0.7, -0.08) },
       { name: "PALM JUMEIRAH", left: "83%", top: "13%", size: "0.7rem", tone: "soft", pointer: new THREE.Vector2(0.82, 0.66) },
       { name: "CREEK HARBOUR", left: "56%", top: "74%", size: "0.7rem", tone: "soft", pointer: new THREE.Vector2(0.12, -0.48) },
       { name: "EMIRATES HILLS", left: "86%", top: "57%", size: "0.66rem", tone: "soft", pointer: new THREE.Vector2(0.76, -0.04) },
+      { name: "EXPO CITY", left: "86%", top: "78%", size: "0.62rem", tone: "soft", pointer: new THREE.Vector2(0.9, -0.54) },
     ],
     [],
   );
@@ -587,11 +607,11 @@ function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; 
           }
           return best;
         },
-        { name: labels[4].name, distance: Number.POSITIVE_INFINITY },
+        { name: labels[5].name, distance: Number.POSITIVE_INFINITY },
       );
 
       setActiveLabel((previous) => {
-        const next = nearest.distance < 0.22 ? nearest.name : null;
+        const next = nearest.distance < 0.24 ? nearest.name : null;
         return previous === next ? previous : next;
       });
 
@@ -616,11 +636,19 @@ function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; 
         <path d="M8 22 C 14 26, 22 30, 31 36 S 42 43, 50 44" fill="none" stroke="url(#district-route)" strokeWidth="0.18" />
         <path d="M50 44 C 59 42, 67 39, 78 35 S 88 29, 96 12" fill="none" stroke="url(#district-route)" strokeWidth="0.18" />
         <path d="M31 36 C 37 44, 43 57, 54 74" fill="none" stroke="rgba(214,184,132,0.18)" strokeWidth="0.14" />
+        <path d="M2 46 C 12 44, 20 42, 31 40 S 44 38, 50 38" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.12" />
+        <path d="M50 38 C 62 37, 72 35, 84 32 S 93 28, 99 24" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.12" />
+        <path d="M66 28 C 72 36, 78 46, 86 58 S 92 70, 98 84" fill="none" stroke="rgba(214,184,132,0.1)" strokeWidth="0.1" />
+        <path d="M28 16 C 34 20, 42 24, 54 27 S 72 30, 86 32" fill="none" stroke="rgba(214,184,132,0.08)" strokeWidth="0.1" />
         <circle cx="50" cy="44" r="0.86" fill="rgba(236,196,118,0.84)" />
         <circle cx="31" cy="36" r="0.3" fill="rgba(214,184,132,0.46)" />
         <circle cx="39" cy="43" r="0.28" fill="rgba(214,184,132,0.42)" />
         <circle cx="78" cy="35" r="0.32" fill="rgba(214,184,132,0.42)" />
         <circle cx="54" cy="74" r="0.24" fill="rgba(214,184,132,0.28)" />
+        <circle cx="22" cy="26" r="0.22" fill="rgba(214,184,132,0.26)" />
+        <circle cx="67" cy="29" r="0.24" fill="rgba(214,184,132,0.28)" />
+        <circle cx="82" cy="50" r="0.22" fill="rgba(214,184,132,0.22)" />
+        <circle cx="95" cy="79" r="0.18" fill="rgba(214,184,132,0.18)" />
       </svg>
 
       {labels.map((label) => (
@@ -639,9 +667,23 @@ function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; 
             transform: activeLabel === label.name ? "scale(1)" : "scale(0.985)",
             transition: "opacity 180ms ease, filter 220ms ease, color 180ms ease, transform 220ms ease",
             textShadow: activeLabel === label.name ? "0 0 24px rgba(236,196,118,0.12)" : "none",
+            whiteSpace: "nowrap",
           }}
         >
-          {label.name}
+          {label.name.split(" ").map((word, index) => (
+            <span
+              key={`${label.name}-${word}`}
+              style={{
+                display: "inline-block",
+                marginRight: index === label.name.split(" ").length - 1 ? 0 : "0.32rem",
+                transform: activeLabel === label.name ? "scale(1) translateY(0px)" : "scale(1.16) translateY(1px)",
+                transformOrigin: "50% 50%",
+                transition: `transform 260ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 45}ms`,
+              }}
+            >
+              {word}
+            </span>
+          ))}
         </div>
       ))}
     </div>
