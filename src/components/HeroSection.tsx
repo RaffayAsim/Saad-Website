@@ -543,8 +543,8 @@ function SilkMesh({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }>
             color += gold * shimmer * 0.65;
             color += gold * fresnel * 0.12;
 
-            float alpha = 0.86 - reveal * 0.54 + fold * 0.08;
-            alpha = clamp(alpha, 0.16, 0.9);
+            float alpha = 0.78 - reveal * 0.48 + fold * 0.08;
+            alpha = clamp(alpha, 0.12, 0.82);
 
             gl_FragColor = vec4(color, alpha);
           }
@@ -728,7 +728,7 @@ const HeroSection = () => {
                 <span className="block">Command</span>
               </h1>
               <p className="mt-6 max-w-[27rem] text-[clamp(1rem,1.5vw,1.15rem)] leading-[1.7] text-white/72" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
-                Strategic placement across Dubai, London, and private cross-border mandates, shaped with discretion, timing, and institutional-grade judgment.
+                Strategic placement across Dubai's prime districts, shaped through discreet introductions, luxury positioning, and institutional-grade judgment.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -752,7 +752,7 @@ const HeroSection = () => {
           </div>
         </div>
 
-        <div ref={silkRef} className="pointer-events-none absolute inset-0 z-20">
+        <div ref={silkRef} className="pointer-events-none absolute inset-0 z-[5]">
           <Canvas
             className="pointer-events-none"
             dpr={[1, 1.5]}
