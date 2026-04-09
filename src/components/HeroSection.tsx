@@ -258,6 +258,10 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
       { name: "Creek", world: new THREE.Vector3(0.85, -2.16, -2.6), pointer: new THREE.Vector2(0.12, -0.42) },
       { name: "Jumeirah", world: new THREE.Vector3(-5.1, 1.92, -2.6), pointer: new THREE.Vector2(-0.8, 0.64) },
       { name: "City Walk", world: new THREE.Vector3(-3.72, 1.14, -2.6), pointer: new THREE.Vector2(-0.52, 0.3) },
+      { name: "Satwa", world: new THREE.Vector3(-4.58, 0.34, -2.6), pointer: new THREE.Vector2(-0.68, 0.12) },
+      { name: "Zaabeel", world: new THREE.Vector3(-2.62, -0.18, -2.6), pointer: new THREE.Vector2(-0.34, -0.02) },
+      { name: "Meydan", world: new THREE.Vector3(-1.52, -1.34, -2.6), pointer: new THREE.Vector2(-0.18, -0.28) },
+      { name: "Dubai Design District", world: new THREE.Vector3(-0.48, -1.88, -2.6), pointer: new THREE.Vector2(-0.02, -0.38) },
       { name: "Bluewaters", world: new THREE.Vector3(4.62, 0.96, -2.6), pointer: new THREE.Vector2(0.66, 0.28) },
       { name: "Dubai Hills", world: new THREE.Vector3(4.98, -0.82, -2.6), pointer: new THREE.Vector2(0.72, -0.08) },
       { name: "Al Wasl", world: new THREE.Vector3(-1.08, -0.18, -2.6), pointer: new THREE.Vector2(-0.08, -0.04) },
@@ -577,8 +581,12 @@ function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; 
     () => [
       { name: "JUMEIRAH", left: "12%", top: "19%", size: "0.74rem", tone: "soft", pointer: new THREE.Vector2(-0.78, 0.58) },
       { name: "CITY WALK", left: "21%", top: "26%", size: "0.68rem", tone: "soft", pointer: new THREE.Vector2(-0.56, 0.36) },
+      { name: "SATWA", left: "12%", top: "39%", size: "0.62rem", tone: "soft", pointer: new THREE.Vector2(-0.7, 0.12) },
       { name: "DOWNTOWN", left: "29%", top: "31%", size: "0.88rem", tone: "strong", pointer: new THREE.Vector2(-0.42, 0.34) },
       { name: "DIFC", left: "38%", top: "37%", size: "0.84rem", tone: "strong", pointer: new THREE.Vector2(-0.18, 0.22) },
+      { name: "ZAABEEL", left: "22%", top: "56%", size: "0.62rem", tone: "soft", pointer: new THREE.Vector2(-0.34, -0.02) },
+      { name: "MEYDAN", left: "27%", top: "73%", size: "0.62rem", tone: "soft", pointer: new THREE.Vector2(-0.18, -0.26) },
+      { name: "DUBAI DESIGN DISTRICT", left: "37%", top: "81%", size: "0.58rem", tone: "soft", pointer: new THREE.Vector2(0.02, -0.4) },
       { name: "AL WASL", left: "42%", top: "52%", size: "0.66rem", tone: "soft", pointer: new THREE.Vector2(-0.06, -0.02) },
       { name: "BUSINESS BAY", left: "48%", top: "45%", size: "0.76rem", tone: "strong", pointer: new THREE.Vector2(0.04, 0.06) },
       { name: "DUBAI", left: "60%", top: "34%", size: "1.12rem", tone: "primary", pointer: new THREE.Vector2(0.22, 0.26) },
@@ -640,12 +648,20 @@ function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; 
         <path d="M50 38 C 62 37, 72 35, 84 32 S 93 28, 99 24" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.12" />
         <path d="M66 28 C 72 36, 78 46, 86 58 S 92 70, 98 84" fill="none" stroke="rgba(214,184,132,0.1)" strokeWidth="0.1" />
         <path d="M28 16 C 34 20, 42 24, 54 27 S 72 30, 86 32" fill="none" stroke="rgba(214,184,132,0.08)" strokeWidth="0.1" />
+        <path d="M6 32 C 12 35, 18 37, 25 39 S 32 42, 39 44" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.1" />
+        <path d="M10 56 C 18 56, 24 55, 31 54 S 39 52, 46 49" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.1" />
+        <path d="M18 72 C 25 70, 32 67, 40 63 S 48 57, 54 50" fill="none" stroke="rgba(214,184,132,0.1)" strokeWidth="0.1" />
+        <path d="M25 84 C 32 82, 39 78, 46 72 S 54 64, 59 56" fill="none" stroke="rgba(214,184,132,0.08)" strokeWidth="0.08" />
         <circle cx="50" cy="44" r="0.86" fill="rgba(236,196,118,0.84)" />
         <circle cx="31" cy="36" r="0.3" fill="rgba(214,184,132,0.46)" />
         <circle cx="39" cy="43" r="0.28" fill="rgba(214,184,132,0.42)" />
         <circle cx="78" cy="35" r="0.32" fill="rgba(214,184,132,0.42)" />
         <circle cx="54" cy="74" r="0.24" fill="rgba(214,184,132,0.28)" />
         <circle cx="22" cy="26" r="0.22" fill="rgba(214,184,132,0.26)" />
+        <circle cx="12" cy="39" r="0.2" fill="rgba(214,184,132,0.18)" />
+        <circle cx="24" cy="55" r="0.22" fill="rgba(214,184,132,0.2)" />
+        <circle cx="30" cy="72" r="0.22" fill="rgba(214,184,132,0.18)" />
+        <circle cx="40" cy="81" r="0.18" fill="rgba(214,184,132,0.16)" />
         <circle cx="67" cy="29" r="0.24" fill="rgba(214,184,132,0.28)" />
         <circle cx="82" cy="50" r="0.22" fill="rgba(214,184,132,0.22)" />
         <circle cx="95" cy="79" r="0.18" fill="rgba(214,184,132,0.18)" />
@@ -670,18 +686,18 @@ function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; 
             whiteSpace: "nowrap",
           }}
         >
-          {label.name.split(" ").map((word, index) => (
+          {Array.from(label.name).map((character, index) => (
             <span
-              key={`${label.name}-${word}`}
+              key={`${label.name}-${index}`}
               style={{
                 display: "inline-block",
-                marginRight: index === label.name.split(" ").length - 1 ? 0 : "0.32rem",
+                marginRight: character === " " ? "0.22rem" : 0,
                 transform: activeLabel === label.name ? "scale(1) translateY(0px)" : "scale(1.16) translateY(1px)",
                 transformOrigin: "50% 50%",
-                transition: `transform 260ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 45}ms`,
+                transition: `transform 260ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 18}ms`,
               }}
             >
-              {word}
+              {character === " " ? "\u00A0" : character}
             </span>
           ))}
         </div>
