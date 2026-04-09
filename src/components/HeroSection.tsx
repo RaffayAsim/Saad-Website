@@ -229,7 +229,7 @@ function GlassSlabPortrait({
       </mesh>
       <mesh position={[0, 0, 0.14]}>
         <planeGeometry args={[1.06, 3.22]} />
-        <meshBasicMaterial map={useTexture(saadImage)} transparent toneMapped={false} />
+          <meshBasicMaterial map={portraitTexture} transparent toneMapped={false} />
       </mesh>
       <mesh position={[0, 0, 0.17]}>
         <planeGeometry args={[1.12, 3.3]} />
@@ -301,7 +301,7 @@ function AtriumScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number
     <>
       <fogExp2 attach="fog" args={["#060606", 0.095]} />
       <ambientLight intensity={0.12} />
-        <meshBasicMaterial map={portraitTexture} transparent toneMapped={false} />
+        <directionalLight position={[-3.8, 3.4, -1.2]} intensity={0.18} color="#d7dde8" />
       <spotLight
         ref={spotlightRef}
         position={[1.1, 2.8, 3.4]}
@@ -321,6 +321,18 @@ function AtriumScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number
       </mesh>
 
       <AtriumFloor />
+      <AtriumPillars mouse={mouse} />
+
+      <group ref={textParallaxRef}>
+        <LightRibbons />
+      </group>
+
+      <group ref={slabRef} position={[2.15, 0.24, 0.4]}>
+        <GlassSlabPortrait mouse={mouse} position={[0, 0, 0]} rotation={[0.02, -0.18, 0]} scale={[1, 1, 1]} delay={0.4} />
+      </group>
+
+      <DustField />
+
       <EffectComposer>
         <Bloom intensity={0.14} luminanceThreshold={0.9} luminanceSmoothing={0.24} mipmapBlur />
         <ChromaticAberration offset={aberrationOffset} radialModulation modulationOffset={0.8} blendFunction={BlendFunction.NORMAL} />
