@@ -701,7 +701,7 @@ function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; 
   }, [items, mouse]);
 
   return (
-    <div className="pointer-events-none absolute bottom-0 left-[3%] z-[6] hidden lg:block" style={{ top: `${NAVBAR_GUARD}px`, width: "62%" }} aria-hidden="true">
+    <div className="pointer-events-none absolute bottom-[8%] left-[4%] z-[6] hidden lg:block" style={{ top: `calc(${NAVBAR_GUARD}px + 6%)`, width: "56%" }} aria-hidden="true">
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
         <defs>
           <linearGradient id="district-route" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -750,8 +750,8 @@ function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; 
             fontFamily: "'Inter', sans-serif",
             fontSize: "12px",
             letterSpacing: "0.3rem",
-            color: item.color === "gold" ? "rgba(197,160,89,0.22)" : "rgba(245,243,238,0.18)",
-            opacity: 0.12,
+            color: item.color === "gold" ? "rgba(197,160,89,0.24)" : "rgba(245,243,238,0.2)",
+            opacity: 0.14,
             whiteSpace: "nowrap",
             willChange: "transform, opacity",
             textShadow: item.color === "gold" ? "0 0 18px rgba(197,160,89,0.12)" : "0 0 18px rgba(245,243,238,0.08)",
@@ -932,102 +932,90 @@ const HeroSection = () => {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-[linear-gradient(180deg,rgba(3,3,3,0.22)_0%,rgba(3,3,3,0.08)_16%,rgba(3,3,3,0.12)_68%,rgba(3,3,3,0.88)_100%)]" style={{ top: `${NAVBAR_GUARD}px` }} />
 
         <div className="relative z-10 mx-auto h-full max-w-[1320px] px-8 md:px-12 lg:px-16" style={{ paddingTop: `${NAVBAR_GUARD}px`, boxSizing: "border-box" }}>
-          <div className="grid h-full items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="hidden h-full lg:block" />
-            <div className="flex justify-end">
+          <div className="grid h-full items-center gap-10 lg:grid-cols-[1fr_0.9fr]">
+            <div className="flex items-center">
+              <div ref={textRef} className="relative max-w-[35rem]">
+                <div className="flex items-center gap-4">
+                  <span className="h-px w-12" style={{ background: "linear-gradient(90deg, rgba(208,171,110,0), rgba(208,171,110,0.78))" }} />
+                  <p
+                    className="text-[clamp(0.76rem,0.9vw,0.9rem)] uppercase"
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      color: "rgba(208,171,110,0.92)",
+                      letterSpacing: "0.32rem",
+                    }}
+                  >
+                    Sovereign-grade real estate advisory.
+                  </p>
+                </div>
+                <h1
+                  className="mt-7 text-white uppercase"
+                  style={{
+                    fontFamily: "'Playfair Display', serif",
+                    fontWeight: 100,
+                    fontSize: "clamp(3.1rem, 5.6vw, 5.8rem)",
+                    letterSpacing: "clamp(0.18rem, 0.7vw, 0.62rem)",
+                    lineHeight: 0.88,
+                    textShadow: "0 14px 36px rgba(0,0,0,0.28)",
+                  }}
+                >
+                  <span className="block">Luxury</span>
+                  <span className="block">Command</span>
+                </h1>
+                <p
+                  className="mt-7 max-w-[29rem] text-[clamp(1rem,1.2vw,1.1rem)] leading-[1.85] text-white/74"
+                  style={{
+                    fontFamily: "'Cormorant Garamond', serif",
+                    textShadow: "0 8px 22px rgba(0,0,0,0.22)",
+                  }}
+                >
+                  Strategic placement across Dubai&apos;s prime districts, shaped through discreet introductions, prestige positioning, and institutional-grade judgment.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-center lg:justify-end">
               <div
-                ref={textRef}
-                className="relative w-full max-w-[34rem] overflow-hidden rounded-[30px] border p-7 md:p-8"
+                className="relative w-full max-w-[25rem] overflow-hidden rounded-[30px] border p-5 md:p-6"
                 style={{
-                  zIndex: 10,
                   borderColor: "rgba(208,171,110,0.16)",
-                  background: "linear-gradient(180deg, rgba(10,10,10,0.42), rgba(8,8,8,0.2))",
+                  background: "linear-gradient(180deg, rgba(10,10,10,0.4), rgba(8,8,8,0.18))",
                   backdropFilter: "blur(14px)",
                   boxShadow: "0 26px 70px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.04)",
                 }}
               >
-                <div className="absolute inset-0 opacity-60" style={{ background: "radial-gradient(circle at 70% 28%, rgba(208,171,110,0.14), transparent 32%)" }} />
-                <div className="relative z-[1] flex flex-col gap-6">
-                  <div className="flex items-center gap-4">
-                    <span className="h-px w-12" style={{ background: "linear-gradient(90deg, rgba(208,171,110,0), rgba(208,171,110,0.78))" }} />
+                <div className="relative overflow-hidden rounded-[24px] border" style={{ borderColor: "rgba(208,171,110,0.16)" }}>
+                  <img
+                    src={saadPortrait}
+                    alt="Saad Bin Zain"
+                    className="h-[360px] w-full object-cover object-center md:h-[420px]"
+                    style={{ filter: "grayscale(1) contrast(1.12) brightness(0.88)" }}
+                  />
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(197,160,89,0.08), rgba(197,160,89,0.18)), linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,0.46))", mixBlendMode: "screen" }} />
+                  <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
+                    <h2
+                      className="text-[clamp(2rem,3.6vw,3rem)] uppercase text-white"
+                      style={{
+                        fontFamily: "'Playfair Display', serif",
+                        fontWeight: 100,
+                        lineHeight: 0.92,
+                        letterSpacing: "0.14rem",
+                        textShadow: "0 14px 36px rgba(0,0,0,0.28)",
+                      }}
+                    >
+                      <span className="block">Saad</span>
+                      <span className="block">Bin Zain</span>
+                    </h2>
                     <p
-                      className="text-[0.74rem] uppercase"
+                      className="mt-3 text-[0.76rem] uppercase"
                       style={{
                         fontFamily: "'Inter', sans-serif",
                         color: "rgba(208,171,110,0.9)",
-                        letterSpacing: "0.32rem",
+                        letterSpacing: "0.28rem",
                       }}
                     >
-                      Dubai private advisory
+                      Private portfolio presence
                     </p>
-                  </div>
-
-                  <div className="grid grid-cols-[128px_1fr] items-center gap-5 md:grid-cols-[148px_1fr]">
-                    <div className="relative overflow-hidden rounded-[24px] border" style={{ borderColor: "rgba(208,171,110,0.16)" }}>
-                      <img
-                        src={saadPortrait}
-                        alt="Saad Bin Zain"
-                        className="h-[180px] w-full object-cover object-center md:h-[208px]"
-                        style={{ filter: "grayscale(1) contrast(1.12) brightness(0.88)" }}
-                      />
-                      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(197,160,89,0.08), rgba(197,160,89,0.18)), linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,0.42))", mixBlendMode: "screen" }} />
-                    </div>
-
-                    <div>
-                      <h1
-                        className="text-[clamp(2.4rem,4.8vw,4.35rem)] uppercase text-white"
-                        style={{
-                          fontFamily: "'Playfair Display', serif",
-                          fontWeight: 100,
-                          lineHeight: 0.9,
-                          letterSpacing: "0.16rem",
-                          textShadow: "0 14px 36px rgba(0,0,0,0.28)",
-                        }}
-                      >
-                        <span className="block">Saad</span>
-                        <span className="block">Bin Zain</span>
-                      </h1>
-                      <p
-                        className="mt-3 text-[0.78rem] uppercase"
-                        style={{
-                          fontFamily: "'Inter', sans-serif",
-                          color: "rgba(208,171,110,0.9)",
-                          letterSpacing: "0.28rem",
-                        }}
-                      >
-                        Luxury command across Dubai
-                      </p>
-                    </div>
-                  </div>
-
-                  <p
-                    className="max-w-[29rem] text-[clamp(1rem,1.18vw,1.08rem)] leading-[1.85] text-white/74"
-                    style={{
-                      fontFamily: "'Cormorant Garamond', serif",
-                      textShadow: "0 8px 22px rgba(0,0,0,0.22)",
-                    }}
-                  >
-                    Personal portfolio presence shaped through market intelligence, cross-border introductions, and a highly selective approach to Dubai&apos;s luxury real estate corridors.
-                  </p>
-
-                  <div className="flex flex-wrap gap-3">
-                    {["Prime Retail", "Private Office", "Cross-Border Access"].map((item) => (
-                      <span
-                        key={item}
-                        className="rounded-full border px-5 py-[0.82rem] text-[0.68rem] uppercase"
-                        style={{
-                          borderColor: "rgba(208,171,110,0.24)",
-                          background: "linear-gradient(180deg, rgba(14,14,14,0.34), rgba(7,7,7,0.18))",
-                          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03), 0 14px 28px rgba(0,0,0,0.14)",
-                          backdropFilter: "blur(10px)",
-                          color: "rgba(208,171,110,0.92)",
-                          fontFamily: "'Inter', sans-serif",
-                          letterSpacing: "0.26rem",
-                        }}
-                      >
-                        {item}
-                      </span>
-                    ))}
                   </div>
                 </div>
               </div>
