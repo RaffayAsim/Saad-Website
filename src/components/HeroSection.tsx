@@ -10,7 +10,8 @@ import saadImage from "@/assets/saad-bin-zain-2.jpg";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const aberrationOffset = new THREE.Vector2(0.00028, 0.00045);
+const aberrationOffset = new THREE.Vector2(0.0002, 0.00032);
+const NAVBAR_HEIGHT = 88;
 
 function ease(current: number, target: number, amount: number) {
   return current + (target - current) * amount;
@@ -46,14 +47,65 @@ function DustField() {
         <bufferAttribute attach="attributes-position" array={points} count={points.length / 3} itemSize={3} />
       </bufferGeometry>
       <pointsMaterial
-        color="#cba264"
+        color="#b89157"
         size={0.023}
         transparent
-        opacity={0.38}
+        opacity={0.28}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
       />
     </points>
+  );
+}
+
+function AtriumPillars({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
+  const ref = useRef<THREE.Group>(null);
+  const pillars = useMemo(
+    () => [
+      { position: [-2.8, -0.12, -1.3] as [number, number, number], height: 3.7, width: 0.28, depth: 0.28, tone: "stone" as const },
+      { position: [-1.9, -0.08, -0.7] as [number, number, number], height: 4.3, width: 0.2, depth: 0.2, tone: "gold" as const },
+      { position: [-0.9, -0.2, -1.15] as [number, number, number], height: 3.4, width: 0.34, depth: 0.34, tone: "stone" as const },
+      { position: [0.25, -0.18, -1.55] as [number, number, number], height: 4.9, width: 0.18, depth: 0.18, tone: "gold" as const },
+      { position: [1.35, -0.12, -0.95] as [number, number, number], height: 3.9, width: 0.28, depth: 0.28, tone: "stone" as const },
+      { position: [2.35, -0.08, -0.45] as [number, number, number], height: 4.4, width: 0.22, depth: 0.22, tone: "gold" as const },
+    ],
+    [],
+  );
+
+  useFrame((state) => {
+    if (!ref.current) {
+      return;
+    }
+
+    ref.current.rotation.y = ease(ref.current.rotation.y, mouse.current.x * 0.08, 0.02);
+    ref.current.position.x = ease(ref.current.position.x, mouse.current.x * -0.18, 0.02);
+    ref.current.position.y = Math.sin(state.clock.elapsedTime * 0.2) * 0.03;
+  });
+
+  return (
+    <group ref={ref}>
+      {pillars.map((pillar) => {
+        const isGold = pillar.tone === "gold";
+        return (
+          <group key={pillar.position.join(":")} position={pillar.position}>
+            <mesh castShadow receiveShadow position={[0, pillar.height / 2 - 1.4, 0]}>
+              <boxGeometry args={[pillar.width, pillar.height, pillar.depth]} />
+              <meshStandardMaterial
+                color={isGold ? "#af8444" : "#2a2724"}
+                roughness={isGold ? 0.34 : 0.9}
+                metalness={isGold ? 0.72 : 0.08}
+                emissive={isGold ? "#65451e" : "#111111"}
+                emissiveIntensity={isGold ? 0.18 : 0.04}
+              />
+            </mesh>
+            <mesh position={[0, -1.16, 0]} receiveShadow>
+              <cylinderGeometry args={[pillar.width * 1.35, pillar.width * 1.55, 0.22, 32]} />
+              <meshStandardMaterial color="#111111" roughness={0.82} metalness={0.14} />
+            </mesh>
+          </group>
+        );
+      })}
+    </group>
   );
 }
 
@@ -94,36 +146,36 @@ function LightRibbons() {
     <group ref={ref}>
       <mesh>
         <tubeGeometry args={[curveA, 180, 0.018, 10, false]} />
-        <meshStandardMaterial color="#d4ab67" emissive="#8f632c" emissiveIntensity={0.52} />
+        <meshStandardMaterial color="#c19a5c" emissive="#7a5425" emissiveIntensity={0.32} />
       </mesh>
       <mesh>
         <tubeGeometry args={[curveB, 180, 0.012, 8, false]} />
-        <meshStandardMaterial color="#a57b45" emissive="#7f5c2f" emissiveIntensity={0.2} transparent opacity={0.8} />
+        <meshStandardMaterial color="#7d6542" emissive="#6f4c24" emissiveIntensity={0.1} transparent opacity={0.55} />
       </mesh>
     </group>
   );
 }
 
-function StageDisk() {
+function AtriumFloor() {
   return (
-    <group position={[0, -1.22, 0]}>
+    <group position={[0, -1.24, 0]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <cylinderGeometry args={[2.65, 2.92, 0.24, 64]} />
-        <meshStandardMaterial color="#0d0d0d" roughness={0.78} metalness={0.12} />
+        <circleGeometry args={[5.6, 96]} />
+        <meshStandardMaterial color="#0b0b0b" roughness={0.96} metalness={0.06} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.13, 0]}>
-        <torusGeometry args={[2.36, 0.04, 24, 120]} />
-        <meshStandardMaterial color="#c59d5c" emissive="#855f2c" emissiveIntensity={0.35} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+        <ringGeometry args={[2.6, 2.8, 96]} />
+        <meshStandardMaterial color="#b88d4f" emissive="#7f5828" emissiveIntensity={0.18} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.18, 0]}>
-        <circleGeometry args={[4.8, 96]} />
-        <meshBasicMaterial color="#060606" transparent opacity={0.9} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
+        <planeGeometry args={[11, 11]} />
+        <meshBasicMaterial color="#050505" transparent opacity={0.94} />
       </mesh>
     </group>
   );
 }
 
-function GlassPylon({
+function GlassSlabPortrait({
   position,
   rotation,
   scale,
@@ -137,6 +189,13 @@ function GlassPylon({
   delay: number;
 }) {
   const ref = useRef<THREE.Group>(null);
+  const portraitTexture = useTexture(saadImage);
+
+  useMemo(() => {
+    portraitTexture.colorSpace = THREE.SRGBColorSpace;
+    portraitTexture.minFilter = THREE.LinearFilter;
+    portraitTexture.magFilter = THREE.LinearFilter;
+  }, [portraitTexture]);
 
   useFrame((state) => {
     if (!ref.current) {
@@ -152,31 +211,51 @@ function GlassPylon({
   return (
     <group ref={ref} position={position} rotation={rotation} scale={scale}>
       <mesh castShadow receiveShadow>
-        <boxGeometry args={[0.52, 2.8, 0.34]} />
+        <boxGeometry args={[1.46, 4.1, 0.26]} />
         <meshPhysicalMaterial
-          color="#fdfdfd"
+          color="#ffffff"
           transmission={1}
-          roughness={0.03}
-          thickness={3.8}
-          ior={1.5}
+          roughness={0.02}
+          thickness={2.6}
+          ior={1.48}
           clearcoat={1}
-          clearcoatRoughness={0.04}
+          clearcoatRoughness={0.03}
           attenuationColor="#ffffff"
-          attenuationDistance={2.4}
-          envMapIntensity={0.46}
+          attenuationDistance={1.9}
+          envMapIntensity={0.3}
           transparent
-          opacity={0.7}
+          opacity={0.56}
         />
       </mesh>
-      <mesh scale={[1.05, 1.02, 1.04]}>
-        <boxGeometry args={[0.52, 2.8, 0.34]} />
-        <meshBasicMaterial color="#d6ad6b" transparent opacity={0.035} depthWrite={false} />
+      <mesh position={[0, 0, 0.14]}>
+        <planeGeometry args={[1.06, 3.22]} />
+        <meshBasicMaterial map={useTexture(saadImage)} transparent toneMapped={false} />
+      </mesh>
+      <mesh position={[0, 0, 0.17]}>
+        <planeGeometry args={[1.12, 3.3]} />
+        <meshPhysicalMaterial
+          color="#ffffff"
+          transmission={1}
+          roughness={0.02}
+          thickness={0.9}
+          ior={1.48}
+          clearcoat={1}
+          clearcoatRoughness={0.02}
+          attenuationColor="#fff7ed"
+          attenuationDistance={1.1}
+          transparent
+          opacity={0.2}
+        />
+      </mesh>
+      <mesh scale={[1.04, 1.02, 1.08]}>
+        <boxGeometry args={[1.46, 4.1, 0.26]} />
+        <meshBasicMaterial color="#d4ad6b" transparent opacity={0.03} depthWrite={false} />
       </mesh>
     </group>
   );
 }
 
-function PortraitMonolith() {
+function PortraitTexturePlane() {
   const portraitTexture = useTexture(saadImage);
 
   useMemo(() => {
@@ -185,114 +264,65 @@ function PortraitMonolith() {
     portraitTexture.magFilter = THREE.LinearFilter;
   }, [portraitTexture]);
 
-  return (
-    <group position={[0, -0.04, 0.15]}>
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={[1.58, 2.72, 0.42]} />
-        <meshStandardMaterial color="#111111" roughness={0.68} metalness={0.18} />
-      </mesh>
-      <mesh position={[0, 0.04, 0.222]}>
-        <planeGeometry args={[1.24, 2.18]} />
-        <meshBasicMaterial map={portraitTexture} transparent toneMapped={false} />
-      </mesh>
-      <mesh position={[0, 0.04, 0.255]}>
-        <planeGeometry args={[1.3, 2.24]} />
-        <meshPhysicalMaterial
-          color="#ffffff"
-          transmission={1}
-          roughness={0.02}
-          thickness={1.4}
-          ior={1.48}
-          clearcoat={1}
-          clearcoatRoughness={0.02}
-          attenuationColor="#fff7ed"
-          attenuationDistance={1.8}
-          transparent
-          opacity={0.28}
-        />
-      </mesh>
-      <mesh position={[0, 1.52, 0.1]}>
-        <boxGeometry args={[1.02, 0.04, 0.16]} />
-        <meshStandardMaterial color="#c39a58" emissive="#875f2c" emissiveIntensity={0.38} />
-      </mesh>
-    </group>
-  );
+  return <primitive object={portraitTexture} />;
 }
 
-function PeripheralBlocks() {
-  const blocks = [
-    { position: [-1.9, -0.92, -0.86] as [number, number, number], size: [0.92, 0.42, 0.72] as [number, number, number], color: "#151515" },
-    { position: [2, -0.84, -1.05] as [number, number, number], size: [1.24, 0.58, 0.9] as [number, number, number], color: "#131313" },
-    { position: [-2.3, -0.36, 0.34] as [number, number, number], size: [0.38, 1.45, 0.34] as [number, number, number], color: "#171717" },
-    { position: [2.36, -0.12, 0.26] as [number, number, number], size: [0.32, 1.82, 0.32] as [number, number, number], color: "#161616" },
-  ];
-
-  return (
-    <group>
-      {blocks.map((block) => (
-        <mesh key={block.position.join(":")} position={block.position} castShadow receiveShadow>
-          <boxGeometry args={block.size} />
-          <meshStandardMaterial color={block.color} roughness={0.74} metalness={0.12} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-function ViewingRoomScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
-  const stageRef = useRef<THREE.Group>(null);
-  const haloRef = useRef<THREE.Mesh>(null);
+function AtriumScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
+  const textParallaxRef = useRef<THREE.Group>(null);
+  const spotlightRef = useRef<THREE.SpotLight>(null);
+  const slabRef = useRef<THREE.Group>(null);
 
   useFrame((state) => {
-    if (stageRef.current) {
-      stageRef.current.rotation.y = ease(stageRef.current.rotation.y, mouse.current.x * 0.2, 0.03);
-      stageRef.current.rotation.x = ease(stageRef.current.rotation.x, mouse.current.y * 0.08, 0.03);
-      stageRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.55) * 0.04;
+    if (textParallaxRef.current) {
+      textParallaxRef.current.rotation.y = ease(textParallaxRef.current.rotation.y, mouse.current.x * 0.04, 0.03);
+      textParallaxRef.current.position.x = ease(textParallaxRef.current.position.x, mouse.current.x * 0.08, 0.03);
     }
 
-    if (haloRef.current) {
-      haloRef.current.rotation.z = state.clock.elapsedTime * 0.12;
-      haloRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.18) * 0.25;
+    if (slabRef.current) {
+      slabRef.current.rotation.y = ease(slabRef.current.rotation.y, -0.18 + mouse.current.x * 0.08, 0.03);
+      slabRef.current.rotation.x = ease(slabRef.current.rotation.x, mouse.current.y * 0.03, 0.03);
+      slabRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.45) * 0.04;
     }
 
-    state.camera.position.x = ease(state.camera.position.x, mouse.current.x * 0.22, 0.03);
-    state.camera.position.y = ease(state.camera.position.y, 0.1 + mouse.current.y * 0.14, 0.03);
-    state.camera.lookAt(0, -0.15, 0);
+    state.camera.position.x = ease(state.camera.position.x, mouse.current.x * 0.14, 0.02);
+    state.camera.position.y = ease(state.camera.position.y, 0.08 + mouse.current.y * 0.08, 0.02);
+    state.camera.lookAt(0.52, -0.08, 0);
+
+    if (spotlightRef.current) {
+      spotlightRef.current.position.x = ease(spotlightRef.current.position.x, 1.1 + mouse.current.x * 1.4, 0.05);
+      spotlightRef.current.position.y = ease(spotlightRef.current.position.y, 2.8 + mouse.current.y * 0.65, 0.05);
+      spotlightRef.current.target.position.x = ease(spotlightRef.current.target.position.x, 0.9 + mouse.current.x * 0.85, 0.05);
+      spotlightRef.current.target.position.y = ease(spotlightRef.current.target.position.y, 0.45 + mouse.current.y * 0.3, 0.05);
+      spotlightRef.current.target.updateMatrixWorld();
+    }
   });
 
   return (
     <>
-      <fogExp2 attach="fog" args={["#050505", 0.1]} />
-      <ambientLight intensity={0.16} />
-      <spotLight position={[0, 4.4, 3.6]} intensity={1.35} angle={0.34} penumbra={1} color="#f3ddb7" />
-      <pointLight position={[-3.2, 1.2, 1.4]} intensity={0.24} color="#a7bbff" distance={10} />
-      <pointLight position={[3.2, 1.4, 1.2]} intensity={0.18} color="#f8d7aa" distance={8} />
-      <Environment preset="night" blur={0.92} />
+      <fogExp2 attach="fog" args={["#060606", 0.095]} />
+      <ambientLight intensity={0.12} />
+        <meshBasicMaterial map={portraitTexture} transparent toneMapped={false} />
+      <spotLight
+        ref={spotlightRef}
+        position={[1.1, 2.8, 3.4]}
+        intensity={0.78}
+        angle={0.3}
+        penumbra={1}
+        distance={12}
+        decay={1.2}
+        color="#e6c483"
+      />
+      <pointLight position={[2.9, 0.85, 1.2]} intensity={0.16} color="#dcb06a" distance={6} />
+      <Environment preset="warehouse" blur={0.95} />
 
-      <mesh position={[0, 0.8, -5]}>
-        <planeGeometry args={[12, 8]} />
+      <mesh position={[0, 0.4, -5]}>
+        <planeGeometry args={[13, 8]} />
         <meshBasicMaterial color="#050505" />
       </mesh>
 
-      <mesh ref={haloRef} position={[0, 0.18, -0.3]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[2.08, 0.05, 24, 160]} />
-        <meshStandardMaterial color="#b98c4a" emissive="#8b632d" emissiveIntensity={0.3} transparent opacity={0.76} />
-      </mesh>
-
-      <group ref={stageRef}>
-        <StageDisk />
-        <PortraitMonolith />
-        <PeripheralBlocks />
-        <GlassPylon mouse={mouse} position={[-1.2, 0.1, 0.86]} rotation={[0.04, 0.28, -0.01]} scale={[1, 1, 1]} delay={0.2} />
-        <GlassPylon mouse={mouse} position={[1.36, 0.04, 0.94]} rotation={[-0.03, -0.24, 0.02]} scale={[0.92, 1.1, 0.92]} delay={1.2} />
-        <GlassPylon mouse={mouse} position={[0.02, 0.38, -0.98]} rotation={[0, 0.06, 0]} scale={[0.74, 0.9, 0.74]} delay={2.1} />
-      </group>
-
-      <LightRibbons />
-      <DustField />
-
+      <AtriumFloor />
       <EffectComposer>
-        <Bloom intensity={0.22} luminanceThreshold={0.86} luminanceSmoothing={0.26} mipmapBlur />
+        <Bloom intensity={0.14} luminanceThreshold={0.9} luminanceSmoothing={0.24} mipmapBlur />
         <ChromaticAberration offset={aberrationOffset} radialModulation modulationOffset={0.8} blendFunction={BlendFunction.NORMAL} />
       </EffectComposer>
     </>
@@ -301,10 +331,10 @@ function ViewingRoomScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: n
 
 const HeroSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
-  const topRailRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLDivElement>(null);
-  const stageShellRef = useRef<HTMLDivElement>(null);
-  const editorialRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const textColumnRef = useRef<HTMLDivElement>(null);
+  const slabShellRef = useRef<HTMLDivElement>(null);
+  const stageFadeRef = useRef<HTMLDivElement>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -341,65 +371,48 @@ const HeroSection = () => {
     }
 
     const ctx = gsap.context(() => {
-      if (topRailRef.current) {
-        gsap.from(topRailRef.current.children, {
+      if (textColumnRef.current) {
+        gsap.from(textColumnRef.current.children, {
           opacity: 0,
-          y: -18,
-          duration: 0.8,
-          stagger: 0.08,
-          ease: "power3.out",
-        });
-      }
-
-      if (titleRef.current) {
-        gsap.from(titleRef.current.children, {
-          opacity: 0,
-          y: 30,
+          y: 26,
           duration: 1,
-          stagger: 0.12,
+          stagger: 0.1,
           ease: "power3.out",
-          delay: 0.12,
+          delay: 0.08,
         });
       }
 
-      if (stageShellRef.current) {
-        gsap.from(stageShellRef.current, {
+      if (slabShellRef.current) {
+        gsap.from(slabShellRef.current, {
           opacity: 0,
-          scale: 0.95,
-          y: 36,
-          duration: 1.2,
+          scale: 0.94,
+          y: 28,
+          duration: 1.1,
           ease: "power3.out",
-          delay: 0.18,
-        });
-      }
-
-      if (editorialRef.current) {
-        gsap.from(editorialRef.current.children, {
-          opacity: 0,
-          y: 22,
-          duration: 0.9,
-          stagger: 0.08,
-          ease: "power3.out",
-          delay: 0.32,
+          delay: 0.22,
         });
       }
 
       ScrollTrigger.create({
         trigger: section,
         start: "top top",
-        end: "+=110%",
+        end: "bottom top",
         scrub: 1,
         onUpdate: (self) => {
-          if (stageShellRef.current) {
-            gsap.set(stageShellRef.current, { y: self.progress * -18 });
+          if (contentRef.current) {
+            gsap.set(contentRef.current, { y: self.progress * -36 });
           }
 
-          if (titleRef.current) {
-            gsap.set(titleRef.current, { y: self.progress * -12 });
+          if (textColumnRef.current) {
+            gsap.set(textColumnRef.current, { y: self.progress * -20 });
           }
 
-          if (editorialRef.current) {
-            gsap.set(editorialRef.current, { y: self.progress * -10 });
+          if (stageFadeRef.current) {
+            gsap.set(stageFadeRef.current, {
+              scale: 1 - self.progress * 0.1,
+              opacity: 1 - self.progress,
+              transformOrigin: "50% 50%",
+            });
           }
         },
       });
@@ -413,9 +426,10 @@ const HeroSection = () => {
       ref={sectionRef}
       className="relative overflow-hidden"
       style={{
-        minHeight: "100svh",
+        height: "100vh",
+        overflow: "hidden",
         background:
-          "radial-gradient(circle at 50% 12%, rgba(170,126,67,0.18), transparent 24%), radial-gradient(circle at 14% 72%, rgba(107,82,43,0.12), transparent 28%), radial-gradient(circle at 84% 68%, rgba(107,82,43,0.12), transparent 26%), linear-gradient(180deg, #040404 0%, #060606 58%, #040404 100%)",
+          "radial-gradient(circle at 18% 30%, rgba(171,129,69,0.14), transparent 26%), radial-gradient(circle at 78% 26%, rgba(171,129,69,0.12), transparent 22%), linear-gradient(180deg, #040404 0%, #050505 56%, #030303 100%)",
       }}
       data-section="hero"
     >
@@ -424,88 +438,83 @@ const HeroSection = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(214,184,132,0.08),transparent_28%)]" />
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 top-[18%] z-[2] hidden justify-center lg:flex">
-        <div
-          className="select-none text-center uppercase"
-          style={{
-            fontFamily: "'Playfair Display', serif",
-            fontWeight: 200,
-            letterSpacing: "0.18em",
-            fontSize: "clamp(5rem, 12vw, 11rem)",
-            lineHeight: 0.84,
-            color: "transparent",
-            WebkitTextStroke: "1px rgba(214,184,132,0.08)",
-          }}
-        >
-          PRIVATE OFFICE
-        </div>
-      </div>
-
-      <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[1540px] flex-col px-6 pb-8 pt-[108px] md:px-10 lg:px-14 lg:pt-[118px]">
-        <div ref={topRailRef} className="grid gap-4 text-[10px] uppercase tracking-[0.34em] text-white/70 md:grid-cols-3 md:text-[11px]" style={{ fontFamily: "'Inter', sans-serif" }}>
-          <div className="flex items-center gap-3">
-            <span className="h-px w-10 bg-[rgba(214,184,132,0.8)]" />
-            <span className="text-[rgba(214,184,132,0.92)]">Saad Bin Zain</span>
-          </div>
-          <div className="text-center text-white/55">Prime Retail • Commercial Offices • Private Mandates</div>
-          <div className="text-left text-white/55 md:text-right">Dubai • London • Netherlands</div>
-        </div>
-
-        <div ref={titleRef} className="relative mt-8 flex flex-col items-center text-center lg:mt-10">
-          <p className="max-w-[760px] text-[10px] uppercase tracking-[0.52em] md:text-[11px]" style={{ color: "rgba(214,184,132,0.92)", fontFamily: "'Inter', sans-serif" }}>
-            Discreet advisory for landmark space, curated capital, and category-defining addresses
-          </p>
-          <h1 className="mt-5 max-w-[12ch] text-[clamp(3.1rem,6vw,6.8rem)] leading-[0.88] text-white" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}>
-            Where exceptional real estate is privately introduced.
-          </h1>
-        </div>
-
-        <div ref={stageShellRef} className="relative mt-6 min-h-[360px] flex-1 md:min-h-[420px] lg:min-h-[520px]">
-          <div className="absolute inset-0 rounded-[2.8rem] border border-[rgba(214,184,132,0.1)] bg-[linear-gradient(180deg,rgba(10,10,10,0.16),rgba(10,10,10,0.02))]" />
+      <div ref={stageFadeRef} className="absolute inset-0 z-[2]">
+        <div className="absolute inset-0">
           <Canvas
             shadows
-            camera={{ position: [0, 0.1, 7.2], fov: 28 }}
+            camera={{ position: [0.16, 0.08, 7.4], fov: 29 }}
             dpr={[1, 1.75]}
             gl={{ antialias: true, alpha: false }}
             onCreated={({ gl, scene }) => {
               gl.toneMapping = THREE.ACESFilmicToneMapping;
-              gl.toneMappingExposure = 0.82;
+              gl.toneMappingExposure = 0.78;
               gl.outputColorSpace = THREE.SRGBColorSpace;
               gl.setClearColor("#040404", 1);
               scene.background = new THREE.Color("#040404");
             }}
           >
-            <ViewingRoomScene mouse={mouseRef} />
+            <AtriumScene mouse={mouseRef} />
           </Canvas>
-          <div className="pointer-events-none absolute inset-0 rounded-[2.8rem] bg-[radial-gradient(circle_at_50%_42%,rgba(214,184,132,0.1),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_24%,transparent_76%,rgba(0,0,0,0.22)_100%)]" />
         </div>
+      </div>
 
-        <div
-          ref={editorialRef}
-          className="mt-6 grid gap-6 rounded-[2rem] border border-[rgba(214,184,132,0.12)] bg-[rgba(8,8,8,0.42)] px-5 py-5 backdrop-blur-xl md:grid-cols-[1.3fr_0.9fr_0.9fr] md:px-7 lg:mt-7 lg:px-8"
-        >
-          <div>
-            <p className="max-w-[34rem] text-[1rem] leading-7 text-white/76 md:text-[1.06rem]" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
-              Banking precision. Luxury retail fluency. Cross-border judgment. The mandate is not volume. It is placement, timing, and access to the right room before attention becomes public.
+      <div className="pointer-events-none absolute inset-0 z-[3] bg-[linear-gradient(90deg,rgba(4,4,4,0.9)_0%,rgba(4,4,4,0.7)_32%,rgba(4,4,4,0.16)_56%,rgba(4,4,4,0.52)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 z-[4] bg-[linear-gradient(180deg,rgba(4,4,4,0.82)_0%,rgba(4,4,4,0.14)_30%,rgba(4,4,4,0.12)_68%,rgba(4,4,4,0.88)_100%)]" />
+
+      <div ref={contentRef} className="relative z-10 h-full px-6 md:px-10 lg:px-14" style={{ paddingTop: `${NAVBAR_HEIGHT}px` }}>
+        <div className="mx-auto grid h-full max-w-[1200px] grid-cols-1 items-center gap-10 lg:grid-cols-[60%_40%]">
+          <div ref={textColumnRef} className="max-w-[42rem] pt-8 lg:pt-0">
+            <p className="text-[clamp(0.7rem,1vw,0.82rem)] uppercase tracking-[0.5em]" style={{ color: "rgba(214,184,132,0.9)", fontFamily: "'Inter', sans-serif" }}>
+              SAAD BIN ZAIN
             </p>
+            <h1 className="mt-6 text-[clamp(2.7rem,7vw,5.4rem)] leading-[0.9] text-white" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}>
+              Immersive luxury command.
+            </h1>
+            <p className="mt-6 max-w-[32rem] text-[clamp(1rem,1.7vw,1.2rem)] leading-[1.65] text-white/74" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+              An architectural atrium of advisory, where landmark retail, office strategy, and private market access are composed with banking discipline and luxury precision.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              {["Prime Retail", "Commercial Offices", "Private Office"].map((item) => (
+                <span
+                  key={item}
+                  className="rounded-full border px-4 py-2 text-[clamp(0.62rem,0.9vw,0.72rem)] uppercase tracking-[0.32em]"
+                  style={{
+                    borderColor: "rgba(214,184,132,0.2)",
+                    background: "rgba(10,10,10,0.24)",
+                    color: "rgba(214,184,132,0.88)",
+                    fontFamily: "'Inter', sans-serif",
+                  }}
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+            <div className="mt-10 grid max-w-[30rem] grid-cols-2 gap-6 border-t border-[rgba(214,184,132,0.12)] pt-6">
+              <div>
+                <div className="text-[clamp(1.8rem,3vw,2.5rem)] gold-text-gradient" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}>
+                  20+
+                </div>
+                <p className="mt-1 text-[clamp(0.62rem,0.9vw,0.72rem)] uppercase tracking-[0.28em] text-white/52" style={{ fontFamily: "'Inter', sans-serif" }}>
+                  Years of cross-sector advisory
+                </p>
+              </div>
+              <div>
+                <div className="text-[clamp(1.8rem,3vw,2.5rem)] gold-text-gradient" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}>
+                  37460
+                </div>
+                <p className="mt-1 text-[clamp(0.62rem,0.9vw,0.72rem)] uppercase tracking-[0.28em] text-white/52" style={{ fontFamily: "'Inter', sans-serif" }}>
+                  RERA registration
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="border-t border-[rgba(214,184,132,0.1)] pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
-            <div className="text-[2.1rem] gold-text-gradient" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}>
-              20+
+          <div className="relative hidden h-full items-center justify-end lg:flex">
+            <div ref={slabShellRef} className="relative ml-auto flex w-[30vw] max-w-[360px] min-w-[280px] items-center justify-center" style={{ height: "70vh", maxHeight: "70vh" }}>
+              <div className="absolute inset-0 rounded-[2rem] border border-[rgba(214,184,132,0.14)] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] backdrop-blur-[2px]" />
+              <div className="absolute inset-x-8 top-6 h-px bg-[linear-gradient(90deg,transparent,rgba(214,184,132,0.76),transparent)]" />
+              <div className="absolute inset-x-8 bottom-6 h-px bg-[linear-gradient(90deg,transparent,rgba(214,184,132,0.42),transparent)]" />
             </div>
-            <p className="mt-1 text-[10px] uppercase tracking-[0.28em] text-white/52" style={{ fontFamily: "'Inter', sans-serif" }}>
-              Years across private banking and real estate
-            </p>
-          </div>
-
-          <div className="border-t border-[rgba(214,184,132,0.1)] pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
-            <div className="text-[2.1rem] gold-text-gradient" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}>
-              37460
-            </div>
-            <p className="mt-1 text-[10px] uppercase tracking-[0.28em] text-white/52" style={{ fontFamily: "'Inter', sans-serif" }}>
-              RERA registration with international reach
-            </p>
           </div>
         </div>
       </div>

@@ -49,7 +49,7 @@ const Navigation = () => {
   return (
     <nav
       ref={navRef}
-      className="fixed top-0 left-0 right-0 z-50"
+      className="fixed top-0 left-0 right-0 z-[1000]"
       style={{
         height: "88px",
         background: scrolled ? "hsl(0 0% 4% / 0.52)" : "transparent",
