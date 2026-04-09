@@ -348,7 +348,7 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
 
       <mesh ref={mapRef} position={[1.15, -0.02, -2.7]}>
         <planeGeometry args={[12.8, 7.2]} />
-        <meshBasicMaterial map={mapTexture} transparent opacity={0.28} toneMapped={false} depthWrite={false} />
+        <meshBasicMaterial map={mapTexture} transparent opacity={0.46} toneMapped={false} depthWrite={false} />
       </mesh>
 
       <line ref={routeRef} visible={false}>
@@ -585,6 +585,66 @@ function SilkScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }
   );
 }
 
+function DubaiDistrictOverlay() {
+  const labels = [
+    { name: "JUMEIRAH", left: "15%", top: "22%", size: "0.74rem", tone: "soft" },
+    { name: "DOWNTOWN", left: "28%", top: "31%", size: "0.9rem", tone: "strong" },
+    { name: "DIFC", left: "37%", top: "37%", size: "0.86rem", tone: "strong" },
+    { name: "BUSINESS BAY", left: "46%", top: "45%", size: "0.76rem", tone: "strong" },
+    { name: "DUBAI", left: "57%", top: "34%", size: "1.3rem", tone: "primary" },
+    { name: "DUBAI MARINA", left: "73%", top: "36%", size: "0.84rem", tone: "strong" },
+    { name: "PALM JUMEIRAH", left: "77%", top: "18%", size: "0.72rem", tone: "soft" },
+    { name: "CREEK HARBOUR", left: "51%", top: "73%", size: "0.72rem", tone: "soft" },
+    { name: "EMIRATES HILLS", left: "80%", top: "56%", size: "0.68rem", tone: "soft" },
+  ] as const;
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-[7] hidden lg:block" aria-hidden="true">
+      <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="district-route" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="rgba(214,184,132,0)" />
+            <stop offset="28%" stopColor="rgba(214,184,132,0.2)" />
+            <stop offset="62%" stopColor="rgba(236,196,118,0.46)" />
+            <stop offset="100%" stopColor="rgba(214,184,132,0.18)" />
+          </linearGradient>
+        </defs>
+        <path d="M16 23 C 21 27, 27 31, 34 37 S 45 45, 57 45" fill="none" stroke="url(#district-route)" strokeWidth="0.18" />
+        <path d="M57 45 C 63 43, 70 39, 79 36 S 88 33, 94 18" fill="none" stroke="url(#district-route)" strokeWidth="0.18" />
+        <path d="M34 37 C 39 46, 45 57, 50 74" fill="none" stroke="rgba(214,184,132,0.16)" strokeWidth="0.14" />
+        <circle cx="57" cy="45" r="0.9" fill="rgba(236,196,118,0.92)" />
+        <circle cx="34" cy="37" r="0.34" fill="rgba(214,184,132,0.56)" />
+        <circle cx="45" cy="45" r="0.3" fill="rgba(214,184,132,0.46)" />
+        <circle cx="79" cy="36" r="0.34" fill="rgba(214,184,132,0.48)" />
+        <circle cx="50" cy="74" r="0.26" fill="rgba(214,184,132,0.3)" />
+      </svg>
+
+      {labels.map((label) => (
+        <div
+          key={label.name}
+          className="absolute uppercase"
+          style={{
+            left: label.left,
+            top: label.top,
+            fontFamily: "'Inter', sans-serif",
+            fontSize: label.size,
+            letterSpacing: label.tone === "primary" ? "0.38rem" : label.tone === "strong" ? "0.2rem" : "0.15rem",
+            color:
+              label.tone === "primary"
+                ? "rgba(236,196,118,0.86)"
+                : label.tone === "strong"
+                  ? "rgba(214,184,132,0.54)"
+                  : "rgba(214,184,132,0.28)",
+            textShadow: label.tone === "primary" ? "0 0 24px rgba(236,196,118,0.14)" : "none",
+          }}
+        >
+          {label.name}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const HeroSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
@@ -770,6 +830,8 @@ const HeroSection = () => {
             </div>
           </div>
         </div>
+
+        <DubaiDistrictOverlay />
 
         <div ref={silkRef} className="pointer-events-none absolute inset-0 z-[5]">
           <Canvas
