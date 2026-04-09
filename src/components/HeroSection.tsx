@@ -35,72 +35,30 @@ function createThreadMapTexture() {
 
   const routes = [
     [
-      [0.08, 0.62],
-      [0.12, 0.68],
-      [0.18, 0.6],
-      [0.24, 0.58],
-      [0.28, 0.52],
-      [0.34, 0.48],
-      [0.4, 0.42],
-      [0.46, 0.4],
+      [0.2, 0.24],
+      [0.28, 0.3],
+      [0.36, 0.34],
+      [0.46, 0.36],
+      [0.56, 0.35],
     ],
     [
-      [0.46, 0.32],
-      [0.5, 0.3],
-      [0.55, 0.31],
-      [0.54, 0.28],
-      [0.58, 0.3],
-      [0.62, 0.36],
-      [0.66, 0.4],
-      [0.72, 0.44],
-      [0.76, 0.5],
-      [0.84, 0.58],
+      [0.56, 0.35],
+      [0.64, 0.3],
+      [0.72, 0.26],
+      [0.8, 0.23],
     ],
     [
-      [0.18, 0.84],
-      [0.26, 0.76],
-      [0.33, 0.72],
-      [0.41, 0.7],
-      [0.48, 0.73],
-      [0.54, 0.78],
-      [0.61, 0.8],
-      [0.7, 0.74],
+      [0.56, 0.35],
+      [0.62, 0.46],
+      [0.68, 0.58],
+      [0.72, 0.76],
     ],
     [
-      [0.42, 0.44],
-      [0.48, 0.48],
-      [0.54, 0.52],
-      [0.61, 0.56],
-      [0.67, 0.62],
-      [0.74, 0.7],
-      [0.82, 0.8],
-    ],
-    [
-      [0.36, 0.44],
-      [0.42, 0.41],
-      [0.49, 0.38],
-      [0.54, 0.34],
-      [0.34, 0.36],
-      [0.32, 0.3],
-      [0.29, 0.22],
-      [0.26, 0.16],
-      [0.24, 0.12],
-    ],
-    [
-      [0.48, 0.39],
-      [0.52, 0.37],
-      [0.55, 0.36],
-      [0.58, 0.37],
-      [0.61, 0.41],
-      [0.65, 0.48],
-    ],
-    [
-      [0.49, 0.42],
-      [0.5, 0.39],
-      [0.51, 0.36],
-      [0.52, 0.33],
-      [0.53, 0.3],
-      [0.54, 0.27],
+      [0.56, 0.35],
+      [0.62, 0.38],
+      [0.69, 0.42],
+      [0.77, 0.47],
+      [0.85, 0.54],
     ],
   ];
 
@@ -119,21 +77,17 @@ function createThreadMapTexture() {
   });
 
   const hubs = [
-    [0.21, 0.58],
-    [0.37, 0.47],
-    [0.45, 0.39],
-    [0.51, 0.34],
-    [0.54, 0.39],
-    [0.63, 0.37],
-    [0.71, 0.67],
-    [0.53, 0.77],
-    [0.83, 0.81],
+    [0.24, 0.24],
+    [0.56, 0.35],
+    [0.8, 0.23],
+    [0.72, 0.76],
+    [0.85, 0.54],
   ];
 
   hubs.forEach(([x, y]) => {
     const px = x * canvas.width;
     const py = y * canvas.height;
-    const isDubaiCluster = Math.abs(x - 0.54) < 0.04 && Math.abs(y - 0.39) < 0.07;
+    const isDubaiCluster = Math.abs(x - 0.56) < 0.03 && Math.abs(y - 0.35) < 0.04;
     const radius = isDubaiCluster ? 28 : 18;
     const gradient = context.createRadialGradient(px, py, 0, px, py, radius);
     gradient.addColorStop(0, "rgba(255, 236, 188, 0.95)");
@@ -147,14 +101,21 @@ function createThreadMapTexture() {
 
   context.fillStyle = "rgba(212, 171, 103, 0.8)";
   context.font = "500 30px Inter";
-  context.fillText("AMSTERDAM", canvas.width * 0.11, canvas.height * 0.57);
-  context.fillText("DUBAI", canvas.width * 0.5, canvas.height * 0.31);
-  context.fillText("ABU DHABI", canvas.width * 0.47, canvas.height * 0.39);
-  context.fillText("SHARJAH", canvas.width * 0.56, canvas.height * 0.43);
-  context.fillText("RIYADH", canvas.width * 0.4, canvas.height * 0.35);
-  context.fillText("LONDON", canvas.width * 0.59, canvas.height * 0.33);
-  context.fillText("MONACO", canvas.width * 0.64, canvas.height * 0.63);
-  context.fillText("SINGAPORE", canvas.width * 0.73, canvas.height * 0.79);
+  context.font = "500 26px Inter";
+  context.fillText("AMSTERDAM", canvas.width * 0.14, canvas.height * 0.22);
+  context.font = "700 38px Inter";
+  context.fillText("DUBAI", canvas.width * 0.53, canvas.height * 0.32);
+  context.font = "500 28px Inter";
+  context.fillText("LONDON", canvas.width * 0.73, canvas.height * 0.22);
+  context.fillText("SINGAPORE", canvas.width * 0.65, canvas.height * 0.75);
+  context.fillText("MONACO", canvas.width * 0.8, canvas.height * 0.53);
+
+  context.fillStyle = "rgba(212, 171, 103, 0.36)";
+  context.font = "500 18px Inter";
+  context.fillText("ABU DHABI", canvas.width * 0.48, canvas.height * 0.43);
+  context.fillText("DOHA", canvas.width * 0.61, canvas.height * 0.42);
+  context.fillText("RIYADH", canvas.width * 0.44, canvas.height * 0.26);
+  context.fillText("MUMBAI", canvas.width * 0.78, canvas.height * 0.45);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -179,16 +140,15 @@ function createGlobalRouteTexture() {
   context.fillRect(0, 0, canvas.width, canvas.height);
 
   const arcs = [
-    [[180, 600], [420, 520], [670, 430], [910, 360], [1210, 280]],
-    [[300, 680], [530, 610], [770, 560], [980, 600], [1210, 720]],
-    [[500, 350], [620, 300], [760, 285], [910, 320], [1070, 420]],
-    [[520, 380], [610, 360], [700, 372], [790, 425], [880, 520]],
-    [[555, 412], [600, 365], [635, 332], [670, 302], [712, 286]],
+    [[260, 220], [420, 280], [600, 320], [760, 336], [900, 348]],
+    [[900, 348], [1030, 304], [1150, 256], [1290, 220]],
+    [[900, 348], [980, 420], [1080, 560], [1160, 700]],
+    [[900, 348], [1040, 382], [1180, 438], [1360, 520]],
   ];
 
   arcs.forEach((arc, index) => {
-    context.strokeStyle = index >= 3 ? "rgba(216, 178, 106, 0.34)" : "rgba(190, 151, 86, 0.22)";
-    context.lineWidth = index >= 3 ? 2.6 : 2;
+    context.strokeStyle = index === 0 ? "rgba(196, 158, 97, 0.26)" : "rgba(216, 178, 106, 0.34)";
+    context.lineWidth = index === 0 ? 1.8 : 2.6;
     context.beginPath();
     arc.forEach(([x, y], index) => {
       if (index === 0) {
@@ -201,21 +161,17 @@ function createGlobalRouteTexture() {
   });
 
   const hubs = [
-    [370, 515, "AMSTERDAM"],
-    [640, 420, "ABU DHABI"],
-    [700, 372, "DUBAI"],
-    [748, 438, "SHARJAH"],
-    [860, 336, "LONDON"],
-    [1010, 595, "MONACO"],
-    [1210, 720, "SINGAPORE"],
-    [548, 314, "RIYADH"],
+    [360, 238, "AMSTERDAM"],
+    [900, 348, "DUBAI"],
+    [1290, 220, "LONDON"],
+    [1160, 700, "SINGAPORE"],
+    [1360, 520, "MONACO"],
   ] as const;
 
   context.font = "500 24px Inter";
   hubs.forEach(([x, y, label]) => {
     const isDubai = label === "DUBAI";
-    const isUAE = label === "ABU DHABI" || label === "SHARJAH";
-    const radius = isDubai ? 42 : isUAE ? 30 : 24;
+    const radius = isDubai ? 52 : 26;
     const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
     gradient.addColorStop(0, "rgba(255,232,186,0.95)");
     gradient.addColorStop(0.35, isDubai ? "rgba(236,196,118,0.9)" : "rgba(212,171,103,0.72)");
@@ -225,10 +181,17 @@ function createGlobalRouteTexture() {
     context.arc(x, y, radius, 0, Math.PI * 2);
     context.fill();
 
-    context.fillStyle = isDubai ? "rgba(230,188,110,0.62)" : isUAE ? "rgba(215,176,107,0.4)" : "rgba(196,160,102,0.3)";
-    context.font = isDubai ? "600 30px Inter" : isUAE ? "500 26px Inter" : "500 24px Inter";
+    context.fillStyle = isDubai ? "rgba(230,188,110,0.72)" : "rgba(196,160,102,0.34)";
+    context.font = isDubai ? "700 34px Inter" : "500 24px Inter";
     context.fillText(label, x + 18, y - 18);
   });
+
+  context.fillStyle = "rgba(196,160,102,0.18)";
+  context.font = "500 18px Inter";
+  context.fillText("ABU DHABI", 780, 430);
+  context.fillText("DOHA", 990, 392);
+  context.fillText("RIYADH", 735, 275);
+  context.fillText("MUMBAI", 1215, 430);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -284,6 +247,18 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
   const ringRef = useRef<THREE.Mesh>(null);
   const mapTexture = useMemo(() => createGlobalRouteTexture(), []);
   const mapRef = useRef<THREE.Mesh>(null);
+  const routeRef = useRef<THREE.Line>(null);
+  const activeCityRef = useRef<THREE.Mesh>(null);
+  const cityAnchors = useMemo(
+    () => [
+      { name: "Amsterdam", world: new THREE.Vector3(-3.17, 1.74, -2.6), pointer: new THREE.Vector2(-0.5, 0.55) },
+      { name: "Dubai", world: new THREE.Vector3(1.15, 0.86, -2.6), pointer: new THREE.Vector2(0.1, 0.24) },
+      { name: "London", world: new THREE.Vector3(4.27, 1.88, -2.6), pointer: new THREE.Vector2(0.72, 0.58) },
+      { name: "Singapore", world: new THREE.Vector3(3.25, -1.96, -2.6), pointer: new THREE.Vector2(0.58, -0.48) },
+      { name: "Monaco", world: new THREE.Vector3(4.83, -0.5, -2.6), pointer: new THREE.Vector2(0.88, -0.02) },
+    ],
+    [],
+  );
 
   useFrame((state) => {
     if (lightRef.current) {
@@ -302,6 +277,42 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
       mapRef.current.position.y = ease(mapRef.current.position.y, -0.02 + mouse.current.y * 0.16, 0.025);
       mapRef.current.rotation.z = ease(mapRef.current.rotation.z, mouse.current.x * -0.035, 0.02);
     }
+
+    if (routeRef.current && activeCityRef.current) {
+      const nearest = cityAnchors.reduce(
+        (best, city) => {
+          const distance = city.pointer.distanceTo(new THREE.Vector2(mouse.current.x, mouse.current.y));
+          if (distance < best.distance) {
+            return { city, distance };
+          }
+          return best;
+        },
+        { city: cityAnchors[1], distance: Number.POSITIVE_INFINITY },
+      );
+
+      const shouldShow = nearest.city.name !== "Dubai" && nearest.distance < 0.42;
+      const routeGeometry = routeRef.current.geometry as THREE.BufferGeometry;
+      const positions = routeGeometry.attributes.position.array as Float32Array;
+      const start = cityAnchors[1].world;
+      const end = nearest.city.world;
+
+      const control = new THREE.Vector3((start.x + end.x) * 0.5, Math.max(start.y, end.y) + 0.7, -2.35);
+      const curve = new THREE.QuadraticBezierCurve3(start, control, end);
+      const points = curve.getPoints(32);
+      points.forEach((point, index) => {
+        positions[index * 3] = point.x;
+        positions[index * 3 + 1] = point.y;
+        positions[index * 3 + 2] = point.z;
+      });
+      routeGeometry.attributes.position.needsUpdate = true;
+
+      routeRef.current.visible = shouldShow;
+      activeCityRef.current.visible = shouldShow;
+      if (shouldShow) {
+        activeCityRef.current.position.copy(end);
+        activeCityRef.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 3.5) * 0.08);
+      }
+    }
   });
 
   return (
@@ -319,6 +330,18 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
       <mesh ref={mapRef} position={[1.15, -0.02, -2.7]}>
         <planeGeometry args={[12.8, 7.2]} />
         <meshBasicMaterial map={mapTexture} transparent opacity={0.28} toneMapped={false} depthWrite={false} />
+      </mesh>
+
+      <line ref={routeRef} visible={false}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" array={new Float32Array(33 * 3)} count={33} itemSize={3} />
+        </bufferGeometry>
+        <lineBasicMaterial color="#d7ae67" transparent opacity={0.6} />
+      </line>
+
+      <mesh ref={activeCityRef} visible={false}>
+        <sphereGeometry args={[0.08, 16, 16]} />
+        <meshBasicMaterial color="#f0cd8a" transparent opacity={0.85} />
       </mesh>
 
       <mesh ref={ringRef} position={[2.2, -0.7, -1.2]} rotation={[Math.PI / 2, 0, 0]}>
