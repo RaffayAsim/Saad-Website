@@ -331,7 +331,6 @@ function AtriumScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number
 
 const HeroSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
   const textColumnRef = useRef<HTMLDivElement>(null);
   const slabShellRef = useRef<HTMLDivElement>(null);
   const stageFadeRef = useRef<HTMLDivElement>(null);
@@ -399,12 +398,8 @@ const HeroSection = () => {
         end: "bottom top",
         scrub: 1,
         onUpdate: (self) => {
-          if (contentRef.current) {
-            gsap.set(contentRef.current, { y: self.progress * -36 });
-          }
-
           if (textColumnRef.current) {
-            gsap.set(textColumnRef.current, { y: self.progress * -20 });
+            gsap.set(textColumnRef.current, { y: self.progress * -12 });
           }
 
           if (stageFadeRef.current) {
@@ -424,99 +419,120 @@ const HeroSection = () => {
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden"
+      className="relative"
       style={{
-        height: "100vh",
-        overflow: "hidden",
         background:
           "radial-gradient(circle at 18% 30%, rgba(171,129,69,0.14), transparent 26%), radial-gradient(circle at 78% 26%, rgba(171,129,69,0.12), transparent 22%), linear-gradient(180deg, #040404 0%, #050505 56%, #030303 100%)",
       }}
       data-section="hero"
     >
-      <div className="pointer-events-none absolute inset-0 z-[1]">
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,4,0.82)_0%,rgba(4,4,4,0.24)_34%,rgba(4,4,4,0.22)_70%,rgba(4,4,4,0.92)_100%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(214,184,132,0.08),transparent_28%)]" />
-      </div>
-
-      <div ref={stageFadeRef} className="absolute inset-0 z-[2]">
-        <div className="absolute inset-0">
-          <Canvas
-            shadows
-            camera={{ position: [0.16, 0.08, 7.4], fov: 29 }}
-            dpr={[1, 1.75]}
-            gl={{ antialias: true, alpha: false }}
-            onCreated={({ gl, scene }) => {
-              gl.toneMapping = THREE.ACESFilmicToneMapping;
-              gl.toneMappingExposure = 0.78;
-              gl.outputColorSpace = THREE.SRGBColorSpace;
-              gl.setClearColor("#040404", 1);
-              scene.background = new THREE.Color("#040404");
-            }}
-          >
-            <AtriumScene mouse={mouseRef} />
-          </Canvas>
+      <div
+        className="hero-wrapper relative overflow-hidden px-6 md:px-10 lg:px-14"
+        style={{ height: "100vh", overflow: "hidden", paddingTop: `${NAVBAR_HEIGHT}px`, boxSizing: "border-box" }}
+      >
+        <div className="pointer-events-none absolute inset-0 z-[1]">
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,4,0.82)_0%,rgba(4,4,4,0.28)_36%,rgba(4,4,4,0.24)_68%,rgba(4,4,4,0.9)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_62%_44%,rgba(214,184,132,0.1),transparent_24%)]" />
         </div>
-      </div>
 
-      <div className="pointer-events-none absolute inset-0 z-[3] bg-[linear-gradient(90deg,rgba(4,4,4,0.9)_0%,rgba(4,4,4,0.7)_32%,rgba(4,4,4,0.16)_56%,rgba(4,4,4,0.52)_100%)]" />
-      <div className="pointer-events-none absolute inset-0 z-[4] bg-[linear-gradient(180deg,rgba(4,4,4,0.82)_0%,rgba(4,4,4,0.14)_30%,rgba(4,4,4,0.12)_68%,rgba(4,4,4,0.88)_100%)]" />
+        <div className="relative z-[2] mx-auto h-full max-w-[1200px]">
+          <div className="grid h-full grid-cols-1 items-center gap-8 lg:grid-cols-[15%_45%_40%] lg:gap-0">
+            <div className="hidden h-full lg:block" aria-hidden="true" />
 
-      <div ref={contentRef} className="relative z-10 px-6 md:px-10 lg:px-14" style={{ height: `calc(100vh - ${NAVBAR_HEIGHT}px)`, marginTop: `${NAVBAR_HEIGHT}px` }}>
-        <div className="mx-auto grid h-full max-w-[1200px] grid-cols-1 items-center gap-8 lg:grid-cols-[60%_40%] lg:gap-12">
-          <div ref={textColumnRef} className="max-w-[42rem] self-center">
-            <p className="text-[clamp(0.7rem,1vw,0.82rem)] uppercase tracking-[0.5em]" style={{ color: "rgba(214,184,132,0.9)", fontFamily: "'Inter', sans-serif" }}>
-              SAAD BIN ZAIN
-            </p>
-            <h1 className="mt-6 text-[clamp(2.7rem,7vw,5.4rem)] leading-[0.9] text-white" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}>
-              Immersive luxury command.
-            </h1>
-            <p className="mt-6 max-w-[32rem] text-[clamp(1rem,1.7vw,1.2rem)] leading-[1.65] text-white/74" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
-              An architectural atrium of advisory, where landmark retail, office strategy, and private market access are composed with banking discipline and luxury precision.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              {["Prime Retail", "Commercial Offices", "Private Office"].map((item) => (
-                <span
-                  key={item}
-                  className="rounded-full border px-4 py-2 text-[clamp(0.62rem,0.9vw,0.72rem)] uppercase tracking-[0.32em]"
-                  style={{
-                    borderColor: "rgba(214,184,132,0.2)",
-                    background: "rgba(10,10,10,0.24)",
-                    color: "rgba(214,184,132,0.88)",
-                    fontFamily: "'Inter', sans-serif",
+            <div ref={textColumnRef} className="relative z-[6] max-w-[30rem] self-center">
+              <p className="text-[clamp(0.68rem,0.9vw,0.78rem)] uppercase" style={{ color: "rgba(214,184,132,0.92)", fontFamily: "'Inter', sans-serif", letterSpacing: "clamp(0.28rem,0.7vw,0.5rem)" }}>
+                SAAD BIN ZAIN
+              </p>
+              <h1
+                className="mt-6 uppercase text-white"
+                style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontWeight: 200,
+                  fontSize: "clamp(2.3rem, 5.4vw, 5rem)",
+                  lineHeight: 0.88,
+                  letterSpacing: "clamp(0.2rem, 1vw, 0.8rem)",
+                  textTransform: "uppercase",
+                }}
+              >
+                <span className="block">Immersive</span>
+                <span className="block">Luxury</span>
+                <span className="block">Real Estate</span>
+                <span className="block">Command</span>
+              </h1>
+              <p className="mt-6 max-w-[28rem] text-[clamp(0.98rem,1.45vw,1.14rem)] leading-[1.7] text-white/72" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                An architectural atrium of advisory, where landmark retail, office strategy, and private market access are composed with banking discipline and luxury precision.
+              </p>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                {["Prime Retail", "Commercial Offices", "Private Office"].map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-full border px-4 py-2 text-[clamp(0.62rem,0.85vw,0.72rem)] uppercase"
+                    style={{
+                      borderColor: "rgba(214,184,132,0.2)",
+                      background: "rgba(10,10,10,0.22)",
+                      color: "rgba(214,184,132,0.88)",
+                      fontFamily: "'Inter', sans-serif",
+                      letterSpacing: "0.28em",
+                    }}
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mt-8 grid max-w-[28rem] grid-cols-2 gap-6 border-t border-[rgba(214,184,132,0.12)] pt-5">
+                <div>
+                  <div className="text-[clamp(1.7rem,2.8vw,2.35rem)] gold-text-gradient" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}>
+                    20+
+                  </div>
+                  <p className="mt-1 text-[clamp(0.62rem,0.8vw,0.72rem)] uppercase tracking-[0.28em] text-white/52" style={{ fontFamily: "'Inter', sans-serif" }}>
+                    Years of cross-sector advisory
+                  </p>
+                </div>
+                <div>
+                  <div className="text-[clamp(1.7rem,2.8vw,2.35rem)] gold-text-gradient" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}>
+                    37460
+                  </div>
+                  <p className="mt-1 text-[clamp(0.62rem,0.8vw,0.72rem)] uppercase tracking-[0.28em] text-white/52" style={{ fontFamily: "'Inter', sans-serif" }}>
+                    RERA registration
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div ref={stageFadeRef} className="relative z-[4] hidden h-full items-center justify-end lg:flex">
+              <div
+                ref={slabShellRef}
+                className="relative flex w-full items-center justify-center overflow-hidden rounded-[2rem] border border-[rgba(214,184,132,0.12)] bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.008))]"
+                style={{ maxWidth: "460px", width: "100%", height: "min(70vh, 80%)", maxHeight: "80%" }}
+              >
+                <Canvas
+                  className="relative h-full w-full"
+                  shadows
+                  camera={{ position: [0.16, 0.08, 7.4], fov: 29 }}
+                  dpr={[1, 1.75]}
+                  gl={{ antialias: true, alpha: false }}
+                  onCreated={({ gl, scene }) => {
+                    gl.toneMapping = THREE.ACESFilmicToneMapping;
+                    gl.toneMappingExposure = 0.78;
+                    gl.outputColorSpace = THREE.SRGBColorSpace;
+                    gl.setClearColor("#040404", 1);
+                    scene.background = new THREE.Color("#040404");
                   }}
                 >
-                  {item}
-                </span>
-              ))}
-            </div>
-            <div className="mt-8 grid max-w-[30rem] grid-cols-2 gap-6 border-t border-[rgba(214,184,132,0.12)] pt-5">
-              <div>
-                <div className="text-[clamp(1.8rem,3vw,2.5rem)] gold-text-gradient" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}>
-                  20+
-                </div>
-                <p className="mt-1 text-[clamp(0.62rem,0.9vw,0.72rem)] uppercase tracking-[0.28em] text-white/52" style={{ fontFamily: "'Inter', sans-serif" }}>
-                  Years of cross-sector advisory
-                </p>
+                  <AtriumScene mouse={mouseRef} />
+                </Canvas>
+                <div className="pointer-events-none absolute inset-0 rounded-[2rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_20%,transparent_78%,rgba(0,0,0,0.24)_100%)]" />
+                <div className="pointer-events-none absolute inset-x-8 top-6 h-px bg-[linear-gradient(90deg,transparent,rgba(214,184,132,0.76),transparent)]" />
+                <div className="pointer-events-none absolute inset-x-8 bottom-6 h-px bg-[linear-gradient(90deg,transparent,rgba(214,184,132,0.42),transparent)]" />
               </div>
-              <div>
-                <div className="text-[clamp(1.8rem,3vw,2.5rem)] gold-text-gradient" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}>
-                  37460
-                </div>
-                <p className="mt-1 text-[clamp(0.62rem,0.9vw,0.72rem)] uppercase tracking-[0.28em] text-white/52" style={{ fontFamily: "'Inter', sans-serif" }}>
-                  RERA registration
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative hidden h-full items-center justify-end self-center lg:flex">
-            <div ref={slabShellRef} className="relative ml-auto flex w-[30vw] max-w-[400px] min-w-[300px] items-center justify-center" style={{ height: "70vh", maxHeight: "70vh" }}>
-              <div className="absolute inset-0 rounded-[2rem] border border-[rgba(214,184,132,0.14)] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] backdrop-blur-[2px]" />
-              <div className="absolute inset-x-8 top-6 h-px bg-[linear-gradient(90deg,transparent,rgba(214,184,132,0.76),transparent)]" />
-              <div className="absolute inset-x-8 bottom-6 h-px bg-[linear-gradient(90deg,transparent,rgba(214,184,132,0.42),transparent)]" />
             </div>
           </div>
         </div>
+
+        <div className="pointer-events-none absolute inset-y-0 left-[57%] z-[7] hidden w-[1px] lg:block" style={{ background: "linear-gradient(180deg, transparent, rgba(214,184,132,0.2), transparent)" }} />
+        <div className="pointer-events-none absolute inset-y-[18%] left-[52%] z-[8] hidden w-[68px] rounded-full lg:block" style={{ background: "linear-gradient(180deg, rgba(214,184,132,0.16), rgba(214,184,132,0.03) 42%, rgba(214,184,132,0.12))", filter: "blur(18px)", opacity: 0.35 }} />
       </div>
     </section>
   );
