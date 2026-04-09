@@ -1,6 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useCallback, useState } from "react";
 import Lenis from "@studio-freight/lenis";
-import { motion, AnimatePresence } from "framer-motion";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import LoadingScreen from "@/components/LoadingScreen";
 import Navigation from "@/components/Navigation";
 import CustomCursor from "@/components/CustomCursor";
 import HeroSection from "@/components/HeroSection";
@@ -9,40 +11,43 @@ import BankingAdvantage from "@/components/BankingAdvantage";
 import PartnersCarousel from "@/components/PartnersCarousel";
 import FooterSection from "@/components/FooterSection";
 
+gsap.registerPlugin(ScrollTrigger);
+
 const Index = () => {
+  const [loaded, setLoaded] = useState(false);
+  const handleLoadingComplete = useCallback(() => setLoaded(true), []);
+
+  // Lenis smooth scroll + GSAP ScrollTrigger integration
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.8,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      duration: 2.25,
+      easing: (t: number) => 1 - Math.pow(1 - t, 3.2),
       smoothWheel: true,
     });
 
-    function raf(time: number) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-    requestAnimationFrame(raf);
+    // Sync Lenis with GSAP ScrollTrigger
+    lenis.on("scroll", ScrollTrigger.update);
+    gsap.ticker.add((time) => {
+      lenis.raf(time * 1000);
+    });
+    gsap.ticker.lagSmoothing(0);
 
-    return () => lenis.destroy();
+    return () => {
+      lenis.destroy();
+    };
   }, []);
 
   return (
-    <AnimatePresence>
-      <motion.div
-        className="bg-background"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
-      >
-        <CustomCursor />
-        <Navigation />
-        <HeroSection />
-        <TwoDecadesSection />
-        <BankingAdvantage />
-        <PartnersCarousel />
-        <FooterSection />
-      </motion.div>
-    </AnimatePresence>
+    <div className="bg-background">
+      <LoadingScreen onComplete={handleLoadingComplete} />
+      <CustomCursor />
+      <Navigation />
+      <HeroSection />
+      <TwoDecadesSection />
+      <BankingAdvantage />
+      <PartnersCarousel />
+      <FooterSection />
+    </div>
   );
 };
 

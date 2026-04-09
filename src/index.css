@@ -158,6 +158,13 @@ html.lenis, html.lenis body {
   50% { transform: translateY(-20px) scale(1.1); opacity: 1; }
 }
 
+/* Scroll line indicator */
+@keyframes scrollLine {
+  0% { transform: translateY(-100%); }
+  50% { transform: translateY(0); }
+  100% { transform: translateY(100%); }
+}
+
 /* Marquee */
 @keyframes marquee {
   0% { transform: translateX(0); }
@@ -172,4 +179,88 @@ html.lenis, html.lenis body {
 }
 .animate-marquee-reverse {
   animation: marquee-reverse 35s linear infinite;
+}
+
+/* Pulse glow */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 20px hsl(40 46% 56% / 0.15); }
+  50% { box-shadow: 0 0 40px hsl(40 46% 56% / 0.3); }
+}
+
+@keyframes ghostBorderSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.command-ghost {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid hsl(0 0% 100% / 0.1);
+  border-radius: 999px;
+  padding: 0.75rem 1.45rem;
+  background: hsl(0 0% 5% / 0.06);
+  backdrop-filter: blur(25px);
+  color: hsl(40 46% 66%);
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  font-size: 11px;
+  font-family: 'Inter', sans-serif;
+  transition: color 250ms ease, border-color 250ms ease, box-shadow 250ms ease;
+}
+
+.command-ghost span {
+  position: relative;
+  z-index: 2;
+}
+
+.command-ghost::before {
+  content: "";
+  position: absolute;
+  inset: -90%;
+  opacity: 0;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    hsl(40 46% 56% / 0.95) 80deg,
+    transparent 160deg,
+    hsl(40 46% 72% / 0.9) 220deg,
+    transparent 320deg
+  );
+  transition: opacity 240ms ease;
+}
+
+.command-ghost:hover {
+  border-color: hsl(40 46% 56% / 0.88);
+  color: hsl(40 52% 74%);
+  box-shadow: 0 0 20px hsl(40 46% 56% / 0.35);
+}
+
+.command-ghost:hover::before {
+  opacity: 1;
+  animation: ghostBorderSpin 1.2s linear infinite;
+}
+
+.command-ghost::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: hsl(0 0% 3% / 0.72);
+  z-index: 1;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+  opacity: 0.03;
+  background-image:
+    radial-gradient(circle at 20% 20%, #fff 0.45px, transparent 0.8px),
+    radial-gradient(circle at 80% 30%, #fff 0.4px, transparent 0.8px),
+    radial-gradient(circle at 40% 70%, #fff 0.5px, transparent 0.9px),
+    radial-gradient(circle at 60% 50%, #fff 0.35px, transparent 0.75px);
+  background-size: 190px 190px, 170px 170px, 210px 210px, 160px 160px;
+  mix-blend-mode: overlay;
 }
