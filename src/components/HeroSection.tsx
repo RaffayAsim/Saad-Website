@@ -2,31 +2,121 @@ import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Environment, useTexture } from "@react-three/drei";
-import { Bloom, ChromaticAberration, EffectComposer } from "@react-three/postprocessing";
-import { BlendFunction } from "postprocessing";
 import * as THREE from "three";
-import saadImage from "@/assets/saad-bin-zain-2.jpg";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const aberrationOffset = new THREE.Vector2(0.0002, 0.00032);
-const NAVBAR_HEIGHT = 88;
+const NAVBAR_GUARD = 80;
+const SILK_WIDTH = 8.6;
+const SILK_HEIGHT = 5.4;
+const SEGMENTS = 128;
 
 function ease(current: number, target: number, amount: number) {
   return current + (target - current) * amount;
 }
 
-function DustField() {
+function createThreadMapTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 1024;
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    return new THREE.CanvasTexture(canvas);
+  }
+
+  context.fillStyle = "#000000";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  context.strokeStyle = "rgba(212, 171, 103, 0.9)";
+  context.lineWidth = 2.4;
+  context.shadowColor = "rgba(212, 171, 103, 0.45)";
+  context.shadowBlur = 14;
+
+  const routes = [
+    [
+      [0.12, 0.68],
+      [0.18, 0.6],
+      [0.24, 0.58],
+      [0.28, 0.52],
+      [0.34, 0.48],
+      [0.4, 0.42],
+    ],
+    [
+      [0.54, 0.28],
+      [0.58, 0.3],
+      [0.62, 0.36],
+      [0.66, 0.4],
+      [0.72, 0.44],
+      [0.76, 0.5],
+    ],
+    [
+      [0.26, 0.76],
+      [0.33, 0.72],
+      [0.41, 0.7],
+      [0.48, 0.73],
+      [0.54, 0.78],
+      [0.61, 0.8],
+    ],
+  ];
+
+  routes.forEach((route) => {
+    context.beginPath();
+    route.forEach(([x, y], index) => {
+      const px = x * canvas.width;
+      const py = y * canvas.height;
+      if (index === 0) {
+        context.moveTo(px, py);
+      } else {
+        context.lineTo(px, py);
+      }
+    });
+    context.stroke();
+  });
+
+  const hubs = [
+    [0.37, 0.47],
+    [0.63, 0.37],
+    [0.53, 0.77],
+  ];
+
+  hubs.forEach(([x, y]) => {
+    const px = x * canvas.width;
+    const py = y * canvas.height;
+    const gradient = context.createRadialGradient(px, py, 0, px, py, 18);
+    gradient.addColorStop(0, "rgba(255, 236, 188, 0.95)");
+    gradient.addColorStop(0.3, "rgba(212, 171, 103, 0.8)");
+    gradient.addColorStop(1, "rgba(212, 171, 103, 0)");
+    context.fillStyle = gradient;
+    context.beginPath();
+    context.arc(px, py, 18, 0, Math.PI * 2);
+    context.fill();
+  });
+
+  context.fillStyle = "rgba(212, 171, 103, 0.8)";
+  context.font = "500 30px Inter";
+  context.fillText("DUBAI", canvas.width * 0.27, canvas.height * 0.43);
+  context.fillText("LONDON", canvas.width * 0.59, canvas.height * 0.33);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.needsUpdate = true;
+
+  return texture;
+}
+
+function GoldDust({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
   const ref = useRef<THREE.Points>(null);
-  const points = useMemo(() => {
-    const count = 320;
+  const positions = useMemo(() => {
+    const count = 260;
     const buffer = new Float32Array(count * 3);
 
     for (let index = 0; index < count; index += 1) {
-      buffer[index * 3] = (Math.random() - 0.5) * 12;
-      buffer[index * 3 + 1] = (Math.random() - 0.5) * 7;
-      buffer[index * 3 + 2] = (Math.random() - 0.5) * 10;
+      buffer[index * 3] = (Math.random() - 0.5) * 16;
+      buffer[index * 3 + 1] = (Math.random() - 0.5) * 9;
+      buffer[index * 3 + 2] = (Math.random() - 0.5) * 6;
     }
 
     return buffer;
@@ -37,20 +127,21 @@ function DustField() {
       return;
     }
 
-    ref.current.rotation.y = state.clock.elapsedTime * 0.01;
-    ref.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.08) * 0.03;
+    ref.current.rotation.y = state.clock.elapsedTime * 0.015;
+    ref.current.position.x = ease(ref.current.position.x, mouse.current.x * 0.18, 0.03);
+    ref.current.position.y = ease(ref.current.position.y, mouse.current.y * 0.12, 0.03);
   });
 
   return (
     <points ref={ref}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" array={points} count={points.length / 3} itemSize={3} />
+        <bufferAttribute attach="attributes-position" array={positions} count={positions.length / 3} itemSize={3} />
       </bufferGeometry>
       <pointsMaterial
-        color="#b89157"
-        size={0.023}
+        color="#bf9554"
+        size={0.022}
         transparent
-        opacity={0.28}
+        opacity={0.38}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
       />
@@ -58,282 +149,257 @@ function DustField() {
   );
 }
 
-function AtriumPillars({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
-  const ref = useRef<THREE.Group>(null);
-  const pillars = useMemo(
-    () => [
-      { position: [-2.8, -0.12, -1.3] as [number, number, number], height: 3.7, width: 0.28, depth: 0.28, tone: "stone" as const },
-      { position: [-1.9, -0.08, -0.7] as [number, number, number], height: 4.3, width: 0.2, depth: 0.2, tone: "gold" as const },
-      { position: [-0.9, -0.2, -1.15] as [number, number, number], height: 3.4, width: 0.34, depth: 0.34, tone: "stone" as const },
-      { position: [0.25, -0.18, -1.55] as [number, number, number], height: 4.9, width: 0.18, depth: 0.18, tone: "gold" as const },
-      { position: [1.35, -0.12, -0.95] as [number, number, number], height: 3.9, width: 0.28, depth: 0.28, tone: "stone" as const },
-      { position: [2.35, -0.08, -0.45] as [number, number, number], height: 4.4, width: 0.22, depth: 0.22, tone: "gold" as const },
-    ],
-    [],
-  );
+function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
+  const lightRef = useRef<THREE.PointLight>(null);
+  const ringRef = useRef<THREE.Mesh>(null);
 
   useFrame((state) => {
-    if (!ref.current) {
-      return;
+    if (lightRef.current) {
+      lightRef.current.position.x = ease(lightRef.current.position.x, mouse.current.x * 2.8, 0.04);
+      lightRef.current.position.y = ease(lightRef.current.position.y, mouse.current.y * 1.8, 0.04);
     }
 
-    ref.current.rotation.y = ease(ref.current.rotation.y, mouse.current.x * 0.08, 0.02);
-    ref.current.position.x = ease(ref.current.position.x, mouse.current.x * -0.18, 0.02);
-    ref.current.position.y = Math.sin(state.clock.elapsedTime * 0.2) * 0.03;
-  });
-
-  return (
-    <group ref={ref}>
-      {pillars.map((pillar) => {
-        const isGold = pillar.tone === "gold";
-        return (
-          <group key={pillar.position.join(":")} position={pillar.position}>
-            <mesh castShadow receiveShadow position={[0, pillar.height / 2 - 1.4, 0]}>
-              <boxGeometry args={[pillar.width, pillar.height, pillar.depth]} />
-              <meshStandardMaterial
-                color={isGold ? "#af8444" : "#2a2724"}
-                roughness={isGold ? 0.34 : 0.9}
-                metalness={isGold ? 0.72 : 0.08}
-                emissive={isGold ? "#65451e" : "#111111"}
-                emissiveIntensity={isGold ? 0.18 : 0.04}
-              />
-            </mesh>
-            <mesh position={[0, -1.16, 0]} receiveShadow>
-              <cylinderGeometry args={[pillar.width * 1.35, pillar.width * 1.55, 0.22, 32]} />
-              <meshStandardMaterial color="#111111" roughness={0.82} metalness={0.14} />
-            </mesh>
-          </group>
-        );
-      })}
-    </group>
-  );
-}
-
-function LightRibbons() {
-  const ref = useRef<THREE.Group>(null);
-  const curveA = useMemo(
-    () =>
-      new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-2.5, -0.4, 1.6),
-        new THREE.Vector3(-1.2, -0.15, 0.4),
-        new THREE.Vector3(0, 0.15, -0.1),
-        new THREE.Vector3(1.35, 0.3, -0.4),
-        new THREE.Vector3(2.4, 0.55, -1.25),
-      ]),
-    [],
-  );
-  const curveB = useMemo(
-    () =>
-      new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-2.15, 0.8, -0.8),
-        new THREE.Vector3(-0.7, 0.58, -0.35),
-        new THREE.Vector3(0.15, 0.1, 0.15),
-        new THREE.Vector3(1.15, -0.42, 0.35),
-        new THREE.Vector3(2.2, -0.86, 0.72),
-      ]),
-    [],
-  );
-
-  useFrame((state) => {
-    if (!ref.current) {
-      return;
-    }
-
-    ref.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.2) * 0.1;
-  });
-
-  return (
-    <group ref={ref}>
-      <mesh>
-        <tubeGeometry args={[curveA, 180, 0.018, 10, false]} />
-        <meshStandardMaterial color="#c19a5c" emissive="#7a5425" emissiveIntensity={0.32} />
-      </mesh>
-      <mesh>
-        <tubeGeometry args={[curveB, 180, 0.012, 8, false]} />
-        <meshStandardMaterial color="#7d6542" emissive="#6f4c24" emissiveIntensity={0.1} transparent opacity={0.55} />
-      </mesh>
-    </group>
-  );
-}
-
-function AtriumFloor() {
-  return (
-    <group position={[0, -1.24, 0]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <circleGeometry args={[5.6, 96]} />
-        <meshStandardMaterial color="#0b0b0b" roughness={0.96} metalness={0.06} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <ringGeometry args={[2.6, 2.8, 96]} />
-        <meshStandardMaterial color="#b88d4f" emissive="#7f5828" emissiveIntensity={0.18} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-        <planeGeometry args={[11, 11]} />
-        <meshBasicMaterial color="#050505" transparent opacity={0.94} />
-      </mesh>
-    </group>
-  );
-}
-
-function GlassSlabPortrait({
-  position,
-  rotation,
-  scale,
-  mouse,
-  delay,
-}: {
-  position: [number, number, number];
-  rotation: [number, number, number];
-  scale: [number, number, number];
-  mouse: MutableRefObject<{ x: number; y: number }>;
-  delay: number;
-}) {
-  const ref = useRef<THREE.Group>(null);
-  const portraitTexture = useTexture(saadImage);
-
-  useMemo(() => {
-    portraitTexture.colorSpace = THREE.SRGBColorSpace;
-    portraitTexture.minFilter = THREE.LinearFilter;
-    portraitTexture.magFilter = THREE.LinearFilter;
-  }, [portraitTexture]);
-
-  useFrame((state) => {
-    if (!ref.current) {
-      return;
-    }
-
-    const time = state.clock.elapsedTime;
-    ref.current.position.y = position[1] + Math.sin(time * 0.48 + delay) * 0.06;
-    ref.current.rotation.y = rotation[1] + mouse.current.x * 0.12 + Math.cos(time * 0.28 + delay) * 0.04;
-    ref.current.rotation.x = rotation[0] + mouse.current.y * 0.05;
-  });
-
-  return (
-    <group ref={ref} position={position} rotation={rotation} scale={scale}>
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={[1.46, 4.1, 0.26]} />
-        <meshPhysicalMaterial
-          color="#ffffff"
-          transmission={1}
-          roughness={0.02}
-          thickness={2.6}
-          ior={1.48}
-          clearcoat={1}
-          clearcoatRoughness={0.03}
-          attenuationColor="#ffffff"
-          attenuationDistance={1.9}
-          envMapIntensity={0.3}
-          transparent
-          opacity={0.56}
-        />
-      </mesh>
-      <mesh position={[0, 0, 0.14]}>
-        <planeGeometry args={[1.06, 3.22]} />
-          <meshBasicMaterial map={portraitTexture} transparent toneMapped={false} />
-      </mesh>
-      <mesh position={[0, 0, 0.17]}>
-        <planeGeometry args={[1.12, 3.3]} />
-        <meshPhysicalMaterial
-          color="#ffffff"
-          transmission={1}
-          roughness={0.02}
-          thickness={0.9}
-          ior={1.48}
-          clearcoat={1}
-          clearcoatRoughness={0.02}
-          attenuationColor="#fff7ed"
-          attenuationDistance={1.1}
-          transparent
-          opacity={0.2}
-        />
-      </mesh>
-      <mesh scale={[1.04, 1.02, 1.08]}>
-        <boxGeometry args={[1.46, 4.1, 0.26]} />
-        <meshBasicMaterial color="#d4ad6b" transparent opacity={0.03} depthWrite={false} />
-      </mesh>
-    </group>
-  );
-}
-
-function AtriumScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
-  const textParallaxRef = useRef<THREE.Group>(null);
-  const spotlightRef = useRef<THREE.SpotLight>(null);
-  const slabRef = useRef<THREE.Group>(null);
-
-  useFrame((state) => {
-    if (textParallaxRef.current) {
-      textParallaxRef.current.rotation.y = ease(textParallaxRef.current.rotation.y, mouse.current.x * 0.04, 0.03);
-      textParallaxRef.current.position.x = ease(textParallaxRef.current.position.x, mouse.current.x * 0.08, 0.03);
-    }
-
-    if (slabRef.current) {
-      slabRef.current.rotation.y = ease(slabRef.current.rotation.y, -0.18 + mouse.current.x * 0.08, 0.03);
-      slabRef.current.rotation.x = ease(slabRef.current.rotation.x, mouse.current.y * 0.03, 0.03);
-      slabRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.45) * 0.04;
-    }
-
-    state.camera.position.x = ease(state.camera.position.x, 0.08 + mouse.current.x * 0.12, 0.02);
-    state.camera.position.y = ease(state.camera.position.y, 0.02 + mouse.current.y * 0.07, 0.02);
-    state.camera.lookAt(0.7, -0.02, 0.18);
-
-    if (spotlightRef.current) {
-      spotlightRef.current.position.x = ease(spotlightRef.current.position.x, 1.1 + mouse.current.x * 1.4, 0.05);
-      spotlightRef.current.position.y = ease(spotlightRef.current.position.y, 2.8 + mouse.current.y * 0.65, 0.05);
-      spotlightRef.current.target.position.x = ease(spotlightRef.current.target.position.x, 0.9 + mouse.current.x * 0.85, 0.05);
-      spotlightRef.current.target.position.y = ease(spotlightRef.current.target.position.y, 0.45 + mouse.current.y * 0.3, 0.05);
-      spotlightRef.current.target.updateMatrixWorld();
+    if (ringRef.current) {
+      ringRef.current.rotation.z = state.clock.elapsedTime * 0.08;
+      ringRef.current.position.x = ease(ringRef.current.position.x, mouse.current.x * 0.45, 0.03);
+      ringRef.current.position.y = ease(ringRef.current.position.y, mouse.current.y * 0.3, 0.03);
     }
   });
 
   return (
     <>
-      <fogExp2 attach="fog" args={["#060606", 0.095]} />
-      <ambientLight intensity={0.12} />
-        <directionalLight position={[-3.8, 3.4, -1.2]} intensity={0.18} color="#d7dde8" />
-      <spotLight
-        ref={spotlightRef}
-        position={[1.1, 2.8, 3.4]}
-        intensity={0.78}
-        angle={0.3}
-        penumbra={1}
-        distance={12}
-        decay={1.2}
-        color="#e6c483"
-      />
-      <pointLight position={[2.3, 0.55, 1.6]} intensity={0.14} color="#e5bf82" distance={5.5} />
-      <Environment preset="warehouse" blur={0.95} />
+      <fogExp2 attach="fog" args={["#030303", 0.16]} />
+      <ambientLight intensity={0.14} />
+      <pointLight ref={lightRef} position={[0.2, 0.3, 2.4]} intensity={0.4} distance={8} color="#d3a860" />
+      <directionalLight position={[-3.5, 2.8, 1.5]} intensity={0.12} color="#9a8f7a" />
 
-      <mesh position={[0, 0.4, -5]}>
-        <planeGeometry args={[13, 8]} />
+      <mesh position={[0, 0, -3.8]}>
+        <planeGeometry args={[16, 10]} />
         <meshBasicMaterial color="#050505" />
       </mesh>
 
-      <AtriumFloor />
-      <AtriumPillars mouse={mouse} />
+      <mesh ref={ringRef} position={[2.2, -0.7, -1.2]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[2.4, 0.035, 24, 140]} />
+        <meshStandardMaterial color="#8c6a3c" emissive="#6f4e24" emissiveIntensity={0.3} transparent opacity={0.42} />
+      </mesh>
 
-      <group ref={textParallaxRef}>
-        <LightRibbons />
-      </group>
+      <GoldDust mouse={mouse} />
+    </>
+  );
+}
 
-      <group ref={slabRef} position={[1.62, -0.06, 0.62]}>
-        <GlassSlabPortrait mouse={mouse} position={[0, 0, 0]} rotation={[0.01, -0.16, 0]} scale={[0.94, 0.94, 0.94]} delay={0.4} />
-      </group>
+function SilkMesh({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
+  const materialRef = useRef<THREE.ShaderMaterial>(null);
+  const geometryRef = useRef<THREE.PlaneGeometry>(null);
+  const threadMap = useMemo(() => createThreadMapTexture(), []);
 
-      <DustField />
+  const simulation = useMemo(() => {
+    const vertexCount = (SEGMENTS + 1) * (SEGMENTS + 1);
+    return {
+      base: new Float32Array(vertexCount * 3),
+      current: new Float32Array(vertexCount * 3),
+      velocity: new Float32Array(vertexCount * 3),
+      seeded: false,
+    };
+  }, []);
 
-      <EffectComposer>
-        <Bloom intensity={0.14} luminanceThreshold={0.9} luminanceSmoothing={0.24} mipmapBlur />
-        <ChromaticAberration offset={aberrationOffset} radialModulation modulationOffset={0.8} blendFunction={BlendFunction.NORMAL} />
-      </EffectComposer>
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uThreadMap: { value: threadMap },
+      uMouseUv: { value: new THREE.Vector2(0.5, 0.5) },
+      uMouseLight: { value: new THREE.Vector3(0, 0, 4) },
+    }),
+    [threadMap],
+  );
+
+  useEffect(() => {
+    const geometry = geometryRef.current;
+    if (!geometry || simulation.seeded) {
+      return;
+    }
+
+    const position = geometry.attributes.position.array as Float32Array;
+    simulation.base.set(position);
+    simulation.current.set(position);
+    simulation.seeded = true;
+  }, [simulation]);
+
+  useFrame((state) => {
+    const geometry = geometryRef.current;
+    const material = materialRef.current;
+
+    if (!geometry || !material || !simulation.seeded) {
+      return;
+    }
+
+    const position = geometry.attributes.position as THREE.BufferAttribute;
+    const array = position.array as Float32Array;
+    const mouseX = mouse.current.x * (SILK_WIDTH * 0.24);
+    const mouseY = mouse.current.y * (SILK_HEIGHT * 0.28);
+    const radius = 1.22;
+
+    for (let row = 0; row <= SEGMENTS; row += 1) {
+      for (let column = 0; column <= SEGMENTS; column += 1) {
+        const index = row * (SEGMENTS + 1) + column;
+        const cursor = index * 3;
+
+        const baseX = simulation.base[cursor];
+        const baseY = simulation.base[cursor + 1];
+        const baseZ = simulation.base[cursor + 2];
+
+        let x = simulation.current[cursor];
+        let y = simulation.current[cursor + 1];
+        let z = simulation.current[cursor + 2];
+
+        let averageZ = z;
+        let neighborCount = 0;
+
+        if (column > 0) {
+          averageZ += simulation.current[cursor - 1];
+          neighborCount += 1;
+        }
+        if (column < SEGMENTS) {
+          averageZ += simulation.current[cursor + 5];
+          neighborCount += 1;
+        }
+        if (row > 0) {
+          averageZ += simulation.current[cursor - (SEGMENTS + 1) * 3 + 2];
+          neighborCount += 1;
+        }
+        if (row < SEGMENTS) {
+          averageZ += simulation.current[cursor + (SEGMENTS + 1) * 3 + 2];
+          neighborCount += 1;
+        }
+
+        averageZ /= neighborCount + 1;
+
+        const dx = x - mouseX;
+        const dy = y - mouseY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const influence = Math.max(0, 1 - distance / radius);
+        const force = influence * influence;
+        const directionX = distance > 0.0001 ? dx / distance : 0;
+        const directionY = distance > 0.0001 ? dy / distance : 0;
+        const wave = Math.sin(state.clock.elapsedTime * 0.52 + baseX * 1.2 + baseY * 0.7) * 0.0022;
+
+        simulation.velocity[cursor] += (baseX - x) * 0.012 + directionX * force * 0.01;
+        simulation.velocity[cursor + 1] += (baseY - y) * 0.012 + directionY * force * 0.01;
+        simulation.velocity[cursor + 2] += (averageZ - z) * 0.18 + (baseZ - z) * 0.028 + wave + force * 0.06;
+
+        simulation.velocity[cursor] *= 0.88;
+        simulation.velocity[cursor + 1] *= 0.88;
+        simulation.velocity[cursor + 2] *= 0.91;
+
+        x += simulation.velocity[cursor];
+        y += simulation.velocity[cursor + 1];
+        z += simulation.velocity[cursor + 2];
+
+        const edgeLock = row < 2 ? 0.9 : 0;
+        if (edgeLock > 0) {
+          x = ease(x, baseX, edgeLock);
+          y = ease(y, baseY, edgeLock);
+          z = ease(z, baseZ, edgeLock);
+        }
+
+        simulation.current[cursor] = x;
+        simulation.current[cursor + 1] = y;
+        simulation.current[cursor + 2] = z;
+
+        array[cursor] = x;
+        array[cursor + 1] = y;
+        array[cursor + 2] = z;
+      }
+    }
+
+    position.needsUpdate = true;
+    geometry.computeVertexNormals();
+
+    uniforms.uTime.value = state.clock.elapsedTime;
+    uniforms.uMouseUv.value.set(mouse.current.x * 0.5 + 0.5, mouse.current.y * 0.5 + 0.5);
+    uniforms.uMouseLight.value.set(mouse.current.x * 3.1, mouse.current.y * 2.2, 4.4);
+  });
+
+  return (
+    <mesh position={[1.1, 0.05, 0]} rotation={[-0.08, -0.22, -0.04]}>
+      <planeGeometry ref={geometryRef} args={[SILK_WIDTH, SILK_HEIGHT, SEGMENTS, SEGMENTS]} />
+      <shaderMaterial
+        ref={materialRef}
+        uniforms={uniforms}
+        vertexShader={`
+          varying vec2 vUv;
+          varying vec3 vNormalW;
+          varying vec3 vWorldPosition;
+
+          void main() {
+            vUv = uv;
+            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+            vWorldPosition = worldPosition.xyz;
+            vNormalW = normalize(mat3(modelMatrix) * normal);
+            gl_Position = projectionMatrix * viewMatrix * worldPosition;
+          }
+        `}
+        fragmentShader={`
+          uniform float uTime;
+          uniform sampler2D uThreadMap;
+          uniform vec2 uMouseUv;
+          uniform vec3 uMouseLight;
+
+          varying vec2 vUv;
+          varying vec3 vNormalW;
+          varying vec3 vWorldPosition;
+
+          void main() {
+            vec3 normal = normalize(vNormalW);
+            vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+            vec3 lightDir = normalize(uMouseLight - vWorldPosition);
+
+            float diffuse = max(dot(normal, lightDir), 0.0);
+            float specular = pow(max(dot(reflect(-lightDir, normal), viewDir), 0.0), 28.0);
+            float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.6);
+            float fold = smoothstep(0.12, 0.86, 1.0 - abs(normal.z));
+            float reveal = smoothstep(0.34, 0.0, distance(vUv, uMouseUv));
+
+            vec2 driftUv = vUv * 1.08 + vec2(sin(uTime * 0.06) * 0.012, cos(uTime * 0.04) * 0.008);
+            float mapSignal = texture2D(uThreadMap, driftUv).r;
+            float shimmer = mapSignal * smoothstep(0.16, 0.72, fold + reveal * 0.75) * (0.5 + 0.5 * sin(uTime * 1.1 + vUv.y * 20.0));
+
+            vec3 obsidian = vec3(0.015, 0.016, 0.02);
+            vec3 gold = vec3(0.86, 0.68, 0.36);
+            vec3 color = obsidian;
+            color += gold * specular * 1.2;
+            color += gold * diffuse * 0.08;
+            color += gold * shimmer * 0.65;
+            color += gold * fresnel * 0.12;
+
+            float alpha = 0.9 - reveal * 0.58 + fold * 0.06;
+            alpha = clamp(alpha, 0.22, 0.94);
+
+            gl_FragColor = vec4(color, alpha);
+          }
+        `}
+        transparent
+        side={THREE.DoubleSide}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+}
+
+function SilkScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
+  return (
+    <>
+      <ambientLight intensity={0.04} />
+      <SilkMesh mouse={mouse} />
     </>
   );
 }
 
 const HeroSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
-  const textColumnRef = useRef<HTMLDivElement>(null);
-  const slabShellRef = useRef<HTMLDivElement>(null);
-  const stageFadeRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+  const backgroundRef = useRef<HTMLDivElement>(null);
+  const silkRef = useRef<HTMLDivElement>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -370,25 +436,32 @@ const HeroSection = () => {
     }
 
     const ctx = gsap.context(() => {
-      if (textColumnRef.current) {
-        gsap.from(textColumnRef.current.children, {
+      if (textRef.current) {
+        gsap.from(textRef.current.children, {
           opacity: 0,
           y: 26,
-          duration: 1,
+          duration: 0.95,
           stagger: 0.1,
           ease: "power3.out",
           delay: 0.08,
         });
       }
 
-      if (slabShellRef.current) {
-        gsap.from(slabShellRef.current, {
+      if (backgroundRef.current) {
+        gsap.from(backgroundRef.current, {
           opacity: 0,
-          scale: 0.94,
-          y: 28,
-          duration: 1.1,
+          scale: 1.04,
+          duration: 1.3,
           ease: "power3.out",
-          delay: 0.22,
+        });
+      }
+
+      if (silkRef.current) {
+        gsap.from(silkRef.current, {
+          opacity: 0,
+          duration: 1.2,
+          ease: "power3.out",
+          delay: 0.14,
         });
       }
 
@@ -398,16 +471,23 @@ const HeroSection = () => {
         end: "bottom top",
         scrub: 1,
         onUpdate: (self) => {
-          if (textColumnRef.current) {
-            gsap.set(textColumnRef.current, { y: self.progress * -12 });
+          if (backgroundRef.current) {
+            gsap.set(backgroundRef.current, {
+              opacity: 1 - self.progress * 0.65,
+              scale: 1 - self.progress * 0.06,
+            });
           }
 
-          if (stageFadeRef.current) {
-            gsap.set(stageFadeRef.current, {
-              scale: 1 - self.progress * 0.1,
-              opacity: 1 - self.progress,
-              transformOrigin: "50% 50%",
+          if (silkRef.current) {
+            gsap.set(silkRef.current, {
+              opacity: 1 - self.progress * 0.72,
+              scale: 1 - self.progress * 0.08,
+              transformOrigin: "68% 48%",
             });
+          }
+
+          if (textRef.current) {
+            gsap.set(textRef.current, { y: self.progress * -18, opacity: 1 - self.progress * 0.18 });
           }
         },
       });
@@ -422,117 +502,102 @@ const HeroSection = () => {
       className="relative"
       style={{
         background:
-          "radial-gradient(circle at 18% 30%, rgba(171,129,69,0.14), transparent 26%), radial-gradient(circle at 78% 26%, rgba(171,129,69,0.12), transparent 22%), linear-gradient(180deg, #040404 0%, #050505 56%, #030303 100%)",
+          "radial-gradient(circle at 22% 28%, rgba(167,126,66,0.1), transparent 24%), radial-gradient(circle at 78% 22%, rgba(167,126,66,0.1), transparent 20%), linear-gradient(180deg, #020202 0%, #050505 58%, #030303 100%)",
       }}
       data-section="hero"
     >
-      <div
-        className="hero-wrapper relative overflow-hidden px-6 md:px-10 lg:px-14"
-        style={{ height: "100vh", overflow: "hidden", paddingTop: `${NAVBAR_HEIGHT}px`, boxSizing: "border-box" }}
-      >
-        <div className="pointer-events-none absolute inset-0 z-[1]">
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,4,0.82)_0%,rgba(4,4,4,0.28)_36%,rgba(4,4,4,0.24)_68%,rgba(4,4,4,0.9)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_62%_44%,rgba(214,184,132,0.1),transparent_24%)]" />
+      <div className="hero-wrapper relative overflow-hidden" style={{ height: "100vh", overflow: "hidden" }}>
+        <div ref={backgroundRef} className="pointer-events-none absolute inset-0 z-0">
+          <Canvas
+            className="pointer-events-none"
+            dpr={[1, 1.5]}
+            gl={{ antialias: true, alpha: false }}
+            camera={{ position: [0, 0, 5.5], fov: 38 }}
+            onCreated={({ gl, scene }) => {
+              gl.toneMapping = THREE.CineonToneMapping;
+              gl.toneMappingExposure = 0.92;
+              gl.outputColorSpace = THREE.SRGBColorSpace;
+              gl.setClearColor("#030303", 1);
+              scene.background = new THREE.Color("#030303");
+            }}
+          >
+            <BackgroundScene mouse={mouseRef} />
+          </Canvas>
         </div>
 
-        <div className="relative z-[2] mx-auto h-full max-w-[1200px]">
-          <div className="grid h-full grid-cols-1 items-center gap-8 lg:grid-cols-[15%_45%_40%] lg:gap-0">
-            <div className="hidden h-full lg:block" aria-hidden="true" />
+        <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(3,3,3,0.78)_0%,rgba(3,3,3,0.42)_42%,rgba(3,3,3,0.26)_66%,rgba(3,3,3,0.58)_100%)]" />
+        <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(3,3,3,0.72)_0%,rgba(3,3,3,0.18)_34%,rgba(3,3,3,0.12)_72%,rgba(3,3,3,0.88)_100%)]" />
 
-            <div ref={textColumnRef} className="relative z-[6] max-w-[30rem] self-center">
-              <p className="text-[clamp(0.68rem,0.9vw,0.78rem)] uppercase" style={{ color: "rgba(214,184,132,0.92)", fontFamily: "'Inter', sans-serif", letterSpacing: "clamp(0.28rem,0.7vw,0.5rem)" }}>
-                SAAD BIN ZAIN
-              </p>
-              <h1
-                className="mt-6 uppercase text-white"
+        <div className="relative z-10 mx-auto h-full max-w-[1200px]" style={{ paddingLeft: "10%", paddingTop: `${NAVBAR_GUARD}px`, boxSizing: "border-box" }}>
+          <div className="flex h-full flex-col justify-center">
+            <div ref={textRef} className="relative max-w-[42rem]" style={{ zIndex: 10 }}>
+              <p
+                className="text-[clamp(0.82rem,1vw,0.95rem)]"
                 style={{
-                  fontFamily: "'Playfair Display', serif",
-                  fontWeight: 200,
-                  fontSize: "clamp(2.3rem, 5.4vw, 5rem)",
-                  lineHeight: 0.88,
-                  letterSpacing: "clamp(0.2rem, 1vw, 0.8rem)",
+                  fontFamily: "'Inter', sans-serif",
+                  color: "rgba(208,171,110,0.92)",
+                  letterSpacing: "0.28rem",
                   textTransform: "uppercase",
                 }}
               >
-                <span className="block">Immersive</span>
+                Sovereign-grade real estate advisory.
+              </p>
+              <h1
+                className="mt-6 text-white"
+                style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontWeight: 100,
+                  fontSize: "clamp(3rem, 6.5vw, 6.4rem)",
+                  letterSpacing: "clamp(0.5rem, 1.8vw, 1.5rem)",
+                  lineHeight: 0.9,
+                  textTransform: "uppercase",
+                }}
+              >
                 <span className="block">Luxury</span>
-                <span className="block">Real Estate</span>
                 <span className="block">Command</span>
               </h1>
-              <p className="mt-6 max-w-[28rem] text-[clamp(0.98rem,1.45vw,1.14rem)] leading-[1.7] text-white/72" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
-                An architectural atrium of advisory, where landmark retail, office strategy, and private market access are composed with banking discipline and luxury precision.
+              <p className="mt-6 max-w-[27rem] text-[clamp(1rem,1.5vw,1.15rem)] leading-[1.7] text-white/72" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                Strategic placement across Dubai, London, and private cross-border mandates, shaped with discretion, timing, and institutional-grade judgment.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                {["Prime Retail", "Commercial Offices", "Private Office"].map((item) => (
-                  <span
+                {["Prime Retail", "Private Office", "Cross-Border Access"].map((item) => (
+                  <button
                     key={item}
-                    className="rounded-full border px-4 py-2 text-[clamp(0.62rem,0.85vw,0.72rem)] uppercase"
+                    className="rounded-full border px-4 py-2 text-[0.7rem] uppercase transition-colors"
                     style={{
-                      borderColor: "rgba(214,184,132,0.2)",
-                      background: "rgba(10,10,10,0.22)",
-                      color: "rgba(214,184,132,0.88)",
+                      borderColor: "rgba(208,171,110,0.22)",
+                      background: "rgba(8,8,8,0.16)",
+                      color: "rgba(208,171,110,0.9)",
                       fontFamily: "'Inter', sans-serif",
-                      letterSpacing: "0.28em",
+                      letterSpacing: "0.24rem",
                     }}
                   >
                     {item}
-                  </span>
+                  </button>
                 ))}
-              </div>
-
-              <div className="mt-8 grid max-w-[28rem] grid-cols-2 gap-6 border-t border-[rgba(214,184,132,0.12)] pt-5">
-                <div>
-                  <div className="text-[clamp(1.7rem,2.8vw,2.35rem)] gold-text-gradient" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}>
-                    20+
-                  </div>
-                  <p className="mt-1 text-[clamp(0.62rem,0.8vw,0.72rem)] uppercase tracking-[0.28em] text-white/52" style={{ fontFamily: "'Inter', sans-serif" }}>
-                    Years of cross-sector advisory
-                  </p>
-                </div>
-                <div>
-                  <div className="text-[clamp(1.7rem,2.8vw,2.35rem)] gold-text-gradient" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 200 }}>
-                    37460
-                  </div>
-                  <p className="mt-1 text-[clamp(0.62rem,0.8vw,0.72rem)] uppercase tracking-[0.28em] text-white/52" style={{ fontFamily: "'Inter', sans-serif" }}>
-                    RERA registration
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div ref={stageFadeRef} className="relative z-[4] hidden h-full items-center justify-end lg:flex">
-              <div
-                ref={slabShellRef}
-                className="relative flex w-full items-center justify-center overflow-hidden rounded-[2rem] border border-[rgba(214,184,132,0.12)] bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.008))]"
-                style={{ maxWidth: "460px", width: "100%", height: "min(70vh, 80%)", maxHeight: "80%" }}
-              >
-                <Canvas
-                  className="relative h-full w-full"
-                  shadows
-                  camera={{ position: [0.16, 0.08, 7.4], fov: 29 }}
-                  dpr={[1, 1.75]}
-                  gl={{ antialias: true, alpha: false }}
-                  onCreated={({ gl, scene }) => {
-                    gl.toneMapping = THREE.ACESFilmicToneMapping;
-                    gl.toneMappingExposure = 0.78;
-                    gl.outputColorSpace = THREE.SRGBColorSpace;
-                    gl.setClearColor("#040404", 1);
-                    scene.background = new THREE.Color("#040404");
-                  }}
-                >
-                  <AtriumScene mouse={mouseRef} />
-                </Canvas>
-                <div className="pointer-events-none absolute inset-0 rounded-[2rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_20%,transparent_78%,rgba(0,0,0,0.24)_100%)]" />
-                <div className="pointer-events-none absolute inset-x-8 top-6 h-px bg-[linear-gradient(90deg,transparent,rgba(214,184,132,0.76),transparent)]" />
-                <div className="pointer-events-none absolute inset-x-8 bottom-6 h-px bg-[linear-gradient(90deg,transparent,rgba(214,184,132,0.42),transparent)]" />
               </div>
             </div>
           </div>
         </div>
 
-        <div className="pointer-events-none absolute inset-y-0 left-[57%] z-[7] hidden w-[1px] lg:block" style={{ background: "linear-gradient(180deg, transparent, rgba(214,184,132,0.2), transparent)" }} />
-        <div className="pointer-events-none absolute inset-y-[18%] left-[52%] z-[8] hidden w-[68px] rounded-full lg:block" style={{ background: "linear-gradient(180deg, rgba(214,184,132,0.16), rgba(214,184,132,0.03) 42%, rgba(214,184,132,0.12))", filter: "blur(18px)", opacity: 0.35 }} />
+        <div ref={silkRef} className="pointer-events-none absolute inset-0 z-20">
+          <Canvas
+            className="pointer-events-none"
+            dpr={[1, 1.5]}
+            gl={{ antialias: true, alpha: true }}
+            camera={{ position: [0, 0, 6.5], fov: 34 }}
+            onCreated={({ gl, scene }) => {
+              gl.toneMapping = THREE.CineonToneMapping;
+              gl.toneMappingExposure = 0.88;
+              gl.outputColorSpace = THREE.SRGBColorSpace;
+              gl.setClearAlpha(0);
+              scene.background = null;
+            }}
+          >
+            <SilkScene mouse={mouseRef} />
+          </Canvas>
+        </div>
       </div>
     </section>
   );
