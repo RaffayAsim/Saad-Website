@@ -77,12 +77,12 @@ const TwoDecadesSection = () => {
       const counter = { value: 2005 };
       gsap.to(counter, {
         value: 2026,
-        ease: "none",
+        ease: "power1.inOut",
         scrollTrigger: {
           trigger: section,
           start: "top top",
           end: SCROLL_END,
-          scrub: 0.5,
+          scrub: 1.2,
         },
         onUpdate: () => {
           if (yearRef.current) {
@@ -91,47 +91,48 @@ const TwoDecadesSection = () => {
         },
       });
 
-      // Year text 3D scale + perspective
+      // Year text 3D scale + perspective with enhanced effects
       if (yearRef.current) {
         gsap.fromTo(
           yearRef.current,
-          { scale: 0.4, opacity: 0.03, rotateX: 25 },
+          { scale: 0.3, opacity: 0.01, rotateX: 45, z: -200 },
           {
-            scale: 1.8,
-            opacity: 0.18,
-            rotateX: -8,
+            scale: 2.2,
+            opacity: 0.25,
+            rotateX: -12,
+            z: 100,
             ease: "power2.inOut",
             scrollTrigger: {
               trigger: section,
               start: "top top",
               end: SCROLL_END,
-              scrub: 1,
+              scrub: 1.5,
             },
           },
         );
       }
 
-      // Sun / lens flare rises
+      // Sun / lens flare rises with glow intensification
       if (sunRef.current) {
         gsap.fromTo(
           sunRef.current,
-          { y: 100, opacity: 0, scale: 0.5 },
+          { y: 150, opacity: 0, scale: 0.6 },
           {
-            y: -80,
-            opacity: 1,
-            scale: 1.2,
-            ease: "power2.out",
+            y: -120,
+            opacity: 1.3,
+            scale: 1.4,
+            ease: "power3.out",
             scrollTrigger: {
               trigger: section,
               start: "top top",
-              end: "+=150%",
-              scrub: 1,
+              end: "+=200%",
+              scrub: 1.2,
             },
           },
         );
       }
 
-      // Buildings grow from ground
+      // Buildings grow from ground with cascading effect
       if (skylineRef.current) {
         const buildingEls = skylineRef.current.querySelectorAll(".building");
         buildingEls.forEach((el, i) => {
@@ -139,112 +140,131 @@ const TwoDecadesSection = () => {
           if (!b) return;
           gsap.fromTo(
             el,
-            { scaleY: 0, opacity: 0 },
+            { scaleY: 0, opacity: 0, y: 40 },
             {
               scaleY: 1,
               opacity: 1,
-              ease: "power3.out",
+              y: 0,
+              ease: "elastic.out(1, 0.4)",
               scrollTrigger: {
                 trigger: section,
-                start: `top+=${b.era * 80}% top`,
-                end: `top+=${(b.era + 0.25) * 80}% top`,
-                scrub: 0.3,
+                start: `top+=${b.era * 75}% top`,
+                end: `top+=${(b.era + 0.22) * 75}% top`,
+                scrub: 0.8,
               },
             },
           );
+          
+          // Parallax tilt effect
+          gsap.to(el, {
+            y: -Math.random() * 8,
+            ease: "sine.inOut",
+            scrollTrigger: {
+              trigger: section,
+              start: "top top",
+              end: SCROLL_END,
+              scrub: 2,
+            },
+          });
         });
       }
 
-      // Heading reveal
+      // Heading reveal with character stagger
       if (headingRef.current) {
         const children = Array.from(headingRef.current.children);
         gsap.fromTo(
           children,
-          { y: 80, opacity: 0 },
+          { y: 100, opacity: 0, scale: 0.95 },
           {
             y: 0,
             opacity: 1,
-            duration: 1.4,
-            stagger: 0.12,
+            scale: 1,
+            duration: 1.6,
+            stagger: 0.18,
             ease: "power3.out",
-            scrollTrigger: { trigger: section, start: "top 80%" },
+            scrollTrigger: { trigger: section, start: "top 75%" },
           },
         );
       }
 
-      // Milestones appear & disappear
+      // Milestones appear & disappear with enhanced drama
       if (milestonesRef.current) {
         const items = milestonesRef.current.querySelectorAll(".milestone");
         items.forEach((item, i) => {
           const m = milestones[i];
-          // Enter
+          // Enter with 3D flip
           gsap.fromTo(
             item,
-            { y: 50, opacity: 0, scale: 0.85 },
+            { y: 60, opacity: 0, scale: 0.7, rotateY: 90 },
             {
               y: 0,
               opacity: 1,
               scale: 1,
-              ease: "power3.out",
+              rotateY: 0,
+              ease: "back.out(1.2)",
               scrollTrigger: {
                 trigger: section,
-                start: `top+=${m.pct}% top`,
-                end: `top+=${m.pct + 8}% top`,
-                scrub: true,
+                start: `top+=${m.pct - 2}% top`,
+                end: `top+=${m.pct + 10}% top`,
+                scrub: 1.2,
               },
             },
           );
-          // Exit (except last)
+          // Exit (except last) with fade and lift
           if (i < milestones.length - 1) {
             gsap.to(item, {
-              y: -30,
+              y: -50,
               opacity: 0,
+              scale: 0.85,
+              rotateY: -90,
+              ease: "power2.in",
               scrollTrigger: {
                 trigger: section,
-                start: `top+=${m.pct + 14}% top`,
-                end: `top+=${m.pct + 20}% top`,
-                scrub: true,
+                start: `top+=${m.pct + 12}% top`,
+                end: `top+=${m.pct + 22}% top`,
+                scrub: 1.2,
               },
             });
           }
         });
       }
 
-      // Stats fly in at end
+      // Stats fly in at end with rotation
       if (statsRef.current) {
         const statEls = statsRef.current.querySelectorAll(".stat-item");
         gsap.fromTo(
           statEls,
-          { y: 80, opacity: 0, rotateX: -20 },
+          { y: 100, opacity: 0, rotateX: -40, rotateZ: -15 },
           {
             y: 0,
             opacity: 1,
             rotateX: 0,
-            stagger: 0.15,
-            ease: "power3.out",
+            rotateZ: 0,
+            stagger: 0.2,
+            ease: "back.out(1.4)",
             scrollTrigger: {
               trigger: section,
-              start: "top+250% top",
-              end: "top+280% top",
-              scrub: true,
+              start: "top+260% top",
+              end: "top+290% top",
+              scrub: 1.5,
             },
           },
         );
       }
 
-      // Light sweep
+      // Light sweep with more dramatic effect
       if (sweepRef.current) {
         gsap.fromTo(
           sweepRef.current,
-          { x: "-100%" },
+          { x: "-120%" },
           {
-            x: "350%",
-            ease: "none",
+            x: "400%",
+            ease: "sine.inOut",
             scrollTrigger: {
               trigger: section,
               start: "top top",
               end: SCROLL_END,
-              scrub: 2,
+              scrub: 2.5,
             },
           },
         );
@@ -258,13 +278,14 @@ const TwoDecadesSection = () => {
     <section ref={sectionRef} className="relative" data-section="decades">
       <div
         ref={pinRef}
-        className="relative h-screen flex items-center justify-center overflow-hidden"
+        className="relative h-screen flex items-center justify-center"
         style={{
           background: `
             radial-gradient(ellipse at 20% 30%, hsl(40 46% 20% / 0.12) 0%, transparent 55%),
             radial-gradient(ellipse at 80% 70%, hsl(40 46% 30% / 0.08) 0%, transparent 45%),
             linear-gradient(180deg, hsl(0 0% 3%) 0%, hsl(0 0% 5%) 30%, hsl(0 0% 7%) 50%, hsl(0 0% 5%) 70%, hsl(0 0% 3%) 100%)
           `,
+          overflow: "visible",
         }}
       >
         {/* Gold ambient particles */}
@@ -308,39 +329,55 @@ const TwoDecadesSection = () => {
           ref={sunRef}
           className="absolute pointer-events-none"
           style={{
-            bottom: "30%",
-            left: "42%",
-            width: "180px",
-            height: "180px",
+            bottom: "25%",
+            left: "45%",
+            width: "220px",
+            height: "220px",
             borderRadius: "50%",
             background:
-              "radial-gradient(circle, hsl(40 50% 60% / 0.25) 0%, hsl(40 46% 56% / 0.08) 40%, transparent 70%)",
-            filter: "blur(30px)",
+              "radial-gradient(circle, hsl(40 50% 65% / 0.3) 0%, hsl(40 46% 56% / 0.12) 35%, hsl(40 45% 50% / 0.04) 65%, transparent 85%)",
+            filter: "blur(45px)",
             zIndex: 0,
+            boxShadow: `
+              0 0 60px hsl(40 46% 56% / 0.15),
+              0 0 120px hsl(40 46% 56% / 0.08),
+              inset 0 0 80px hsl(40 50% 65% / 0.2)
+            `,
+            willChange: "transform, filter",
           }}
         />
 
-        {/* Giant background year */}
+        {/* Giant background year with enhanced glow */}
         <span
           ref={yearRef}
           className="absolute select-none pointer-events-none"
           style={{
             fontFamily: "'Playfair Display', serif",
-            fontSize: "clamp(200px, 35vw, 900px)",
-            fontWeight: 200,
+            fontSize: "clamp(220px, 40vw, 1000px)",
+            fontWeight: 100,
             lineHeight: 1,
-            WebkitTextStroke: "2px hsl(40 46% 56% / 0.08)",
+            WebkitTextStroke: "1px hsl(40 46% 56% / 0.12)",
             color: "transparent",
             zIndex: 0,
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            whiteSpace: "nowrap",
             backgroundImage:
-              "linear-gradient(135deg, hsl(40 46% 56% / 0.06), hsl(40 46% 30% / 0.02), hsl(40 46% 56% / 0.06))",
+              "linear-gradient(135deg, hsl(40 50% 65% / 0.15), hsl(40 46% 50% / 0.08), hsl(40 50% 65% / 0.15))",
             backgroundSize: "200% 200%",
-            animation: "shimmerBg 6s ease infinite",
+            animation: "shimmerBg 8s ease infinite",
             WebkitBackgroundClip: "text",
             backgroundClip: "text",
             transformStyle: "preserve-3d",
             perspective: "1200px",
             willChange: "transform, opacity",
+            filter: "drop-shadow(0 0 2px hsl(40 46% 56% / 0.3)) drop-shadow(0 0 8px hsl(40 46% 56% / 0.15))",
+            textShadow: `
+              0 0 20px hsl(40 46% 56% / 0.2),
+              0 0 40px hsl(40 46% 56% / 0.08),
+              0 0 60px hsl(40 46% 56% / 0.04)
+            `,
           }}
         >
           2005
@@ -372,11 +409,16 @@ const TwoDecadesSection = () => {
                 width: `${b.w}%`,
                 height: `${b.maxH}%`,
                 transformOrigin: "bottom center",
-                background: `linear-gradient(180deg, hsl(40 46% 56% / ${b.lit * 0.3}) 0%, hsl(40 46% 56% / ${b.lit * 0.08}) 100%)`,
-                borderTop: `1px solid hsl(40 46% 56% / ${b.lit * 0.3})`,
-                borderLeft: "1px solid hsl(40 46% 56% / 0.06)",
-                borderRight: "1px solid hsl(40 46% 56% / 0.06)",
+                background: `linear-gradient(180deg, hsl(40 46% 56% / ${b.lit * 0.4}) 0%, hsl(40 46% 56% / ${b.lit * 0.1}) 60%, hsl(40 46% 56% / ${b.lit * 0.02}) 100%)`,
+                borderTop: `2px solid hsl(40 46% 56% / ${b.lit * 0.4})`,
+                borderLeft: "1px solid hsl(40 46% 56% / 0.08)",
+                borderRight: "1px solid hsl(40 46% 56% / 0.08)",
+                boxShadow: `
+                  inset 0 1px 4px hsl(40 46% 56% / ${b.lit * 0.2}),
+                  0 -2px 8px hsl(40 46% 56% / ${b.lit * 0.15})
+                `,
                 opacity: 0,
+                willChange: "transform, opacity",
               }}
             >
               {/* Window grid */}
@@ -429,9 +471,11 @@ const TwoDecadesSection = () => {
           className="absolute inset-y-0 pointer-events-none"
           style={{
             background:
-              "linear-gradient(90deg, transparent 0%, hsl(40 46% 56% / 0.03) 35%, hsl(40 46% 56% / 0.1) 50%, hsl(40 46% 56% / 0.03) 65%, transparent 100%)",
-            width: "20%",
+              "linear-gradient(90deg, transparent 0%, hsl(40 46% 56% / 0.05) 30%, hsl(40 46% 56% / 0.15) 50%, hsl(40 46% 56% / 0.05) 70%, transparent 100%)",
+            width: "25%",
             zIndex: 2,
+            filter: "blur(2px)",
+            willChange: "transform",
           }}
         />
 
@@ -439,8 +483,8 @@ const TwoDecadesSection = () => {
         <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
           <div ref={headingRef}>
             <p
-              className="font-sans text-[10px] md:text-xs tracking-[0.6em] uppercase mb-8"
-              style={{ color: "hsl(40 46% 56%)" }}
+              className="font-sans text-[10px] md:text-xs tracking-[0.8em] uppercase mb-8"
+              style={{ color: "hsl(40 46% 56%)", letterSpacing: "0.2em" }}
             >
               Two Decades of Excellence
             </p>
@@ -449,42 +493,61 @@ const TwoDecadesSection = () => {
               className="text-4xl md:text-6xl lg:text-8xl text-gallery leading-[0.9] mb-8"
               style={{
                 fontFamily: "'Playfair Display', serif",
-                fontWeight: 200,
+                fontWeight: 100,
+                letterSpacing: "-0.02em",
+                textShadow: `
+                  0 2px 4px rgba(0,0,0,0.3),
+                  0 8px 16px hsl(40 46% 56% / 0.08)
+                `,
               }}
             >
               From Private Banking
               <br />
-              <span className="gold-text-gradient">to Global Real Estate</span>
+              <span className="gold-text-gradient" style={{ 
+                background: "linear-gradient(135deg, hsl(40 50% 65%) 0%, hsl(40 46% 56%) 50%, hsl(40 42% 50%) 100%)",
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                filter: "drop-shadow(0 0 8px hsl(40 46% 56% / 0.15))"
+              }}>to Global Real Estate</span>
             </h2>
           </div>
 
           {/* Milestones — stacked, absolute */}
-          <div ref={milestonesRef} className="relative h-24 mb-12">
+          <div ref={milestonesRef} className="relative h-28 mb-16">
             {milestones.map((m) => (
               <div
                 key={m.year}
                 className="milestone absolute inset-0 flex flex-col items-center justify-center opacity-0"
               >
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-px gold-gradient" />
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-px gold-gradient" />
                   <span
-                    className="font-sans text-lg md:text-xl tracking-[0.2em]"
-                    style={{ color: "hsl(40 46% 56%)" }}
+                    className="font-sans text-lg md:text-2xl tracking-[0.3em] font-light"
+                    style={{ 
+                      color: "hsl(40 46% 56%)",
+                      textShadow: "0 0 12px hsl(40 46% 56% / 0.2)"
+                    }}
                   >
                     {m.year}
                   </span>
-                  <div className="w-8 h-px gold-gradient" />
+                  <div className="w-12 h-px gold-gradient" />
                 </div>
                 <span
-                  className="text-xl md:text-2xl text-gallery mb-1"
+                  className="text-2xl md:text-3xl text-gallery mb-2"
                   style={{
                     fontFamily: "'Playfair Display', serif",
-                    fontWeight: 300,
+                    fontWeight: 200,
+                    letterSpacing: "-0.01em",
+                    textShadow: "0 2px 8px rgba(0,0,0,0.2)"
                   }}
                 >
                   {m.label}
                 </span>
-                <span className="font-sans text-xs text-muted-foreground tracking-[0.15em]">
+                <span 
+                  className="font-sans text-xs md:text-sm text-muted-foreground tracking-[0.15em]"
+                  style={{ color: "hsl(40 46% 56% / 0.7)" }}
+                >
                   {m.desc}
                 </span>
               </div>
@@ -494,8 +557,8 @@ const TwoDecadesSection = () => {
           {/* Stats */}
           <div
             ref={statsRef}
-            className="flex justify-center gap-8 md:gap-20"
-            style={{ perspective: "600px" }}
+            className="flex justify-center gap-12 md:gap-24"
+            style={{ perspective: "800px" }}
           >
             {[
               { value: "20+", label: "Years Experience" },
@@ -504,22 +567,34 @@ const TwoDecadesSection = () => {
             ].map((stat) => (
               <div key={stat.label} className="stat-item text-center relative group opacity-0">
                 <div
-                  className="absolute -inset-4 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+                  className="absolute -inset-6 rounded-3xl opacity-0 group-hover:opacity-100 transition-all duration-700 group-hover:scale-110"
                   style={{
                     background:
-                      "radial-gradient(circle, hsl(40 46% 56% / 0.08), transparent 70%)",
+                      "radial-gradient(circle, hsl(40 46% 56% / 0.12), transparent 70%)",
+                    filter: "blur(8px)",
                   }}
                 />
                 <div
-                  className="text-4xl md:text-6xl gold-text-gradient mb-3 relative"
+                  className="text-5xl md:text-7xl gold-text-gradient mb-4 relative"
                   style={{
                     fontFamily: "'Playfair Display', serif",
-                    fontWeight: 200,
+                    fontWeight: 100,
+                    letterSpacing: "-0.02em",
+                    textShadow: `
+                      0 4px 12px hsl(40 46% 56% / 0.15),
+                      0 0 20px hsl(40 46% 56% / 0.1)
+                    `,
                   }}
                 >
                   {stat.value}
                 </div>
-                <div className="font-sans text-[9px] md:text-[11px] tracking-[0.35em] uppercase text-muted-foreground relative">
+                <div 
+                  className="font-sans text-[10px] md:text-xs tracking-[0.3em] uppercase relative"
+                  style={{ 
+                    color: "hsl(40 46% 56%)",
+                    letterSpacing: "0.15em"
+                  }}
+                >
                   {stat.label}
                 </div>
               </div>

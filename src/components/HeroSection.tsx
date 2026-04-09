@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import saadPortrait from "../assets/saad-bin-zain-2.jpg";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -156,8 +157,8 @@ function createGlobalRouteTexture() {
     context.strokeStyle = index === 0 ? "rgba(233, 190, 112, 0.34)" : index < 4 ? "rgba(214, 171, 103, 0.24)" : "rgba(214, 171, 103, 0.16)";
     context.lineWidth = index === 0 ? 2.8 : index < 4 ? 2.1 : 1.5;
     context.beginPath();
-    arc.forEach(([x, y], index) => {
-      if (index === 0) {
+    arc.forEach(([x, y], pointIndex) => {
+      if (pointIndex === 0) {
         context.moveTo(x, y);
       } else {
         context.lineTo(x, y);
@@ -246,7 +247,7 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
   const ringRef = useRef<THREE.Mesh>(null);
   const mapTexture = useMemo(() => createGlobalRouteTexture(), []);
   const mapRef = useRef<THREE.Mesh>(null);
-  const routeRef = useRef<THREE.Line>(null);
+  const routeRef = useRef<THREE.Line<THREE.BufferGeometry, THREE.LineBasicMaterial>>(null);
   const activeCityRef = useRef<THREE.Mesh>(null);
   const districtAnchors = useMemo(
     () => [
@@ -342,6 +343,7 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
         <meshBasicMaterial map={mapTexture} transparent opacity={0.52} toneMapped={false} depthWrite={false} />
       </mesh>
 
+      {/* @ts-ignore - Three.js line with custom visible handling */}
       <line ref={routeRef} visible={false}>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" array={new Float32Array(33 * 3)} count={33} itemSize={3} />
@@ -576,62 +578,169 @@ function SilkScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }
   );
 }
 
-function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
-  const labels = useMemo(
+function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; y: number; inside: boolean }> }) {
+  const items = useMemo(
     () => [
-      { name: "JUMEIRAH", left: "12%", top: "19%", size: "0.74rem", tone: "soft", pointer: new THREE.Vector2(-0.78, 0.58) },
-      { name: "CITY WALK", left: "21%", top: "26%", size: "0.68rem", tone: "soft", pointer: new THREE.Vector2(-0.56, 0.36) },
-      { name: "SATWA", left: "12%", top: "39%", size: "0.62rem", tone: "soft", pointer: new THREE.Vector2(-0.7, 0.12) },
-      { name: "DOWNTOWN", left: "29%", top: "31%", size: "0.88rem", tone: "strong", pointer: new THREE.Vector2(-0.42, 0.34) },
-      { name: "DIFC", left: "38%", top: "37%", size: "0.84rem", tone: "strong", pointer: new THREE.Vector2(-0.18, 0.22) },
-      { name: "ZAABEEL", left: "22%", top: "56%", size: "0.62rem", tone: "soft", pointer: new THREE.Vector2(-0.34, -0.02) },
-      { name: "MEYDAN", left: "27%", top: "73%", size: "0.62rem", tone: "soft", pointer: new THREE.Vector2(-0.18, -0.26) },
-      { name: "DUBAI DESIGN DISTRICT", left: "37%", top: "81%", size: "0.58rem", tone: "soft", pointer: new THREE.Vector2(0.02, -0.4) },
-      { name: "AL WASL", left: "42%", top: "52%", size: "0.66rem", tone: "soft", pointer: new THREE.Vector2(-0.06, -0.02) },
-      { name: "BUSINESS BAY", left: "48%", top: "45%", size: "0.76rem", tone: "strong", pointer: new THREE.Vector2(0.04, 0.06) },
-      { name: "DUBAI", left: "60%", top: "34%", size: "1.12rem", tone: "primary", pointer: new THREE.Vector2(0.22, 0.26) },
-      { name: "DUBAI MARINA", left: "79%", top: "36%", size: "0.82rem", tone: "strong", pointer: new THREE.Vector2(0.64, 0.18) },
-      { name: "BLUEWATERS", left: "72%", top: "28%", size: "0.66rem", tone: "soft", pointer: new THREE.Vector2(0.58, 0.28) },
-      { name: "DUBAI HILLS", left: "77%", top: "49%", size: "0.68rem", tone: "soft", pointer: new THREE.Vector2(0.7, -0.08) },
-      { name: "PALM JUMEIRAH", left: "83%", top: "13%", size: "0.7rem", tone: "soft", pointer: new THREE.Vector2(0.82, 0.66) },
-      { name: "CREEK HARBOUR", left: "56%", top: "74%", size: "0.7rem", tone: "soft", pointer: new THREE.Vector2(0.12, -0.48) },
-      { name: "EMIRATES HILLS", left: "86%", top: "57%", size: "0.66rem", tone: "soft", pointer: new THREE.Vector2(0.76, -0.04) },
-      { name: "EXPO CITY", left: "86%", top: "78%", size: "0.62rem", tone: "soft", pointer: new THREE.Vector2(0.9, -0.54) },
+      { label: "JUMEIRAH", left: "8%", top: "12%", color: "gold" },
+      { label: "CITY WALK", left: "16%", top: "18%", color: "white" },
+      { label: "SATWA", left: "6%", top: "32%", color: "white" },
+      { label: "DOWNTOWN", left: "25%", top: "24%", color: "gold" },
+      { label: "DIFC", left: "35%", top: "29%", color: "white" },
+      { label: "ZAABEEL", left: "18%", top: "48%", color: "white" },
+      { label: "MEYDAN", left: "23%", top: "62%", color: "white" },
+      { label: "AL WASL", left: "40%", top: "42%", color: "gold" },
+      { label: "BUSINESS BAY", left: "46%", top: "36%", color: "gold" },
+      { label: "DUBAI", left: "57%", top: "26%", color: "gold" },
+      { label: "DUBAI MARINA", left: "76%", top: "28%", color: "white" },
+      { label: "BLUEWATERS", left: "68%", top: "19%", color: "white" },
+      { label: "DUBAI HILLS", left: "74%", top: "41%", color: "white" },
+      { label: "PALM JUMEIRAH", left: "80%", top: "8%", color: "gold" },
+      { label: "CREEK HARBOUR", left: "53%", top: "66%", color: "white" },
+      { label: "EMIRATES HILLS", left: "82%", top: "49%", color: "white" },
+      { label: "EXPO CITY", left: "82%", top: "70%", color: "gold" },
+      // Expanded coverage for blank spaces
+      { label: "NEW DUBAI", left: "92%", top: "15%", color: "white" },
+      { label: "SOUTH MARINA", left: "89%", top: "62%", color: "gold" },
+      { label: "WEST CREEK", left: "44%", top: "78%", color: "white" },
+      { label: "REMRAAM", left: "72%", top: "58%", color: "gold" },
+      { label: "ARABIAN RANCHES", left: "65%", top: "72%", color: "white" },
     ],
     [],
   );
-  const [activeLabel, setActiveLabel] = useState<string | null>(null);
+  const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const dotRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const charRefs = useRef<Array<Array<HTMLSpanElement | null>>>([]);
+  const spotlightRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const itemSetters = itemRefs.current.map((element, index) => {
+      const colorValue = items[index]?.color === "gold" ? "#C5A059" : "#F5F3EE";
+      return element
+        ? {
+            opacity: gsap.quickTo(element, "opacity", { duration: 0.22, ease: "power2.out" }),
+            y: gsap.quickTo(element, "y", { duration: 0.26, ease: "back.out(1.8)" }),
+            color: colorValue,
+          }
+        : null;
+    });
+
+    const dotSetters = dotRefs.current.map((element) =>
+      element
+        ? {
+            scale: gsap.quickTo(element, "scale", { duration: 0.24, ease: "back.out(2.1)" }),
+            opacity: gsap.quickTo(element, "opacity", { duration: 0.2, ease: "power2.out" }),
+          }
+        : null,
+    );
+
+    const characterSetters = charRefs.current.map((characters) =>
+      characters.map((character) =>
+        character
+          ? {
+              scale: gsap.quickTo(character, "scale", { duration: 0.26, ease: "back.out(2.4)" }),
+              y: gsap.quickTo(character, "y", { duration: 0.24, ease: "back.out(2)" }),
+            }
+          : null,
+      ),
+    );
+
     let frameId = 0;
 
     const tick = () => {
-      const currentPointer = new THREE.Vector2(mouse.current.x, mouse.current.y);
-      const nearest = labels.reduce(
-        (best, label) => {
-          const distance = label.pointer.distanceTo(currentPointer);
-          if (distance < best.distance) {
-            return { name: label.name, distance };
-          }
-          return best;
-        },
-        { name: labels[5].name, distance: Number.POSITIVE_INFINITY },
-      );
+      const pointer = mouse.current;
 
-      setActiveLabel((previous) => {
-        const next = nearest.distance < 0.24 ? nearest.name : null;
-        return previous === next ? previous : next;
+      itemRefs.current.forEach((element, index) => {
+        if (!element) {
+          return;
+        }
+
+        const dot = dotRefs.current[index];
+        const pointRect = dot?.getBoundingClientRect() ?? element.getBoundingClientRect();
+        const pointX = pointRect.left + pointRect.width / 2;
+        const pointY = pointRect.top + pointRect.height / 2;
+        const pointDistance = pointer.inside ? Math.hypot(pointer.x - pointX, pointer.y - pointY) : Number.POSITIVE_INFINITY;
+        const activation = pointer.inside ? THREE.MathUtils.clamp(1 - pointDistance / 85, 0, 1) : 0;
+        const baseColor = items[index].color === "gold" ? "rgba(197,160,89,0.18)" : "rgba(245,243,238,0.16)";
+
+        if (itemSetters[index]) {
+          itemSetters[index]?.opacity(0.1 + activation * 0.9);
+          itemSetters[index]?.y((1 - activation) * 2.5);
+          gsap.to(element, {
+            color: activation > 0.04 ? itemSetters[index]?.color : baseColor,
+            duration: 0.18,
+            ease: "power2.out",
+            overwrite: true,
+          });
+          // Zoom effect on reveal
+          if (activation > 0.3) {
+            element.style.transform = `scale(${0.95 + activation * 0.18}) translateY(${(1 - activation) * 2.5}px)`;
+          }
+        }
+
+        if (dotSetters[index]) {
+          dotSetters[index]?.scale(0.7 + activation * 1.15);
+          dotSetters[index]?.opacity(0.12 + activation * 0.88);
+        }
+
+        characterSetters[index]?.forEach((setter, charIndex) => {
+          const character = charRefs.current[index]?.[charIndex];
+          if (!setter || !character) {
+            return;
+          }
+
+          const rect = character.getBoundingClientRect();
+          const charX = rect.left + rect.width / 2;
+          const charY = rect.top + rect.height / 2;
+          const charDistance = pointer.inside ? Math.hypot(pointer.x - charX, pointer.y - charY) : Number.POSITIVE_INFINITY;
+          const charActivation = activation * THREE.MathUtils.clamp(1 - charDistance / 110, 0, 1);
+          setter.scale(0.92 + activation * 0.12 + charActivation * 0.82);
+          setter.y(-(activation * 1.2 + charActivation * 4.6));
+        });
       });
+
+      // Update spotlight position
+      if (spotlightRef.current && mouse.current.inside) {
+        const containerRect = spotlightRef.current.parentElement?.getBoundingClientRect();
+        if (containerRect) {
+          const relX = mouse.current.x - containerRect.left;
+          const relY = mouse.current.y - containerRect.top;
+          spotlightRef.current.style.background = `radial-gradient(circle 200px at ${relX}px ${relY}px, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%)`;
+        }
+      }
 
       frameId = window.requestAnimationFrame(tick);
     };
 
     frameId = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(frameId);
-  }, [labels, mouse]);
+  }, [items, mouse]);
+
+  const mapContainerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] hidden lg:block" style={{ top: `${NAVBAR_GUARD}px` }} aria-hidden="true">
+    <div 
+      ref={mapContainerRef}
+      className="pointer-events-none absolute bottom-[4%] left-[2.5%] z-[6] hidden lg:block" 
+      style={{ 
+        top: `calc(${NAVBAR_GUARD}px + 1%)`, 
+        width: "95%",
+        right: "2.5%",
+        backdropFilter: "blur(2px)",
+      }} 
+      aria-hidden="true"
+    >
+      {/* Radial spotlight overlay */}
+      <div 
+        ref={spotlightRef}
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `radial-gradient(circle 200px at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%)`,
+          backdropFilter: "blur(3px)",
+          zIndex: 40,
+          mixBlendMode: "screen",
+        }}
+      />
+      
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
         <defs>
           <linearGradient id="district-route" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -641,63 +750,99 @@ function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; 
             <stop offset="100%" stopColor="rgba(214,184,132,0.22)" />
           </linearGradient>
         </defs>
-        <path d="M8 22 C 14 26, 22 30, 31 36 S 42 43, 50 44" fill="none" stroke="url(#district-route)" strokeWidth="0.18" />
-        <path d="M50 44 C 59 42, 67 39, 78 35 S 88 29, 96 12" fill="none" stroke="url(#district-route)" strokeWidth="0.18" />
-        <path d="M31 36 C 37 44, 43 57, 54 74" fill="none" stroke="rgba(214,184,132,0.18)" strokeWidth="0.14" />
-        <path d="M2 46 C 12 44, 20 42, 31 40 S 44 38, 50 38" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.12" />
-        <path d="M50 38 C 62 37, 72 35, 84 32 S 93 28, 99 24" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.12" />
-        <path d="M66 28 C 72 36, 78 46, 86 58 S 92 70, 98 84" fill="none" stroke="rgba(214,184,132,0.1)" strokeWidth="0.1" />
-        <path d="M28 16 C 34 20, 42 24, 54 27 S 72 30, 86 32" fill="none" stroke="rgba(214,184,132,0.08)" strokeWidth="0.1" />
-        <path d="M6 32 C 12 35, 18 37, 25 39 S 32 42, 39 44" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.1" />
-        <path d="M10 56 C 18 56, 24 55, 31 54 S 39 52, 46 49" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.1" />
-        <path d="M18 72 C 25 70, 32 67, 40 63 S 48 57, 54 50" fill="none" stroke="rgba(214,184,132,0.1)" strokeWidth="0.1" />
-        <path d="M25 84 C 32 82, 39 78, 46 72 S 54 64, 59 56" fill="none" stroke="rgba(214,184,132,0.08)" strokeWidth="0.08" />
-        <circle cx="50" cy="44" r="0.86" fill="rgba(236,196,118,0.84)" />
-        <circle cx="31" cy="36" r="0.3" fill="rgba(214,184,132,0.46)" />
-        <circle cx="39" cy="43" r="0.28" fill="rgba(214,184,132,0.42)" />
-        <circle cx="78" cy="35" r="0.32" fill="rgba(214,184,132,0.42)" />
-        <circle cx="54" cy="74" r="0.24" fill="rgba(214,184,132,0.28)" />
-        <circle cx="22" cy="26" r="0.22" fill="rgba(214,184,132,0.26)" />
-        <circle cx="12" cy="39" r="0.2" fill="rgba(214,184,132,0.18)" />
-        <circle cx="24" cy="55" r="0.22" fill="rgba(214,184,132,0.2)" />
-        <circle cx="30" cy="72" r="0.22" fill="rgba(214,184,132,0.18)" />
-        <circle cx="40" cy="81" r="0.18" fill="rgba(214,184,132,0.16)" />
-        <circle cx="67" cy="29" r="0.24" fill="rgba(214,184,132,0.28)" />
-        <circle cx="82" cy="50" r="0.22" fill="rgba(214,184,132,0.22)" />
-        <circle cx="95" cy="79" r="0.18" fill="rgba(214,184,132,0.18)" />
+        {/* Main network flows */}
+        <path d="M8 22 C 14 26, 22 30, 31 36 S 42 43, 50 44" fill="none" stroke="url(#district-route)" strokeWidth="0.25" />
+        <path d="M50 44 C 59 42, 67 39, 78 35 S 88 29, 96 12" fill="none" stroke="url(#district-route)" strokeWidth="0.25" />
+        
+        {/* Lower pathway */}
+        <path d="M31 36 C 37 44, 43 57, 54 74" fill="none" stroke="rgba(214,184,132,0.18)" strokeWidth="0.2" />
+        
+        {/* Side corridors */}
+        <path d="M2 46 C 12 44, 20 42, 31 40 S 44 38, 50 38" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.18" />
+        <path d="M50 38 C 62 37, 72 35, 84 32 S 93 28, 99 24" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.18" />
+        
+        {/* Right tributaries */}
+        <path d="M66 28 C 72 36, 78 46, 86 58 S 92 70, 98 84" fill="none" stroke="rgba(214,184,132,0.1)" strokeWidth="0.16" />
+        
+        {/* Top connection */}
+        <path d="M28 16 C 34 20, 42 24, 54 27 S 72 30, 86 32" fill="none" stroke="rgba(214,184,132,0.08)" strokeWidth="0.16" />
+        
+        {/* Left corner fills */}
+        <path d="M6 32 C 12 35, 18 37, 25 39 S 32 42, 39 44" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.16" />
+        <path d="M10 56 C 18 56, 24 55, 31 54 S 39 52, 46 49" fill="none" stroke="rgba(214,184,132,0.12)" strokeWidth="0.16" />
+        <path d="M18 72 C 25 70, 32 67, 40 63 S 48 57, 54 50" fill="none" stroke="rgba(214,184,132,0.1)" strokeWidth="0.14" />
+        <path d="M25 84 C 32 82, 39 78, 46 72 S 54 64, 59 56" fill="none" stroke="rgba(214,184,132,0.08)" strokeWidth="0.12" />
+        
+        {/* Hub nodes */}
+        <circle cx="50" cy="44" r="1.2" fill="rgba(236,196,118,0.84)" />
+        <circle cx="31" cy="36" r="0.42" fill="rgba(214,184,132,0.46)" />
+        <circle cx="39" cy="43" r="0.4" fill="rgba(214,184,132,0.42)" />
+        <circle cx="78" cy="35" r="0.45" fill="rgba(214,184,132,0.42)" />
+        <circle cx="54" cy="74" r="0.35" fill="rgba(214,184,132,0.28)" />
+        
+        {/* Strategic nodes */}
+        <circle cx="22" cy="26" r="0.32" fill="rgba(214,184,132,0.26)" />
+        <circle cx="12" cy="39" r="0.3" fill="rgba(214,184,132,0.18)" />
+        <circle cx="24" cy="55" r="0.32" fill="rgba(214,184,132,0.2)" />
+        <circle cx="30" cy="72" r="0.32" fill="rgba(214,184,132,0.18)" />
+        <circle cx="40" cy="81" r="0.28" fill="rgba(214,184,132,0.16)" />
+        <circle cx="67" cy="29" r="0.35" fill="rgba(214,184,132,0.28)" />
+        <circle cx="82" cy="50" r="0.32" fill="rgba(214,184,132,0.22)" />
+        <circle cx="95" cy="79" r="0.28" fill="rgba(214,184,132,0.18)" />
       </svg>
 
-      {labels.map((label) => (
+      {items.map((item, index) => (
         <div
-          key={label.name}
+          key={item.label}
+          ref={(element) => {
+            itemRefs.current[index] = element;
+          }}
           className="absolute uppercase"
           style={{
-            left: label.left,
-            top: label.top,
+            left: item.left,
+            top: item.top,
             fontFamily: "'Inter', sans-serif",
-            fontSize: label.size,
-            letterSpacing: label.tone === "primary" ? "0.38rem" : label.tone === "strong" ? "0.2rem" : "0.15rem",
-            color: activeLabel === label.name ? "rgba(236,196,118,0.88)" : "rgba(214,184,132,0.14)",
-            opacity: activeLabel === label.name ? 1 : 0.38,
-            filter: activeLabel === label.name ? "blur(0px)" : "blur(6px)",
-            transform: activeLabel === label.name ? "scale(1)" : "scale(0.985)",
-            transition: "opacity 180ms ease, filter 220ms ease, color 180ms ease, transform 220ms ease",
-            textShadow: activeLabel === label.name ? "0 0 24px rgba(236,196,118,0.12)" : "none",
+            fontSize: "19px",
+            fontWeight: 800,
+            letterSpacing: "0.42rem",
+            color: item.color === "gold" ? "rgba(220,190,130,0.72)" : "rgba(250,248,243,0.68)",
+            opacity: 0.28,
             whiteSpace: "nowrap",
+            willChange: "transform, opacity",
+            textShadow: item.color === "gold" ? "0 0 32px rgba(197,160,89,0.45), 0 2px 10px rgba(0,0,0,0.6), 0 0 16px rgba(197,160,89,0.25)" : "0 0 32px rgba(245,243,238,0.35), 0 2px 10px rgba(0,0,0,0.6), 0 0 16px rgba(245,243,238,0.18)",
+            transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
           }}
         >
-          {label.name.split(" ").map((word, index, words) => (
+          <span
+            ref={(element) => {
+              dotRefs.current[index] = element;
+            }}
+            className="absolute left-[-14px] top-[6px] h-[4px] w-[4px] rounded-full"
+            style={{
+              background: item.color === "gold" ? "#D7B871" : "#FEFAF5",
+              opacity: 0.32,
+              willChange: "transform, opacity",
+              boxShadow: item.color === "gold" ? "0 0 16px rgba(220,190,130,0.5), 0 0 8px rgba(197,160,89,0.4)" : "0 0 16px rgba(245,243,238,0.4), 0 0 8px rgba(250,248,243,0.3)",
+            }}
+          />
+          {Array.from(item.label).map((character, charIndex) => (
             <span
-              key={`${label.name}-${word}-${index}`}
+              key={`${item.label}-${charIndex}`}
+              ref={(element) => {
+                if (!charRefs.current[index]) {
+                  charRefs.current[index] = [];
+                }
+                charRefs.current[index][charIndex] = element;
+              }}
               style={{
                 display: "inline-block",
-                marginRight: index === words.length - 1 ? 0 : "0.34rem",
-                transform: activeLabel === label.name ? "scale(1) translateY(0px)" : "scale(1.22) translateY(1px)",
+                marginRight: character === " " ? "0.32rem" : 0,
+                transform: "scale(0.92) translateY(0px)",
                 transformOrigin: "50% 50%",
-                transition: `transform 300ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 65}ms`,
+                willChange: "transform",
               }}
             >
-              {word}
+              {character === " " ? "\u00A0" : character}
             </span>
           ))}
         </div>
@@ -712,6 +857,9 @@ const HeroSection = () => {
   const backgroundRef = useRef<HTMLDivElement>(null);
   const silkRef = useRef<HTMLDivElement>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
+  const mouseScreenRef = useRef({ x: 0, y: 0, inside: false });
+  const portfolioWrapperRef = useRef<HTMLDivElement>(null);
+  const portfolioImageRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -725,10 +873,12 @@ const HeroSection = () => {
         x: THREE.MathUtils.clamp(((event.clientX - rect.left) / rect.width - 0.5) * 2, -1, 1),
         y: THREE.MathUtils.clamp(-((event.clientY - rect.top) / rect.height - 0.5) * 2, -1, 1),
       };
+      mouseScreenRef.current = { x: event.clientX, y: event.clientY, inside: true };
     };
 
     const onLeave = () => {
       mouseRef.current = { x: 0, y: 0 };
+      mouseScreenRef.current = { x: 0, y: 0, inside: false };
     };
 
     section.addEventListener("mousemove", onMove, { passive: true });
@@ -738,6 +888,38 @@ const HeroSection = () => {
       section.removeEventListener("mousemove", onMove);
       section.removeEventListener("mouseleave", onLeave);
     };
+  }, []);
+
+  // Portfolio blur effect on cursor proximity
+  useEffect(() => {
+    const portfolio = portfolioWrapperRef.current;
+    const portfolioImage = portfolioImageRef.current ? portfolioImageRef.current : (document.querySelector('img[alt="Saad Bin Zain"]') as HTMLImageElement);
+    if (!portfolio || !portfolioImage) return;
+
+    const onMouseMove = (event: MouseEvent) => {
+      const portfolioRect = portfolio.getBoundingClientRect();
+      const cursorX = event.clientX;
+      const cursorY = event.clientY;
+
+      // Calculate distance from portfolio center
+      const portfolioCenterX = portfolioRect.left + portfolioRect.width / 2;
+      const portfolioCenterY = portfolioRect.top + portfolioRect.height / 2;
+      
+      const distance = Math.hypot(
+        cursorX - portfolioCenterX,
+        cursorY - portfolioCenterY
+      );
+
+      // Blur when cursor is within 200px of portfolio
+      const blurAmount = Math.max(0, Math.min(12, (200 - distance) / 20));
+      const portfolioOpacity = Math.max(0.3, 1 - blurAmount / 8);
+
+      portfolioImage.style.filter = `grayscale(1) contrast(1.12) brightness(0.88) blur(${blurAmount}px)`;
+      portfolio.style.opacity = portfolioOpacity.toString();
+    };
+
+    document.addEventListener("mousemove", onMouseMove, { passive: true });
+    return () => document.removeEventListener("mousemove", onMouseMove);
   }, []);
 
   useEffect(() => {
@@ -836,77 +1018,115 @@ const HeroSection = () => {
           </Canvas>
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-[linear-gradient(90deg,rgba(3,3,3,0.72)_0%,rgba(3,3,3,0.4)_30%,rgba(3,3,3,0.16)_58%,rgba(3,3,3,0.36)_100%)]" style={{ top: `${NAVBAR_GUARD}px` }} />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-[linear-gradient(180deg,rgba(3,3,3,0.28)_0%,rgba(3,3,3,0.14)_16%,rgba(3,3,3,0.12)_68%,rgba(3,3,3,0.88)_100%)]" style={{ top: `${NAVBAR_GUARD}px` }} />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-[linear-gradient(90deg,rgba(3,3,3,0.4)_0%,rgba(3,3,3,0.12)_28%,rgba(3,3,3,0.08)_54%,rgba(3,3,3,0.52)_100%)]" style={{ top: `${NAVBAR_GUARD}px` }} />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-[linear-gradient(180deg,rgba(3,3,3,0.22)_0%,rgba(3,3,3,0.08)_16%,rgba(3,3,3,0.12)_68%,rgba(3,3,3,0.88)_100%)]" style={{ top: `${NAVBAR_GUARD}px` }} />
 
-        <div className="relative z-10 mx-auto h-full max-w-[1200px]" style={{ paddingLeft: "10%", paddingTop: `${NAVBAR_GUARD}px`, boxSizing: "border-box" }}>
-          <div className="flex h-full flex-col justify-center">
-            <div ref={textRef} className="relative max-w-[39rem]" style={{ zIndex: 10 }}>
-              <div className="flex items-center gap-4">
-                <span className="h-px w-12" style={{ background: "linear-gradient(90deg, rgba(208,171,110,0), rgba(208,171,110,0.78))" }} />
-                <p
-                  className="text-[clamp(0.76rem,0.9vw,0.9rem)]"
-                  style={{
-                    fontFamily: "'Inter', sans-serif",
-                    color: "rgba(208,171,110,0.92)",
-                    letterSpacing: "0.32rem",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Sovereign-grade real estate advisory.
-                </p>
-              </div>
-              <h1
-                className="mt-7 text-white"
-                style={{
-                  fontFamily: "'Playfair Display', serif",
-                  fontWeight: 100,
-                  fontSize: "clamp(3.25rem, 6.2vw, 6rem)",
-                  letterSpacing: "clamp(0.18rem, 0.75vw, 0.72rem)",
-                  lineHeight: 0.88,
-                  textTransform: "uppercase",
-                  textShadow: "0 14px 36px rgba(0,0,0,0.28)",
-                }}
-              >
-                <span className="block">Luxury</span>
-                <span className="block">Command</span>
-              </h1>
-              <p
-                className="mt-7 max-w-[31rem] text-[clamp(1rem,1.28vw,1.14rem)] leading-[1.85] text-white/74"
-                style={{
-                  fontFamily: "'Cormorant Garamond', serif",
-                  textShadow: "0 8px 22px rgba(0,0,0,0.22)",
-                }}
-              >
-                Strategic placement across Dubai&apos;s prime districts, shaped through discreet introductions, prestige positioning, and institutional-grade judgment.
-              </p>
-
-              <div className="mt-9 flex flex-wrap gap-3">
-                {["Prime Retail", "Private Office", "Cross-Border Access"].map((item) => (
-                  <button
-                    key={item}
-                    className="rounded-full border px-5 py-[0.82rem] text-[0.68rem] uppercase transition-colors"
+        <div className="relative z-10 mx-auto h-full max-w-[1320px] px-8 md:px-12 lg:px-16" style={{ paddingTop: `${NAVBAR_GUARD}px`, boxSizing: "border-box" }}>
+          <div className="grid h-full items-center gap-10 lg:grid-cols-[1fr_0.9fr]">
+            <div className="flex items-center">
+              <div ref={textRef} className="relative max-w-[35rem]">
+                <div className="flex items-center gap-4">
+                  <span className="h-px w-12" style={{ background: "linear-gradient(90deg, rgba(208,171,110,0), rgba(208,171,110,1))" }} />
+                  <span className="h-px w-1 bg-[rgba(208,171,110,0.6)]" style={{ boxShadow: "0 0 12px rgba(208,171,110,0.4)" }} />
+                  <p
+                    className="text-[clamp(0.76rem,0.9vw,0.9rem)] uppercase"
                     style={{
-                      borderColor: "rgba(208,171,110,0.24)",
-                      background: "linear-gradient(180deg, rgba(14,14,14,0.34), rgba(7,7,7,0.18))",
-                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03), 0 14px 28px rgba(0,0,0,0.14)",
-                      backdropFilter: "blur(10px)",
-                      color: "rgba(208,171,110,0.92)",
                       fontFamily: "'Inter', sans-serif",
-                      letterSpacing: "0.26rem",
+                      color: "rgba(208,171,110,0.92)",
+                      letterSpacing: "0.32rem",
+                      textShadow: "0 0 12px rgba(208,171,110,0.15)",
                     }}
                   >
-                    {item}
-                  </button>
-                ))}
+                    Global portfolio expertise
+                  </p>
+                </div>
+                <h1
+                  className="mt-7 text-white uppercase"
+                  style={{
+                    fontFamily: "'Playfair Display', serif",
+                    fontWeight: 100,
+                    fontSize: "clamp(3.1rem, 5.6vw, 5.8rem)",
+                    letterSpacing: "clamp(0.18rem, 0.7vw, 0.62rem)",
+                    lineHeight: 0.88,
+                    textShadow: "0 20px 40px rgba(0,0,0,0.4), 0 0 60px rgba(213,180,110,0.15)",
+                    backgroundImage: "linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(245,243,238,0.98) 100%)",
+                    backgroundClip: "text",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  <span className="block">Strategic</span>
+                  <span className="block">Advisory</span>
+                </h1>
+                <p
+                  className="mt-7 max-w-[29rem] text-[clamp(1rem,1.2vw,1.1rem)] leading-[1.85] text-white/80"
+                  style={{
+                    fontFamily: "'Cormorant Garamond', serif",
+                    textShadow: "0 8px 24px rgba(0,0,0,0.3), 0 0 24px rgba(213,180,110,0.08)",
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  Curated placements across Dubai&apos;s most exclusive districts through institutional connections, refined positioning, and sovereign-grade judgment.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-center lg:justify-end">
+              <div
+                ref={portfolioWrapperRef}
+                className="relative w-full max-w-[25rem] overflow-hidden rounded-[30px] border p-5 md:p-6 transition-opacity duration-300"
+                style={{
+                  borderColor: "rgba(208,171,110,0.16)",
+                  background: "linear-gradient(180deg, rgba(10,10,10,0.4), rgba(8,8,8,0.18))",
+                  backdropFilter: "blur(14px)",
+                  boxShadow: "0 26px 70px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.04)",
+                }}
+              >
+                <div className="relative overflow-hidden rounded-[24px] border" style={{ borderColor: "rgba(208,171,110,0.16)" }}>
+                  <img
+                    ref={portfolioImageRef ? portfolioImageRef : undefined}
+                    src={saadPortrait}
+                    alt="Saad Bin Zain"
+                    className="h-[360px] w-full object-cover object-center md:h-[420px] transition-filter duration-150"
+                    style={{ filter: "grayscale(1) contrast(1.12) brightness(0.88)" }}
+                  />
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(197,160,89,0.08), rgba(197,160,89,0.18)), linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,0.46))", mixBlendMode: "screen" }} />
+                  <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
+                    <h2
+                      className="text-[clamp(2rem,3.6vw,3rem)] uppercase transition-all duration-300 ease-out"
+                      style={{
+                        fontFamily: "'Playfair Display', serif",
+                        fontWeight: 100,
+                        lineHeight: 0.92,
+                        letterSpacing: "0.14rem",
+                        textShadow: "0 14px 36px rgba(0,0,0,0.28)",
+                        color: "rgba(197,160,89,0.92)",
+                        cursor: "pointer",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = "rgba(220,190,130,1)";
+                        e.currentTarget.style.textShadow = "0 14px 36px rgba(0,0,0,0.28), 0 0 28px rgba(197,160,89,0.6)";
+                        e.currentTarget.style.transform = "scale(1.02)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = "rgba(197,160,89,0.92)";
+                        e.currentTarget.style.textShadow = "0 14px 36px rgba(0,0,0,0.28)";
+                        e.currentTarget.style.transform = "scale(1)";
+                      }}
+                    >
+                      <span className="block">Saad</span>
+                      <span className="block">Bin Zain</span>
+                    </h2>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <DubaiDistrictOverlay mouse={mouseRef} />
+        <DubaiDistrictOverlay mouse={mouseScreenRef} />
 
-        <div ref={silkRef} className="pointer-events-none absolute inset-x-0 bottom-0 z-[5]" style={{ top: `${NAVBAR_GUARD}px` }}>
+        <div ref={silkRef} className="pointer-events-none absolute inset-x-0 bottom-0 z-[3]" style={{ top: `${NAVBAR_GUARD}px` }}>
           <Canvas
             className="pointer-events-none"
             dpr={[1, 1.5]}
