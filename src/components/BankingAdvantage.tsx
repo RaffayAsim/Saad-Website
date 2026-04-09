@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Float, Line, Reflector, RoundedBox } from "@react-three/drei";
+import { Line, Reflector, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -196,9 +196,32 @@ function GoldFlow({ amount }: { amount: number }) {
     [],
   );
 
+  const geometry = useMemo(() => {
+    const flowGeometry = new THREE.BufferGeometry();
+    flowGeometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(points.flatMap((point) => [point.x, point.y, point.z]), 3),
+    );
+    return flowGeometry;
+  }, [points]);
+
+  const material = useMemo(
+    () => new THREE.LineBasicMaterial({ color: "#d4a657", transparent: true, opacity: 0.85 }),
+    [],
+  );
+
+  const flowLine = useMemo(() => new THREE.Line(geometry, material), [geometry, material]);
+
+  useEffect(() => {
+    return () => {
+      geometry.dispose();
+      material.dispose();
+    };
+  }, [geometry, material]);
+
   useFrame((state) => {
     if (!lineRef.current) return;
-    const position = lineRef.current.geometry.attributes.position as THREE.BufferAttribute;
+    const position = geometry.attributes.position as THREE.BufferAttribute;
     for (let index = 0; index < position.count; index += 1) {
       const x = THREE.MathUtils.mapLinear(index, 0, position.count - 1, -2.2, 2.2);
       position.setY(index, Math.sin(index * 0.18 + state.clock.elapsedTime * 2.6) * 0.22);
@@ -209,19 +232,7 @@ function GoldFlow({ amount }: { amount: number }) {
     lineRef.current.scale.setScalar(amount);
   });
 
-  return (
-    <line ref={lineRef}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={points.length}
-          array={new Float32Array(points.flatMap((point) => [point.x, point.y, point.z]))}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <lineBasicMaterial color="#d4a657" transparent opacity={0.85} />
-    </line>
-  );
+  return <primitive ref={lineRef} object={flowLine} />;
 }
 
 function ParticleLogo({ amount }: { amount: number }) {
@@ -313,12 +324,15 @@ function TabletScene({ progress }: { progress: number }) {
 
   useFrame((state) => {
     if (!tabletRef.current) return;
-    tabletRef.current.rotation.x = THREE.MathUtils.lerp(tabletRef.current.rotation.x, -0.22 + progress * 0.1, 0.05);
-    tabletRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.35) * 0.12;
-    tabletRef.current.position.y = 0.4 + Math.sin(state.clock.elapsedTime * 0.65) * 0.08;
+    const targetRotationX = -0.18 + progress * 0.04;
+    const targetRotationY = THREE.MathUtils.lerp(-0.08, 0.08, progress);
+    const targetPositionY = 0.18 + Math.sin(state.clock.elapsedTime * 0.35) * 0.025;
+    tabletRef.current.rotation.x = THREE.MathUtils.lerp(tabletRef.current.rotation.x, targetRotationX, 0.045);
+    tabletRef.current.rotation.y = THREE.MathUtils.lerp(tabletRef.current.rotation.y, targetRotationY, 0.045);
+    tabletRef.current.position.y = THREE.MathUtils.lerp(tabletRef.current.position.y, targetPositionY, 0.045);
     if (edgeRef.current) {
       const material = edgeRef.current.material as THREE.MeshStandardMaterial;
-      material.emissiveIntensity = 0.35 + Math.sin(state.clock.elapsedTime * 1.2) * 0.08 + blendAmount * 0.3;
+      material.emissiveIntensity = 0.32 + Math.sin(state.clock.elapsedTime * 0.8) * 0.03 + blendAmount * 0.22;
     }
   });
 
@@ -341,45 +355,42 @@ function TabletScene({ progress }: { progress: number }) {
         blur={[300, 60]}
         minDepthThreshold={0.8}
         maxDepthThreshold={1.3}
-        color="#18120a"
         position={[0, -3.35, -1.5]}
         rotation={[-Math.PI / 2, 0, 0]}
       />
 
-      <Float speed={1.2} rotationIntensity={0.08} floatIntensity={0.12}>
-        <group ref={tabletRef} position={[0, 0.35, 0]}>
-          <mesh ref={edgeRef} position={[0, 0, -0.02]}>
-            <boxGeometry args={[5.45, 3.3, 0.18]} />
-            <meshStandardMaterial color="#b98d41" emissive="#8a6022" emissiveIntensity={0.4} metalness={0.95} roughness={0.2} />
-          </mesh>
+      <group ref={tabletRef} position={[0, 0.18, 0]}>
+        <mesh ref={edgeRef} position={[0, 0, -0.02]}>
+          <boxGeometry args={[5.45, 3.3, 0.18]} />
+          <meshStandardMaterial color="#b98d41" emissive="#8a6022" emissiveIntensity={0.4} metalness={0.95} roughness={0.2} />
+        </mesh>
 
-          <RoundedBox args={[5.25, 3.08, 0.12]} radius={0.15} smoothness={6}>
-            <meshPhysicalMaterial
-              color="#f5ead7"
-              transparent
-              opacity={0.22}
-              transmission={0.95}
-              roughness={0.05}
-              thickness={0.6}
-              ior={1.2}
-              metalness={0.08}
-              reflectivity={0.65}
-              attenuationDistance={1.5}
-              attenuationColor="#f0c477"
-            />
-          </RoundedBox>
+        <RoundedBox args={[5.25, 3.08, 0.12]} radius={0.15} smoothness={6}>
+          <meshPhysicalMaterial
+            color="#f5ead7"
+            transparent
+            opacity={0.22}
+            transmission={0.95}
+            roughness={0.05}
+            thickness={0.6}
+            ior={1.2}
+            metalness={0.08}
+            reflectivity={0.65}
+            attenuationDistance={1.5}
+            attenuationColor="#f0c477"
+          />
+        </RoundedBox>
 
-          <mesh position={[0, 0, 0.03]}>
-            <planeGeometry args={[4.92, 2.76]} />
-            <meshBasicMaterial color="#0b0b0b" transparent opacity={0.42} />
-          </mesh>
+        <mesh position={[0, 0, 0.03]}>
+          <planeGeometry args={[4.92, 2.76]} />
+          <meshBasicMaterial color="#0b0b0b" transparent opacity={0.42} />
+        </mesh>
 
-          <VaultDoor amount={dnaAmount} />
-          <SkylineCluster amount={geometryAmount} />
-          <GoldFlow amount={scaleAmount} />
-          <ParticleLogo amount={blendAmount} />
-        </group>
-      </Float>
+        <VaultDoor amount={dnaAmount} />
+        <SkylineCluster amount={geometryAmount} />
+        <GoldFlow amount={scaleAmount} />
+        <ParticleLogo amount={blendAmount} />
+      </group>
     </>
   );
 }
@@ -431,14 +442,15 @@ const BankingAdvantage = () => {
   useEffect(() => {
     if (!tabletCopyRef.current) return;
     const children = Array.from(tabletCopyRef.current.children);
+    gsap.killTweensOf(children);
     gsap.fromTo(
       children,
-      { opacity: 0, y: 20, filter: "blur(10px)" },
+      { opacity: 0, y: 12, filter: "blur(6px)" },
       {
         opacity: 1,
         y: 0,
         filter: "blur(0px)",
-        duration: 0.75,
+        duration: 0.5,
         stagger: 0.05,
         ease: "power3.out",
       },
@@ -450,7 +462,7 @@ const BankingAdvantage = () => {
       ref={sectionRef}
       className="relative overflow-hidden"
       style={{
-        minHeight: "420vh",
+        minHeight: "300vh",
         background:
           "radial-gradient(circle at 50% 20%, hsl(40 28% 10% / 0.18), transparent 28%), linear-gradient(180deg, hsl(0 0% 2%) 0%, hsl(0 0% 3%) 40%, hsl(0 0% 2%) 100%)",
       }}
@@ -463,12 +475,13 @@ const BankingAdvantage = () => {
 
       <div className="sticky top-0 h-screen overflow-hidden">
         <div className="absolute inset-0">
-          <Canvas camera={{ position: [0, 0.4, 7.8], fov: 32 }} dpr={[1, 1.7]} gl={{ antialias: true, alpha: true }}>
+          <Canvas camera={{ position: [0, 0.25, 8.2], fov: 31 }} dpr={[1, 1.5]} gl={{ antialias: true, alpha: true }}>
             <TabletScene progress={progress} />
           </Canvas>
         </div>
 
-        <div className="relative z-10 mx-auto flex h-full max-w-[1000px] flex-col justify-between px-6 pb-10 pt-10 md:px-10 md:pb-12 md:pt-12">
+        <div className="relative z-10 mx-auto flex h-full w-full max-w-[1000px] items-center px-6 py-8 md:px-10 md:py-10">
+          <div className="grid w-full gap-5 md:gap-7">
           <div ref={headerRef} className="max-w-[540px]">
             <p
               className="mb-4 text-[10px] uppercase tracking-[0.6em]"
@@ -492,11 +505,10 @@ const BankingAdvantage = () => {
             </p>
           </div>
 
-          <div className="pointer-events-none relative mx-auto flex w-full max-w-[1000px] justify-center">
+          <div className="pointer-events-none relative flex w-full items-center justify-center">
             <div
               className="pointer-events-auto relative w-full max-w-[860px] rounded-[40px] border px-6 py-6 md:px-10 md:py-8"
               style={{
-                marginTop: "12vh",
                 background: "linear-gradient(180deg, hsl(0 0% 7% / 0.22), hsl(0 0% 4% / 0.18))",
                 borderColor: "hsl(40 46% 56% / 0.18)",
                 boxShadow: "0 26px 90px hsl(0 0% 0% / 0.28), inset 0 1px 0 hsl(40 46% 56% / 0.12)",
@@ -599,7 +611,7 @@ const BankingAdvantage = () => {
           </div>
 
           <div className="mx-auto w-full max-w-[1000px]">
-            <div className="grid gap-3 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {slides.map((slide, index) => {
                 const active = index === activeIndex;
                 return (
@@ -626,6 +638,7 @@ const BankingAdvantage = () => {
                 );
               })}
             </div>
+          </div>
           </div>
         </div>
       </div>
