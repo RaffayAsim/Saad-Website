@@ -46,6 +46,8 @@ function createThreadMapTexture() {
     ],
     [
       [0.46, 0.32],
+      [0.5, 0.3],
+      [0.55, 0.31],
       [0.54, 0.28],
       [0.58, 0.3],
       [0.62, 0.36],
@@ -75,11 +77,30 @@ function createThreadMapTexture() {
     ],
     [
       [0.36, 0.44],
+      [0.42, 0.41],
+      [0.49, 0.38],
+      [0.54, 0.34],
       [0.34, 0.36],
       [0.32, 0.3],
       [0.29, 0.22],
       [0.26, 0.16],
       [0.24, 0.12],
+    ],
+    [
+      [0.48, 0.39],
+      [0.52, 0.37],
+      [0.55, 0.36],
+      [0.58, 0.37],
+      [0.61, 0.41],
+      [0.65, 0.48],
+    ],
+    [
+      [0.49, 0.42],
+      [0.5, 0.39],
+      [0.51, 0.36],
+      [0.52, 0.33],
+      [0.53, 0.3],
+      [0.54, 0.27],
     ],
   ];
 
@@ -101,6 +122,8 @@ function createThreadMapTexture() {
     [0.21, 0.58],
     [0.37, 0.47],
     [0.45, 0.39],
+    [0.51, 0.34],
+    [0.54, 0.39],
     [0.63, 0.37],
     [0.71, 0.67],
     [0.53, 0.77],
@@ -110,20 +133,24 @@ function createThreadMapTexture() {
   hubs.forEach(([x, y]) => {
     const px = x * canvas.width;
     const py = y * canvas.height;
-    const gradient = context.createRadialGradient(px, py, 0, px, py, 18);
+    const isDubaiCluster = Math.abs(x - 0.54) < 0.04 && Math.abs(y - 0.39) < 0.07;
+    const radius = isDubaiCluster ? 28 : 18;
+    const gradient = context.createRadialGradient(px, py, 0, px, py, radius);
     gradient.addColorStop(0, "rgba(255, 236, 188, 0.95)");
-    gradient.addColorStop(0.3, "rgba(212, 171, 103, 0.8)");
+    gradient.addColorStop(0.3, isDubaiCluster ? "rgba(233, 192, 116, 0.92)" : "rgba(212, 171, 103, 0.8)");
     gradient.addColorStop(1, "rgba(212, 171, 103, 0)");
     context.fillStyle = gradient;
     context.beginPath();
-    context.arc(px, py, 18, 0, Math.PI * 2);
+    context.arc(px, py, radius, 0, Math.PI * 2);
     context.fill();
   });
 
   context.fillStyle = "rgba(212, 171, 103, 0.8)";
   context.font = "500 30px Inter";
   context.fillText("AMSTERDAM", canvas.width * 0.11, canvas.height * 0.57);
-  context.fillText("DUBAI", canvas.width * 0.27, canvas.height * 0.43);
+  context.fillText("DUBAI", canvas.width * 0.5, canvas.height * 0.31);
+  context.fillText("ABU DHABI", canvas.width * 0.47, canvas.height * 0.39);
+  context.fillText("SHARJAH", canvas.width * 0.56, canvas.height * 0.43);
   context.fillText("RIYADH", canvas.width * 0.4, canvas.height * 0.35);
   context.fillText("LONDON", canvas.width * 0.59, canvas.height * 0.33);
   context.fillText("MONACO", canvas.width * 0.64, canvas.height * 0.63);
@@ -155,11 +182,13 @@ function createGlobalRouteTexture() {
     [[180, 600], [420, 520], [670, 430], [910, 360], [1210, 280]],
     [[300, 680], [530, 610], [770, 560], [980, 600], [1210, 720]],
     [[500, 350], [620, 300], [760, 285], [910, 320], [1070, 420]],
+    [[520, 380], [610, 360], [700, 372], [790, 425], [880, 520]],
+    [[555, 412], [600, 365], [635, 332], [670, 302], [712, 286]],
   ];
 
-  context.strokeStyle = "rgba(190, 151, 86, 0.22)";
-  context.lineWidth = 2;
-  arcs.forEach((arc) => {
+  arcs.forEach((arc, index) => {
+    context.strokeStyle = index >= 3 ? "rgba(216, 178, 106, 0.34)" : "rgba(190, 151, 86, 0.22)";
+    context.lineWidth = index >= 3 ? 2.6 : 2;
     context.beginPath();
     arc.forEach(([x, y], index) => {
       if (index === 0) {
@@ -173,7 +202,9 @@ function createGlobalRouteTexture() {
 
   const hubs = [
     [370, 515, "AMSTERDAM"],
-    [640, 420, "DUBAI"],
+    [640, 420, "ABU DHABI"],
+    [700, 372, "DUBAI"],
+    [748, 438, "SHARJAH"],
     [860, 336, "LONDON"],
     [1010, 595, "MONACO"],
     [1210, 720, "SINGAPORE"],
@@ -182,16 +213,20 @@ function createGlobalRouteTexture() {
 
   context.font = "500 24px Inter";
   hubs.forEach(([x, y, label]) => {
-    const gradient = context.createRadialGradient(x, y, 0, x, y, 24);
+    const isDubai = label === "DUBAI";
+    const isUAE = label === "ABU DHABI" || label === "SHARJAH";
+    const radius = isDubai ? 42 : isUAE ? 30 : 24;
+    const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
     gradient.addColorStop(0, "rgba(255,232,186,0.95)");
-    gradient.addColorStop(0.35, "rgba(212,171,103,0.72)");
+    gradient.addColorStop(0.35, isDubai ? "rgba(236,196,118,0.9)" : "rgba(212,171,103,0.72)");
     gradient.addColorStop(1, "rgba(212,171,103,0)");
     context.fillStyle = gradient;
     context.beginPath();
-    context.arc(x, y, 24, 0, Math.PI * 2);
+    context.arc(x, y, radius, 0, Math.PI * 2);
     context.fill();
 
-    context.fillStyle = "rgba(196,160,102,0.3)";
+    context.fillStyle = isDubai ? "rgba(230,188,110,0.62)" : isUAE ? "rgba(215,176,107,0.4)" : "rgba(196,160,102,0.3)";
+    context.font = isDubai ? "600 30px Inter" : isUAE ? "500 26px Inter" : "500 24px Inter";
     context.fillText(label, x + 18, y - 18);
   });
 
@@ -263,8 +298,8 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
     }
 
     if (mapRef.current) {
-      mapRef.current.position.x = ease(mapRef.current.position.x, 0.4 + mouse.current.x * 0.26, 0.025);
-      mapRef.current.position.y = ease(mapRef.current.position.y, -0.08 + mouse.current.y * 0.18, 0.025);
+      mapRef.current.position.x = ease(mapRef.current.position.x, 1.15 + mouse.current.x * 0.24, 0.025);
+      mapRef.current.position.y = ease(mapRef.current.position.y, -0.02 + mouse.current.y * 0.16, 0.025);
       mapRef.current.rotation.z = ease(mapRef.current.rotation.z, mouse.current.x * -0.035, 0.02);
     }
   });
@@ -281,9 +316,9 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
         <meshBasicMaterial color="#050505" />
       </mesh>
 
-      <mesh ref={mapRef} position={[0.4, -0.08, -2.7]}>
+      <mesh ref={mapRef} position={[1.15, -0.02, -2.7]}>
         <planeGeometry args={[12.8, 7.2]} />
-        <meshBasicMaterial map={mapTexture} transparent opacity={0.22} toneMapped={false} depthWrite={false} />
+        <meshBasicMaterial map={mapTexture} transparent opacity={0.28} toneMapped={false} depthWrite={false} />
       </mesh>
 
       <mesh ref={ringRef} position={[2.2, -0.7, -1.2]} rotation={[Math.PI / 2, 0, 0]}>
