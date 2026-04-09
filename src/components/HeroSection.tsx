@@ -686,18 +686,18 @@ function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; 
             whiteSpace: "nowrap",
           }}
         >
-          {Array.from(label.name).map((character, index) => (
+          {label.name.split(" ").map((word, index, words) => (
             <span
-              key={`${label.name}-${index}`}
+              key={`${label.name}-${word}-${index}`}
               style={{
                 display: "inline-block",
-                marginRight: character === " " ? "0.22rem" : 0,
-                transform: activeLabel === label.name ? "scale(1) translateY(0px)" : "scale(1.16) translateY(1px)",
+                marginRight: index === words.length - 1 ? 0 : "0.34rem",
+                transform: activeLabel === label.name ? "scale(1) translateY(0px)" : "scale(1.22) translateY(1px)",
                 transformOrigin: "50% 50%",
-                transition: `transform 260ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 18}ms`,
+                transition: `transform 300ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 65}ms`,
               }}
             >
-              {character === " " ? "\u00A0" : character}
+              {word}
             </span>
           ))}
         </div>
@@ -841,47 +841,59 @@ const HeroSection = () => {
 
         <div className="relative z-10 mx-auto h-full max-w-[1200px]" style={{ paddingLeft: "10%", paddingTop: `${NAVBAR_GUARD}px`, boxSizing: "border-box" }}>
           <div className="flex h-full flex-col justify-center">
-            <div ref={textRef} className="relative max-w-[42rem]" style={{ zIndex: 10 }}>
-              <p
-                className="text-[clamp(0.82rem,1vw,0.95rem)]"
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  color: "rgba(208,171,110,0.92)",
-                  letterSpacing: "0.28rem",
-                  textTransform: "uppercase",
-                }}
-              >
-                Sovereign-grade real estate advisory.
-              </p>
+            <div ref={textRef} className="relative max-w-[39rem]" style={{ zIndex: 10 }}>
+              <div className="flex items-center gap-4">
+                <span className="h-px w-12" style={{ background: "linear-gradient(90deg, rgba(208,171,110,0), rgba(208,171,110,0.78))" }} />
+                <p
+                  className="text-[clamp(0.76rem,0.9vw,0.9rem)]"
+                  style={{
+                    fontFamily: "'Inter', sans-serif",
+                    color: "rgba(208,171,110,0.92)",
+                    letterSpacing: "0.32rem",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Sovereign-grade real estate advisory.
+                </p>
+              </div>
               <h1
-                className="mt-6 text-white"
+                className="mt-7 text-white"
                 style={{
                   fontFamily: "'Playfair Display', serif",
                   fontWeight: 100,
-                  fontSize: "clamp(3rem, 6.5vw, 6.4rem)",
-                  letterSpacing: "clamp(0.5rem, 1.8vw, 1.5rem)",
-                  lineHeight: 0.9,
+                  fontSize: "clamp(3.25rem, 6.2vw, 6rem)",
+                  letterSpacing: "clamp(0.18rem, 0.75vw, 0.72rem)",
+                  lineHeight: 0.88,
                   textTransform: "uppercase",
+                  textShadow: "0 14px 36px rgba(0,0,0,0.28)",
                 }}
               >
                 <span className="block">Luxury</span>
                 <span className="block">Command</span>
               </h1>
-              <p className="mt-6 max-w-[27rem] text-[clamp(1rem,1.5vw,1.15rem)] leading-[1.7] text-white/72" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
-                Strategic placement across Dubai's prime districts, shaped through discreet introductions, luxury positioning, and institutional-grade judgment.
+              <p
+                className="mt-7 max-w-[31rem] text-[clamp(1rem,1.28vw,1.14rem)] leading-[1.85] text-white/74"
+                style={{
+                  fontFamily: "'Cormorant Garamond', serif",
+                  textShadow: "0 8px 22px rgba(0,0,0,0.22)",
+                }}
+              >
+                Strategic placement across Dubai&apos;s prime districts, shaped through discreet introductions, prestige positioning, and institutional-grade judgment.
               </p>
 
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-9 flex flex-wrap gap-3">
                 {["Prime Retail", "Private Office", "Cross-Border Access"].map((item) => (
                   <button
                     key={item}
-                    className="rounded-full border px-4 py-2 text-[0.7rem] uppercase transition-colors"
+                    className="rounded-full border px-5 py-[0.82rem] text-[0.68rem] uppercase transition-colors"
                     style={{
-                      borderColor: "rgba(208,171,110,0.22)",
-                      background: "rgba(8,8,8,0.16)",
-                      color: "rgba(208,171,110,0.9)",
+                      borderColor: "rgba(208,171,110,0.24)",
+                      background: "linear-gradient(180deg, rgba(14,14,14,0.34), rgba(7,7,7,0.18))",
+                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03), 0 14px 28px rgba(0,0,0,0.14)",
+                      backdropFilter: "blur(10px)",
+                      color: "rgba(208,171,110,0.92)",
                       fontFamily: "'Inter', sans-serif",
-                      letterSpacing: "0.24rem",
+                      letterSpacing: "0.26rem",
                     }}
                   >
                     {item}
