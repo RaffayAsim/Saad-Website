@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Canvas, useFrame } from "@react-three/fiber";
@@ -103,23 +103,6 @@ function createThreadMapTexture() {
     context.fill();
   });
 
-  context.fillStyle = "rgba(229, 190, 116, 0.84)";
-  context.font = "700 42px Inter";
-  context.fillText("DUBAI", canvas.width * 0.36, canvas.height * 0.38);
-
-  context.fillStyle = "rgba(214, 171, 103, 0.56)";
-  context.font = "500 24px Inter";
-  context.fillText("DOWNTOWN", canvas.width * 0.25, canvas.height * 0.31);
-  context.fillText("DIFC", canvas.width * 0.33, canvas.height * 0.37);
-  context.fillText("BUSINESS BAY", canvas.width * 0.42, canvas.height * 0.44);
-  context.fillText("DUBAI MARINA", canvas.width * 0.63, canvas.height * 0.35);
-
-  context.fillStyle = "rgba(214, 171, 103, 0.3)";
-  context.font = "500 18px Inter";
-  context.fillText("PALM JUMEIRAH", canvas.width * 0.66, canvas.height * 0.15);
-  context.fillText("JUMEIRAH", canvas.width * 0.14, canvas.height * 0.2);
-  context.fillText("CREEK HARBOUR", canvas.width * 0.44, canvas.height * 0.72);
-
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = THREE.ClampToEdgeWrapping;
@@ -179,17 +162,16 @@ function createGlobalRouteTexture() {
   });
 
   const hubs = [
-    [420, 330, "DOWNTOWN"],
-    [560, 354, "DIFC"],
-    [700, 366, "DUBAI"],
-    [860, 352, "MARINA"],
-    [1250, 222, "PALM"],
-    [748, 620, "CREEK"],
+    [420, 330, false],
+    [560, 354, false],
+    [700, 366, true],
+    [860, 352, false],
+    [1250, 222, false],
+    [748, 620, false],
   ] as const;
 
   context.font = "500 24px Inter";
-  hubs.forEach(([x, y, label]) => {
-    const isDubai = label === "DUBAI";
+  hubs.forEach(([x, y, isDubai]) => {
     const radius = isDubai ? 60 : 26;
     const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
     gradient.addColorStop(0, "rgba(255,232,186,0.95)");
@@ -199,17 +181,7 @@ function createGlobalRouteTexture() {
     context.beginPath();
     context.arc(x, y, radius, 0, Math.PI * 2);
     context.fill();
-
-    context.fillStyle = isDubai ? "rgba(230,188,110,0.72)" : "rgba(196,160,102,0.34)";
-    context.font = isDubai ? "700 40px Inter" : "500 24px Inter";
-    context.fillText(label, x + 18, y - 18);
   });
-
-  context.fillStyle = "rgba(196,160,102,0.18)";
-  context.font = "500 18px Inter";
-  context.fillText("BUSINESS BAY", 630, 430);
-  context.fillText("JUMEIRAH", 220, 192);
-  context.fillText("EMIRATES HILLS", 980, 312);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -269,12 +241,12 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
   const activeCityRef = useRef<THREE.Mesh>(null);
   const districtAnchors = useMemo(
     () => [
-      { name: "Downtown", world: new THREE.Vector3(-1.75, 1.04, -2.6), pointer: new THREE.Vector2(-0.36, 0.24) },
-      { name: "DIFC", world: new THREE.Vector3(-0.62, 0.84, -2.6), pointer: new THREE.Vector2(-0.14, 0.2) },
-      { name: "Dubai", world: new THREE.Vector3(0.86, 0.76, -2.6), pointer: new THREE.Vector2(0.12, 0.18) },
-      { name: "Marina", world: new THREE.Vector3(2.62, 0.7, -2.6), pointer: new THREE.Vector2(0.44, 0.18) },
-      { name: "Palm", world: new THREE.Vector3(4.56, 1.86, -2.6), pointer: new THREE.Vector2(0.82, 0.55) },
-      { name: "Creek", world: new THREE.Vector3(1.1, -1.4, -2.6), pointer: new THREE.Vector2(0.18, -0.34) },
+      { name: "Downtown", world: new THREE.Vector3(-3.05, 1.02, -2.6), pointer: new THREE.Vector2(-0.42, 0.28) },
+      { name: "DIFC", world: new THREE.Vector3(-1.7, 0.78, -2.6), pointer: new THREE.Vector2(-0.2, 0.2) },
+      { name: "Dubai", world: new THREE.Vector3(0.25, 0.58, -2.6), pointer: new THREE.Vector2(0.02, 0.16) },
+      { name: "Marina", world: new THREE.Vector3(3.3, 0.46, -2.6), pointer: new THREE.Vector2(0.46, 0.14) },
+      { name: "Palm", world: new THREE.Vector3(5.55, 2.02, -2.6), pointer: new THREE.Vector2(0.78, 0.58) },
+      { name: "Creek", world: new THREE.Vector3(0.85, -2.16, -2.6), pointer: new THREE.Vector2(0.12, -0.42) },
     ],
     [],
   );
@@ -292,9 +264,9 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
     }
 
     if (mapRef.current) {
-      mapRef.current.position.x = ease(mapRef.current.position.x, 1.15 + mouse.current.x * 0.24, 0.025);
-      mapRef.current.position.y = ease(mapRef.current.position.y, -0.02 + mouse.current.y * 0.16, 0.025);
-      mapRef.current.rotation.z = ease(mapRef.current.rotation.z, mouse.current.x * -0.035, 0.02);
+      mapRef.current.position.x = ease(mapRef.current.position.x, 0.2 + mouse.current.x * 0.22, 0.025);
+      mapRef.current.position.y = ease(mapRef.current.position.y, -0.12 + mouse.current.y * 0.14, 0.025);
+      mapRef.current.rotation.z = ease(mapRef.current.rotation.z, mouse.current.x * -0.024, 0.02);
     }
 
     if (routeRef.current && activeCityRef.current) {
@@ -341,14 +313,14 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
       <pointLight ref={lightRef} position={[0.2, 0.3, 2.4]} intensity={0.4} distance={8} color="#d3a860" />
       <directionalLight position={[-3.5, 2.8, 1.5]} intensity={0.12} color="#9a8f7a" />
 
-      <mesh position={[0, 0, -3.8]}>
-        <planeGeometry args={[16, 10]} />
+      <mesh position={[0, -0.1, -3.8]}>
+        <planeGeometry args={[18, 11]} />
         <meshBasicMaterial color="#050505" />
       </mesh>
 
-      <mesh ref={mapRef} position={[1.15, -0.02, -2.7]}>
-        <planeGeometry args={[12.8, 7.2]} />
-        <meshBasicMaterial map={mapTexture} transparent opacity={0.46} toneMapped={false} depthWrite={false} />
+      <mesh ref={mapRef} position={[0.2, -0.12, -2.7]}>
+        <planeGeometry args={[16.8, 8.8]} />
+        <meshBasicMaterial map={mapTexture} transparent opacity={0.52} toneMapped={false} depthWrite={false} />
       </mesh>
 
       <line ref={routeRef} visible={false}>
@@ -363,9 +335,9 @@ function BackgroundScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: nu
         <meshBasicMaterial color="#f0cd8a" transparent opacity={0.85} />
       </mesh>
 
-      <mesh ref={ringRef} position={[2.2, -0.7, -1.2]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[2.4, 0.035, 24, 140]} />
-        <meshStandardMaterial color="#8c6a3c" emissive="#6f4e24" emissiveIntensity={0.3} transparent opacity={0.42} />
+      <mesh ref={ringRef} position={[1.8, -0.8, -1.2]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[3.1, 0.035, 24, 140]} />
+        <meshStandardMaterial color="#8c6a3c" emissive="#6f4e24" emissiveIntensity={0.3} transparent opacity={0.28} />
       </mesh>
 
       <mesh position={[-3.8, 2.3, -2.9]} rotation={[0, 0, 0.1]}>
@@ -585,38 +557,70 @@ function SilkScene({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }
   );
 }
 
-function DubaiDistrictOverlay() {
-  const labels = [
-    { name: "JUMEIRAH", left: "15%", top: "22%", size: "0.74rem", tone: "soft" },
-    { name: "DOWNTOWN", left: "28%", top: "31%", size: "0.9rem", tone: "strong" },
-    { name: "DIFC", left: "37%", top: "37%", size: "0.86rem", tone: "strong" },
-    { name: "BUSINESS BAY", left: "46%", top: "45%", size: "0.76rem", tone: "strong" },
-    { name: "DUBAI", left: "57%", top: "34%", size: "1.3rem", tone: "primary" },
-    { name: "DUBAI MARINA", left: "73%", top: "36%", size: "0.84rem", tone: "strong" },
-    { name: "PALM JUMEIRAH", left: "77%", top: "18%", size: "0.72rem", tone: "soft" },
-    { name: "CREEK HARBOUR", left: "51%", top: "73%", size: "0.72rem", tone: "soft" },
-    { name: "EMIRATES HILLS", left: "80%", top: "56%", size: "0.68rem", tone: "soft" },
-  ] as const;
+function DubaiDistrictOverlay({ mouse }: { mouse: MutableRefObject<{ x: number; y: number }> }) {
+  const labels = useMemo(
+    () => [
+      { name: "JUMEIRAH", left: "12%", top: "19%", size: "0.74rem", tone: "soft", pointer: new THREE.Vector2(-0.78, 0.58) },
+      { name: "DOWNTOWN", left: "29%", top: "31%", size: "0.88rem", tone: "strong", pointer: new THREE.Vector2(-0.42, 0.34) },
+      { name: "DIFC", left: "38%", top: "37%", size: "0.84rem", tone: "strong", pointer: new THREE.Vector2(-0.18, 0.22) },
+      { name: "BUSINESS BAY", left: "48%", top: "45%", size: "0.76rem", tone: "strong", pointer: new THREE.Vector2(0.04, 0.06) },
+      { name: "DUBAI", left: "60%", top: "34%", size: "1.12rem", tone: "primary", pointer: new THREE.Vector2(0.22, 0.26) },
+      { name: "DUBAI MARINA", left: "79%", top: "36%", size: "0.82rem", tone: "strong", pointer: new THREE.Vector2(0.64, 0.18) },
+      { name: "PALM JUMEIRAH", left: "83%", top: "13%", size: "0.7rem", tone: "soft", pointer: new THREE.Vector2(0.82, 0.66) },
+      { name: "CREEK HARBOUR", left: "56%", top: "74%", size: "0.7rem", tone: "soft", pointer: new THREE.Vector2(0.12, -0.48) },
+      { name: "EMIRATES HILLS", left: "86%", top: "57%", size: "0.66rem", tone: "soft", pointer: new THREE.Vector2(0.76, -0.04) },
+    ],
+    [],
+  );
+  const [activeLabel, setActiveLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    let frameId = 0;
+
+    const tick = () => {
+      const currentPointer = new THREE.Vector2(mouse.current.x, mouse.current.y);
+      const nearest = labels.reduce(
+        (best, label) => {
+          const distance = label.pointer.distanceTo(currentPointer);
+          if (distance < best.distance) {
+            return { name: label.name, distance };
+          }
+          return best;
+        },
+        { name: labels[4].name, distance: Number.POSITIVE_INFINITY },
+      );
+
+      setActiveLabel((previous) => {
+        const next = nearest.distance < 0.22 ? nearest.name : null;
+        return previous === next ? previous : next;
+      });
+
+      frameId = window.requestAnimationFrame(tick);
+    };
+
+    frameId = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [labels, mouse]);
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-[7] hidden lg:block" aria-hidden="true">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] hidden lg:block" style={{ top: `${NAVBAR_GUARD}px` }} aria-hidden="true">
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
         <defs>
           <linearGradient id="district-route" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="rgba(214,184,132,0)" />
-            <stop offset="28%" stopColor="rgba(214,184,132,0.2)" />
-            <stop offset="62%" stopColor="rgba(236,196,118,0.46)" />
-            <stop offset="100%" stopColor="rgba(214,184,132,0.18)" />
+            <stop offset="28%" stopColor="rgba(214,184,132,0.24)" />
+            <stop offset="62%" stopColor="rgba(236,196,118,0.52)" />
+            <stop offset="100%" stopColor="rgba(214,184,132,0.22)" />
           </linearGradient>
         </defs>
-        <path d="M16 23 C 21 27, 27 31, 34 37 S 45 45, 57 45" fill="none" stroke="url(#district-route)" strokeWidth="0.18" />
-        <path d="M57 45 C 63 43, 70 39, 79 36 S 88 33, 94 18" fill="none" stroke="url(#district-route)" strokeWidth="0.18" />
-        <path d="M34 37 C 39 46, 45 57, 50 74" fill="none" stroke="rgba(214,184,132,0.16)" strokeWidth="0.14" />
-        <circle cx="57" cy="45" r="0.9" fill="rgba(236,196,118,0.92)" />
-        <circle cx="34" cy="37" r="0.34" fill="rgba(214,184,132,0.56)" />
-        <circle cx="45" cy="45" r="0.3" fill="rgba(214,184,132,0.46)" />
-        <circle cx="79" cy="36" r="0.34" fill="rgba(214,184,132,0.48)" />
-        <circle cx="50" cy="74" r="0.26" fill="rgba(214,184,132,0.3)" />
+        <path d="M8 22 C 14 26, 22 30, 31 36 S 42 43, 50 44" fill="none" stroke="url(#district-route)" strokeWidth="0.18" />
+        <path d="M50 44 C 59 42, 67 39, 78 35 S 88 29, 96 12" fill="none" stroke="url(#district-route)" strokeWidth="0.18" />
+        <path d="M31 36 C 37 44, 43 57, 54 74" fill="none" stroke="rgba(214,184,132,0.18)" strokeWidth="0.14" />
+        <circle cx="50" cy="44" r="0.86" fill="rgba(236,196,118,0.84)" />
+        <circle cx="31" cy="36" r="0.3" fill="rgba(214,184,132,0.46)" />
+        <circle cx="39" cy="43" r="0.28" fill="rgba(214,184,132,0.42)" />
+        <circle cx="78" cy="35" r="0.32" fill="rgba(214,184,132,0.42)" />
+        <circle cx="54" cy="74" r="0.24" fill="rgba(214,184,132,0.28)" />
       </svg>
 
       {labels.map((label) => (
@@ -629,13 +633,12 @@ function DubaiDistrictOverlay() {
             fontFamily: "'Inter', sans-serif",
             fontSize: label.size,
             letterSpacing: label.tone === "primary" ? "0.38rem" : label.tone === "strong" ? "0.2rem" : "0.15rem",
-            color:
-              label.tone === "primary"
-                ? "rgba(236,196,118,0.86)"
-                : label.tone === "strong"
-                  ? "rgba(214,184,132,0.54)"
-                  : "rgba(214,184,132,0.28)",
-            textShadow: label.tone === "primary" ? "0 0 24px rgba(236,196,118,0.14)" : "none",
+            color: activeLabel === label.name ? "rgba(236,196,118,0.88)" : "rgba(214,184,132,0.14)",
+            opacity: activeLabel === label.name ? 1 : 0.38,
+            filter: activeLabel === label.name ? "blur(0px)" : "blur(6px)",
+            transform: activeLabel === label.name ? "scale(1)" : "scale(0.985)",
+            transition: "opacity 180ms ease, filter 220ms ease, color 180ms ease, transform 220ms ease",
+            textShadow: activeLabel === label.name ? "0 0 24px rgba(236,196,118,0.12)" : "none",
           }}
         >
           {label.name}
@@ -757,7 +760,7 @@ const HeroSection = () => {
       data-section="hero"
     >
       <div className="hero-wrapper relative overflow-hidden" style={{ height: "100vh", overflow: "hidden" }}>
-        <div ref={backgroundRef} className="pointer-events-none absolute inset-0 z-0">
+        <div ref={backgroundRef} className="pointer-events-none absolute inset-x-0 bottom-0 z-0" style={{ top: `${NAVBAR_GUARD}px` }}>
           <Canvas
             className="pointer-events-none"
             dpr={[1, 1.5]}
@@ -775,8 +778,8 @@ const HeroSection = () => {
           </Canvas>
         </div>
 
-        <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(3,3,3,0.72)_0%,rgba(3,3,3,0.38)_36%,rgba(3,3,3,0.18)_58%,rgba(3,3,3,0.46)_100%)]" />
-        <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(3,3,3,0.72)_0%,rgba(3,3,3,0.18)_34%,rgba(3,3,3,0.12)_72%,rgba(3,3,3,0.88)_100%)]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-[linear-gradient(90deg,rgba(3,3,3,0.72)_0%,rgba(3,3,3,0.4)_30%,rgba(3,3,3,0.16)_58%,rgba(3,3,3,0.36)_100%)]" style={{ top: `${NAVBAR_GUARD}px` }} />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-[linear-gradient(180deg,rgba(3,3,3,0.28)_0%,rgba(3,3,3,0.14)_16%,rgba(3,3,3,0.12)_68%,rgba(3,3,3,0.88)_100%)]" style={{ top: `${NAVBAR_GUARD}px` }} />
 
         <div className="relative z-10 mx-auto h-full max-w-[1200px]" style={{ paddingLeft: "10%", paddingTop: `${NAVBAR_GUARD}px`, boxSizing: "border-box" }}>
           <div className="flex h-full flex-col justify-center">
@@ -831,9 +834,9 @@ const HeroSection = () => {
           </div>
         </div>
 
-        <DubaiDistrictOverlay />
+        <DubaiDistrictOverlay mouse={mouseRef} />
 
-        <div ref={silkRef} className="pointer-events-none absolute inset-0 z-[5]">
+        <div ref={silkRef} className="pointer-events-none absolute inset-x-0 bottom-0 z-[5]" style={{ top: `${NAVBAR_GUARD}px` }}>
           <Canvas
             className="pointer-events-none"
             dpr={[1, 1.5]}
