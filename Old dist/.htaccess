@@ -1,0 +1,76 @@
+# ─────────────────────────────────────────────────────────────
+#  Quantum Arc — Apache configuration for Hostinger
+#  Handles React Router SPA routing, MIME types, gzip & cache
+# ─────────────────────────────────────────────────────────────
+
+Options -MultiViews
+Options -Indexes
+
+# ── MIME types ──────────────────────────────────────────────
+AddType application/javascript .js .mjs
+AddType text/css .css
+AddType image/svg+xml .svg
+AddType application/json .json
+AddType font/woff2 .woff2
+AddType font/woff .woff
+
+# ── React Router SPA fallback ───────────────────────────────
+# All routes that don't match a real file or folder are sent
+# to index.html so React Router can handle them client-side.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Pass through existing files & directories
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Everything else → index.html
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# ── Gzip compression ────────────────────────────────────────
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css
+  AddOutputFilterByType DEFLATE application/javascript application/json
+  AddOutputFilterByType DEFLATE image/svg+xml font/woff2 font/woff
+</IfModule>
+
+# ── Browser caching ─────────────────────────────────────────
+<IfModule mod_expires.c>
+  ExpiresActive On
+
+  # HTML — no cache (always fresh for SPA)
+  ExpiresByType text/html                 "access plus 0 seconds"
+
+  # Hashed JS/CSS bundles — cache 1 year (Vite adds hash to filename)
+  ExpiresByType application/javascript    "access plus 1 year"
+  ExpiresByType text/css                  "access plus 1 year"
+
+  # Images & fonts
+  ExpiresByType image/png                 "access plus 1 year"
+  ExpiresByType image/jpeg                "access plus 1 year"
+  ExpiresByType image/webp                "access plus 1 year"
+  ExpiresByType image/avif                "access plus 1 year"
+  ExpiresByType image/svg+xml             "access plus 1 year"
+  ExpiresByType font/woff2                "access plus 1 year"
+  ExpiresByType font/woff                 "access plus 1 year"
+</IfModule>
+
+# ── Security headers ────────────────────────────────────────
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # Cache-Control for hashed assets (immutable = browser never re-requests)
+  <FilesMatch "\.(js|css|woff2|woff|png|jpg|jpeg|webp|avif)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # No caching for HTML
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
+</IfModule>

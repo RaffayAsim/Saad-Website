@@ -4,6 +4,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
+const IS_TOUCH = typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+
 /* ── Dubai skyline building data ── */
 const buildings = [
   { x: 3, w: 2.5, maxH: 12, era: 0, lit: 0.4 },
@@ -56,13 +58,47 @@ const TwoDecadesSection = () => {
   const sweepRef = useRef<HTMLDivElement>(null);
   const sunRef = useRef<HTMLDivElement>(null);
 
+  const view = IS_TOUCH
+    ? {
+        scrollEnd: "+=200%",
+        headingTriggerStart: "top top",
+        sunBottom: "24%",
+        skylineHeight: "45%",
+        particles: 15,
+        buildStart: (era: number) => era * 150,
+        buildEnd: (era: number) => (era + 0.22) * 150,
+        milestoneBase: (pct: number) => pct * 2,
+        milestoneEnterStart: -4,
+        milestoneEnterEnd: 20,
+        milestoneExitStart: 24,
+        milestoneExitEnd: 44,
+        statsStart: 170,
+        statsEnd: 190,
+      }
+    : {
+        scrollEnd: "+=300%",
+        headingTriggerStart: "top 75%",
+        sunBottom: "25%",
+        skylineHeight: "45%",
+        particles: 50,
+        buildStart: (era: number) => era * 75,
+        buildEnd: (era: number) => (era + 0.22) * 75,
+        milestoneBase: (pct: number) => pct,
+        milestoneEnterStart: -2,
+        milestoneEnterEnd: 10,
+        milestoneExitStart: 12,
+        milestoneExitEnd: 22,
+        statsStart: 260,
+        statsEnd: 290,
+      };
+
   useEffect(() => {
     const section = sectionRef.current;
     const pin = pinRef.current;
     if (!section || !pin) return;
 
     const ctx = gsap.context(() => {
-      const SCROLL_END = "+=300%";
+      const SCROLL_END = view.scrollEnd;
 
       // Pin the inner viewport
       ScrollTrigger.create({
@@ -148,8 +184,8 @@ const TwoDecadesSection = () => {
               ease: "elastic.out(1, 0.4)",
               scrollTrigger: {
                 trigger: section,
-                start: `top+=${b.era * 75}% top`,
-                end: `top+=${(b.era + 0.22) * 75}% top`,
+                start: `top+=${view.buildStart(b.era)}% top`,
+                end: `top+=${view.buildEnd(b.era)}% top`,
                 scrub: 0.8,
               },
             },
@@ -182,7 +218,7 @@ const TwoDecadesSection = () => {
             duration: 1.6,
             stagger: 0.18,
             ease: "power3.out",
-            scrollTrigger: { trigger: section, start: "top 75%" },
+            scrollTrigger: { trigger: section, start: view.headingTriggerStart },
           },
         );
       }
@@ -192,20 +228,21 @@ const TwoDecadesSection = () => {
         const items = milestonesRef.current.querySelectorAll(".milestone");
         items.forEach((item, i) => {
           const m = milestones[i];
-          // Enter with 3D flip
+          const p = view.milestoneBase(m.pct);
+          // Enter — simpler on mobile (no 3D flip)
           gsap.fromTo(
             item,
-            { y: 60, opacity: 0, scale: 0.7, rotateY: 90 },
+            { y: 60, opacity: 0, scale: 0.7, ...(IS_TOUCH ? {} : { rotateY: 90 }) },
             {
               y: 0,
               opacity: 1,
               scale: 1,
-              rotateY: 0,
+              ...(IS_TOUCH ? {} : { rotateY: 0 }),
               ease: "back.out(1.2)",
               scrollTrigger: {
                 trigger: section,
-                start: `top+=${m.pct - 2}% top`,
-                end: `top+=${m.pct + 10}% top`,
+                start: `top+=${p + view.milestoneEnterStart}% top`,
+                end: `top+=${p + view.milestoneEnterEnd}% top`,
                 scrub: 1.2,
               },
             },
@@ -216,12 +253,12 @@ const TwoDecadesSection = () => {
               y: -50,
               opacity: 0,
               scale: 0.85,
-              rotateY: -90,
+              ...(IS_TOUCH ? {} : { rotateY: -90 }),
               ease: "power2.in",
               scrollTrigger: {
                 trigger: section,
-                start: `top+=${m.pct + 12}% top`,
-                end: `top+=${m.pct + 22}% top`,
+                start: `top+=${p + view.milestoneExitStart}% top`,
+                end: `top+=${p + view.milestoneExitEnd}% top`,
                 scrub: 1.2,
               },
             });
@@ -234,18 +271,17 @@ const TwoDecadesSection = () => {
         const statEls = statsRef.current.querySelectorAll(".stat-item");
         gsap.fromTo(
           statEls,
-          { y: 100, opacity: 0, rotateX: -40, rotateZ: -15 },
+          { y: 100, opacity: 0, ...(IS_TOUCH ? {} : { rotateX: -40, rotateZ: -15 }) },
           {
             y: 0,
             opacity: 1,
-            rotateX: 0,
-            rotateZ: 0,
+            ...(IS_TOUCH ? {} : { rotateX: 0, rotateZ: 0 }),
             stagger: 0.2,
             ease: "back.out(1.4)",
             scrollTrigger: {
               trigger: section,
-              start: "top+260% top",
-              end: "top+290% top",
+              start: `top+=${view.statsStart}% top`,
+              end: `top+=${view.statsEnd}% top`,
               scrub: 1.5,
             },
           },
@@ -278,19 +314,19 @@ const TwoDecadesSection = () => {
     <section ref={sectionRef} className="relative" data-section="decades">
       <div
         ref={pinRef}
-        className="relative h-screen flex items-center justify-center"
+        className={IS_TOUCH ? "relative h-screen overflow-hidden" : "relative h-screen flex items-center justify-center"}
         style={{
           background: `
             radial-gradient(ellipse at 20% 30%, hsl(40 46% 20% / 0.12) 0%, transparent 55%),
             radial-gradient(ellipse at 80% 70%, hsl(40 46% 30% / 0.08) 0%, transparent 45%),
             linear-gradient(180deg, hsl(0 0% 3%) 0%, hsl(0 0% 5%) 30%, hsl(0 0% 7%) 50%, hsl(0 0% 5%) 70%, hsl(0 0% 3%) 100%)
           `,
-          overflow: "visible",
+          overflow: IS_TOUCH ? "hidden" : "visible",
         }}
       >
         {/* Gold ambient particles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {Array.from({ length: 50 }).map((_, i) => (
+          {Array.from({ length: view.particles }).map((_, i) => (
             <div
               key={i}
               className="absolute rounded-full"
@@ -329,7 +365,7 @@ const TwoDecadesSection = () => {
           ref={sunRef}
           className="absolute pointer-events-none"
           style={{
-            bottom: "25%",
+            bottom: view.sunBottom,
             left: "45%",
             width: "220px",
             height: "220px",
@@ -387,7 +423,7 @@ const TwoDecadesSection = () => {
         <div
           ref={skylineRef}
           className="absolute bottom-0 left-0 right-0 pointer-events-none"
-          style={{ height: "45%", zIndex: 1 }}
+          style={{ height: view.skylineHeight, zIndex: 1 }}
         >
           {/* Ground glow */}
           <div
@@ -480,127 +516,245 @@ const TwoDecadesSection = () => {
         />
 
         {/* Content overlay */}
-        <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
-          <div ref={headingRef}>
-            <p
-              className="font-sans text-[10px] md:text-xs tracking-[0.8em] uppercase mb-8"
-              style={{ color: "hsl(40 46% 56%)", letterSpacing: "0.2em" }}
-            >
-              Two Decades of Excellence
-            </p>
-
-            <h2
-              className="text-4xl md:text-6xl lg:text-8xl text-gallery leading-[0.9] mb-8"
-              style={{
-                fontFamily: "'Playfair Display', serif",
-                fontWeight: 100,
-                letterSpacing: "-0.02em",
-                textShadow: `
-                  0 2px 4px rgba(0,0,0,0.3),
-                  0 8px 16px hsl(40 46% 56% / 0.08)
-                `,
-              }}
-            >
-              From Private Banking
-              <br />
-              <span className="gold-text-gradient" style={{ 
-                background: "linear-gradient(135deg, hsl(40 50% 65%) 0%, hsl(40 46% 56%) 50%, hsl(40 42% 50%) 100%)",
-                backgroundClip: "text",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                filter: "drop-shadow(0 0 8px hsl(40 46% 56% / 0.15))"
-              }}>to Global Real Estate</span>
-            </h2>
-          </div>
-
-          {/* Milestones — stacked, absolute */}
-          <div ref={milestonesRef} className="relative h-28 mb-16">
-            {milestones.map((m) => (
-              <div
-                key={m.year}
-                className="milestone absolute inset-0 flex flex-col items-center justify-center opacity-0"
+        {IS_TOUCH ? (
+          <div className="absolute inset-0 z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 pt-6 text-center md:px-10 md:pt-8 lg:px-14 lg:pt-10">
+            <div ref={headingRef} className="mx-auto max-w-4xl">
+              <p
+                className="mb-4 font-sans text-[10px] uppercase tracking-[0.4em] md:mb-5 md:text-xs lg:mb-6"
+                style={{ color: "hsl(40 46% 56%)", letterSpacing: "0.26em" }}
               >
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-px gold-gradient" />
+                Two Decades of Excellence
+              </p>
+
+              <h2
+                className="text-[clamp(2.8rem,6vw,5.2rem)] text-gallery leading-[0.9] md:text-[clamp(3.8rem,6.8vw,6rem)] lg:text-[clamp(4.4rem,7vw,6.6rem)]"
+                style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontWeight: 100,
+                  letterSpacing: "-0.02em",
+                  textShadow: `
+                    0 2px 4px rgba(0,0,0,0.3),
+                    0 8px 16px hsl(40 46% 56% / 0.08)
+                  `,
+                }}
+              >
+                From Private Banking
+                <br />
+                <span className="gold-text-gradient" style={{
+                  background: "linear-gradient(135deg, hsl(40 50% 65%) 0%, hsl(40 46% 56%) 50%, hsl(40 42% 50%) 100%)",
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  filter: "drop-shadow(0 0 8px hsl(40 46% 56% / 0.15))"
+                }}>to Global Real Estate</span>
+              </h2>
+            </div>
+
+            <div ref={milestonesRef} className="relative mt-[14vh] h-32 w-full max-w-4xl sm:h-28 md:mt-[16vh] lg:mt-[18vh]">
+              {milestones.map((m) => (
+                <div
+                  key={m.year}
+                  className="milestone absolute inset-0 flex flex-col items-center justify-center opacity-0"
+                >
+                  <div className="mb-4 flex items-center gap-4">
+                    <div className="w-12 h-px gold-gradient" />
+                    <span
+                      className="font-sans text-lg font-light tracking-[0.3em] md:text-2xl"
+                      style={{
+                        color: "hsl(40 46% 56%)",
+                        textShadow: "0 0 12px hsl(40 46% 56% / 0.2)"
+                      }}
+                    >
+                      {m.year}
+                    </span>
+                    <div className="w-12 h-px gold-gradient" />
+                  </div>
                   <span
-                    className="font-sans text-lg md:text-2xl tracking-[0.3em] font-light"
-                    style={{ 
-                      color: "hsl(40 46% 56%)",
-                      textShadow: "0 0 12px hsl(40 46% 56% / 0.2)"
+                    className="mb-2 text-2xl text-gallery md:text-3xl"
+                    style={{
+                      fontFamily: "'Playfair Display', serif",
+                      fontWeight: 200,
+                      letterSpacing: "-0.01em",
+                      textShadow: "0 2px 8px rgba(0,0,0,0.2)"
                     }}
                   >
-                    {m.year}
+                    {m.label}
                   </span>
-                  <div className="w-12 h-px gold-gradient" />
+                  <span
+                    className="font-sans text-xs tracking-[0.15em] text-muted-foreground md:text-sm"
+                    style={{ color: "hsl(40 46% 56% / 0.7)" }}
+                  >
+                    {m.desc}
+                  </span>
                 </div>
-                <span
-                  className="text-2xl md:text-3xl text-gallery mb-2"
-                  style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontWeight: 200,
-                    letterSpacing: "-0.01em",
-                    textShadow: "0 2px 8px rgba(0,0,0,0.2)"
-                  }}
-                >
-                  {m.label}
-                </span>
-                <span 
-                  className="font-sans text-xs md:text-sm text-muted-foreground tracking-[0.15em]"
-                  style={{ color: "hsl(40 46% 56% / 0.7)" }}
-                >
-                  {m.desc}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          {/* Stats */}
-          <div
-            ref={statsRef}
-            className="flex justify-center gap-12 md:gap-24"
-            style={{ perspective: "800px" }}
-          >
-            {[
-              { value: "20+", label: "Years Experience" },
-              { value: "ABN", label: "AMRO Legacy" },
-              { value: "37460", label: "RERA ID" },
-            ].map((stat) => (
-              <div key={stat.label} className="stat-item text-center relative group opacity-0">
-                <div
-                  className="absolute -inset-6 rounded-3xl opacity-0 group-hover:opacity-100 transition-all duration-700 group-hover:scale-110"
-                  style={{
-                    background:
-                      "radial-gradient(circle, hsl(40 46% 56% / 0.12), transparent 70%)",
-                    filter: "blur(8px)",
-                  }}
-                />
-                <div
-                  className="text-5xl md:text-7xl gold-text-gradient mb-4 relative"
-                  style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontWeight: 100,
-                    letterSpacing: "-0.02em",
-                    textShadow: `
-                      0 4px 12px hsl(40 46% 56% / 0.15),
-                      0 0 20px hsl(40 46% 56% / 0.1)
-                    `,
-                  }}
-                >
-                  {stat.value}
+            <div
+              ref={statsRef}
+              className="mt-auto flex justify-center gap-10 pb-12 md:gap-16 md:pb-14 lg:gap-24 lg:pb-16"
+              style={{ perspective: "800px" }}
+            >
+              {[
+                { value: "20+", label: "Years Experience" },
+                { value: "ABN", label: "AMRO Legacy" },
+                { value: "37460", label: "RERA ID" },
+              ].map((stat) => (
+                <div key={stat.label} className="stat-item relative text-center opacity-0 group">
+                  <div
+                    className="absolute -inset-6 rounded-3xl opacity-0 transition-all duration-700 group-hover:scale-110 group-hover:opacity-100"
+                    style={{
+                      background: "radial-gradient(circle, hsl(40 46% 56% / 0.12), transparent 70%)",
+                      filter: "blur(8px)",
+                    }}
+                  />
+                  <div
+                    className="relative mb-4 text-5xl gold-text-gradient md:text-7xl"
+                    style={{
+                      fontFamily: "'Playfair Display', serif",
+                      fontWeight: 100,
+                      letterSpacing: "-0.02em",
+                      textShadow: `
+                        0 4px 12px hsl(40 46% 56% / 0.15),
+                        0 0 20px hsl(40 46% 56% / 0.1)
+                      `,
+                    }}
+                  >
+                    {stat.value}
+                  </div>
+                  <div
+                    className="relative font-sans text-[10px] uppercase tracking-[0.3em] md:text-xs"
+                    style={{
+                      color: "hsl(40 46% 56%)",
+                      letterSpacing: "0.15em"
+                    }}
+                  >
+                    {stat.label}
+                  </div>
                 </div>
-                <div 
-                  className="font-sans text-[10px] md:text-xs tracking-[0.3em] uppercase relative"
-                  style={{ 
-                    color: "hsl(40 46% 56%)",
-                    letterSpacing: "0.15em"
-                  }}
-                >
-                  {stat.label}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="relative z-10 mx-auto max-w-5xl px-6 text-center">
+            <div ref={headingRef}>
+              <p
+                className="mb-8 font-sans text-[10px] uppercase tracking-[0.8em] md:text-xs"
+                style={{ color: "hsl(40 46% 56%)", letterSpacing: "0.2em" }}
+              >
+                Two Decades of Excellence
+              </p>
+
+              <h2
+                className="mb-8 text-4xl leading-[0.9] text-gallery md:text-6xl lg:text-8xl"
+                style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontWeight: 100,
+                  letterSpacing: "-0.02em",
+                  textShadow: `
+                    0 2px 4px rgba(0,0,0,0.3),
+                    0 8px 16px hsl(40 46% 56% / 0.08)
+                  `,
+                }}
+              >
+                From Private Banking
+                <br />
+                <span className="gold-text-gradient" style={{
+                  background: "linear-gradient(135deg, hsl(40 50% 65%) 0%, hsl(40 46% 56%) 50%, hsl(40 42% 50%) 100%)",
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  filter: "drop-shadow(0 0 8px hsl(40 46% 56% / 0.15))"
+                }}>to Global Real Estate</span>
+              </h2>
+            </div>
+
+            <div ref={milestonesRef} className="relative mb-16 h-28">
+              {milestones.map((m) => (
+                <div
+                  key={m.year}
+                  className="milestone absolute inset-0 flex flex-col items-center justify-center opacity-0"
+                >
+                  <div className="mb-4 flex items-center gap-4">
+                    <div className="w-12 h-px gold-gradient" />
+                    <span
+                      className="font-sans text-lg font-light tracking-[0.3em] md:text-2xl"
+                      style={{
+                        color: "hsl(40 46% 56%)",
+                        textShadow: "0 0 12px hsl(40 46% 56% / 0.2)"
+                      }}
+                    >
+                      {m.year}
+                    </span>
+                    <div className="w-12 h-px gold-gradient" />
+                  </div>
+                  <span
+                    className="mb-2 text-2xl text-gallery md:text-3xl"
+                    style={{
+                      fontFamily: "'Playfair Display', serif",
+                      fontWeight: 200,
+                      letterSpacing: "-0.01em",
+                      textShadow: "0 2px 8px rgba(0,0,0,0.2)"
+                    }}
+                  >
+                    {m.label}
+                  </span>
+                  <span
+                    className="font-sans text-xs tracking-[0.15em] text-muted-foreground md:text-sm"
+                    style={{ color: "hsl(40 46% 56% / 0.7)" }}
+                  >
+                    {m.desc}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div
+              ref={statsRef}
+              className="flex justify-center gap-12 md:gap-24"
+              style={{ perspective: "800px" }}
+            >
+              {[
+                { value: "20+", label: "Years Experience" },
+                { value: "ABN", label: "AMRO Legacy" },
+                { value: "37460", label: "RERA ID" },
+              ].map((stat) => (
+                <div key={stat.label} className="stat-item relative text-center opacity-0 group">
+                  <div
+                    className="absolute -inset-6 rounded-3xl opacity-0 transition-all duration-700 group-hover:scale-110 group-hover:opacity-100"
+                    style={{
+                      background: "radial-gradient(circle, hsl(40 46% 56% / 0.12), transparent 70%)",
+                      filter: "blur(8px)",
+                    }}
+                  />
+                  <div
+                    className="relative mb-4 text-5xl gold-text-gradient md:text-7xl"
+                    style={{
+                      fontFamily: "'Playfair Display', serif",
+                      fontWeight: 100,
+                      letterSpacing: "-0.02em",
+                      textShadow: `
+                        0 4px 12px hsl(40 46% 56% / 0.15),
+                        0 0 20px hsl(40 46% 56% / 0.1)
+                      `,
+                    }}
+                  >
+                    {stat.value}
+                  </div>
+                  <div
+                    className="relative font-sans text-[10px] uppercase tracking-[0.3em] md:text-xs"
+                    style={{
+                      color: "hsl(40 46% 56%)",
+                      letterSpacing: "0.15em"
+                    }}
+                  >
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

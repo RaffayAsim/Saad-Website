@@ -158,6 +158,21 @@ html.lenis, html.lenis body {
   50% { transform: translateY(-20px) scale(1.1); opacity: 1; }
 }
 
+/* Ancient pillar shimmer */
+@keyframes pillarShimmer {
+  0%   { background-position: 100% 100%; }
+  50%  { background-position: 100% 0%; }
+  100% { background-position: 100% 100%; }
+}
+
+/* Banking section floating particles */
+@keyframes bankingFloat {
+  0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0.3; }
+  25% { transform: translateY(-12px) translateX(6px); opacity: 0.7; }
+  50% { transform: translateY(-22px) translateX(-4px); opacity: 0.5; }
+  75% { transform: translateY(-8px) translateX(8px); opacity: 0.6; }
+}
+
 /* Scroll line indicator */
 @keyframes scrollLine {
   0% { transform: translateY(-100%); }
@@ -169,6 +184,53 @@ html.lenis, html.lenis body {
 @keyframes marquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-33.333%); }
+}
+
+/* Hero: cloud blob drifting */
+@keyframes cloudFloat1 {
+  0%   { transform: translate(0px,   0px)   scale(1);    opacity: 0.88; }
+  100% { transform: translate(55px,  42px)  scale(1.06); opacity: 1; }
+}
+@keyframes cloudFloat2 {
+  0%   { transform: translate(0px,   0px)   scale(1);    opacity: 0.82; }
+  100% { transform: translate(-48px, 52px)  scale(0.94); opacity: 0.95; }
+}
+@keyframes cloudFloat3 {
+  0%   { transform: translate(0px,  0px)   scale(1);    opacity: 0.6; }
+  50%  { opacity: 1; }
+  100% { transform: translate(-38px,-32px) scale(1.10); opacity: 0.7; }
+}
+@keyframes cloudFloat4 {
+  0%   { transform: translate(0px,  0px)   scale(1);    opacity: 0.85; }
+  100% { transform: translate(42px,-36px)  scale(0.92); opacity: 0.96; }
+}
+@keyframes cloudFloat5 {
+  0%   { transform: translate(0px,  0px)   scale(1);    opacity: 0.72; }
+  100% { transform: translate(-52px,28px)  scale(1.05); opacity: 0.88; }
+}
+
+/* Water-drop cursor ripple (kept for reference) */
+@keyframes waterRipple {
+  0%   { transform: translate(-50%, -50%) scale(0.25); opacity: 0.75; }
+  100% { transform: translate(-50%, -50%) scale(3.8);  opacity: 0; }
+}
+
+/* City crosshair survey marker */
+@keyframes cityPulse {
+  0%, 100% { opacity: 0.12; }
+  50%      { opacity: 0.38; }
+}
+/* Flare as traveling route dot passes through */
+@keyframes cityFlare {
+  0%, 68%, 100% { opacity: 0.12; }
+  78%           { opacity: 0.85; }
+}
+
+/* Hero: explore hint */
+@keyframes exploreHint {
+  0%        { opacity: 0; transform: translateX(-50%) translateY(5px); }
+  15%, 75%  { opacity: 0.8; transform: translateX(-50%) translateY(0); }
+  100%      { opacity: 0; transform: translateX(-50%) translateY(-3px); }
 }
 @keyframes marquee-reverse {
   0% { transform: translateX(-33.333%); }

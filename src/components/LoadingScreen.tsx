@@ -85,7 +85,7 @@ const LoadingScreen = ({ onComplete }: Props) => {
       style={{ background: "hsl(0 0% 2%)" }}
     >
       {/* Counter */}
-      <div className="absolute top-8 right-12 flex items-baseline gap-1">
+      <div className="absolute top-6 right-6 sm:top-8 sm:right-12 flex items-baseline gap-1">
         <span
           ref={counterRef}
           className="font-sans text-sm tracking-[0.3em]"
@@ -102,10 +102,10 @@ const LoadingScreen = ({ onComplete }: Props) => {
       </div>
 
       {/* Corner decorative lines */}
-      <div className="absolute top-8 left-12 w-12 h-px" style={{ background: "hsl(40 46% 56% / 0.15)" }} />
-      <div className="absolute top-8 left-12 w-px h-12" style={{ background: "hsl(40 46% 56% / 0.15)" }} />
-      <div className="absolute bottom-8 right-12 w-12 h-px" style={{ background: "hsl(40 46% 56% / 0.15)" }} />
-      <div className="absolute bottom-8 right-12 w-px h-12" style={{ background: "hsl(40 46% 56% / 0.15)" }} />
+      <div className="absolute top-6 left-6 sm:top-8 sm:left-12 w-8 sm:w-12 h-px" style={{ background: "hsl(40 46% 56% / 0.15)" }} />
+      <div className="absolute top-6 left-6 sm:top-8 sm:left-12 w-px h-8 sm:h-12" style={{ background: "hsl(40 46% 56% / 0.15)" }} />
+      <div className="absolute bottom-6 right-6 sm:bottom-8 sm:right-12 w-8 sm:w-12 h-px" style={{ background: "hsl(40 46% 56% / 0.15)" }} />
+      <div className="absolute bottom-6 right-6 sm:bottom-8 sm:right-12 w-px h-8 sm:h-12" style={{ background: "hsl(40 46% 56% / 0.15)" }} />
 
       {/* Main text */}
       <div

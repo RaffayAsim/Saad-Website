@@ -1,645 +1,560 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Line, Reflector, RoundedBox } from "@react-three/drei";
-import * as THREE from "three";
 
 gsap.registerPlugin(ScrollTrigger);
 
-type SlideId = "dna" | "geometry" | "scale" | "blend";
+const IS_TOUCH = typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
 
-type Slide = {
-  id: SlideId;
+/* -- Typography -- */
+const MONO = "'IBM Plex Mono','SFMono-Regular',monospace";
+const SERIF = "'Playfair Display',serif";
+const BODY = "'Cormorant Garamond',serif";
+
+/* -- Phase data -- */
+interface Phase {
   eyebrow: string;
-  title: string;
   stat: string;
   unit: string;
+  title: string;
   body: string;
-  note: string;
-  markers: string[];
-};
+}
 
-const MONO_FONT = "'IBM Plex Mono', 'SFMono-Regular', 'Cascadia Code', 'Fira Code', monospace";
-const SERIF_FONT = "'Playfair Display', serif";
-
-const slides: Slide[] = [
+const PHASES: Phase[] = [
   {
-    id: "dna",
-    eyebrow: "Institutional DNA",
-    title: "7 Years inside ABN AMRO shaped the discipline behind every advisory decision.",
+    eyebrow: "INSTITUTIONAL RIGOR",
     stat: "7",
-    unit: "YEARS AT ABN AMRO",
-    body:
-      "Private banking taught structure, discretion, and sequence. That logic still governs how opportunities are filtered, framed, and executed for high-value clients.",
-    note: "Behind the glass: a wireframe vault door, representing security, governance, and controlled access.",
-    markers: ["Institutional trust", "Cross-border discipline", "Private wealth rigor"],
+    unit: "Years in Private Banking",
+    title: "Banking Pedigree",
+    body: "Seven years inside ABN AMRO forged a discipline of structure, discretion, and institutional rigor � the foundation that still governs every advisory decision.",
   },
   {
-    id: "geometry",
-    eyebrow: "Market Geometry",
-    title: "50+ landmark deals built a sharper understanding of value, positioning, and market rhythm.",
+    eyebrow: "MARKET GEOMETRY",
     stat: "50+",
-    unit: "LANDMARK DEALS",
-    body:
-      "Retail and commercial transactions are not treated as isolated wins. They are read as systems of movement, pricing, timing, and portfolio shape.",
-    note: "Behind the glass: a skyline cluster emerging from the tablet surface like a market map becoming physical form.",
-    markers: ["Retail intelligence", "Prime asset selection", "Long-horizon thinking"],
+    unit: "Landmark Deals � $2B+",
+    title: "Market Instinct",
+    body: "Fifty landmark transactions across global real estate built an instinct for value, rhythm, and off-market access that shapes every position taken.",
   },
   {
-    id: "scale",
-    eyebrow: "Sovereign Scale",
-    title: "$2B+ in relationship value creates access, leverage, and conversations that rarely reach the open market.",
-    stat: "$2B+",
-    unit: "MANAGED & CONNECTED",
-    body:
-      "Serious advisory depends on the quality of the network around it. Capital flow, counterparties, and timing become more powerful when the ecosystem is already in place.",
-    note: "Behind the glass: a gold fluid current moving across the tablet, translating capital into motion.",
-    markers: ["Elite network", "Off-market reach", "Institutional counterparties"],
-  },
-  {
-    id: "blend",
-    eyebrow: "Rare Blend",
-    title: "Finance logic and real estate instinct converge into one signature advisory lens.",
-    stat: "S.B.Z",
-    unit: "SIGNATURE METHOD",
-    body:
-      "At the final phase, the monograph leaves metrics behind and resolves into identity: an approach built from analytical precision, market fluency, and trust at the highest level.",
-    note: "The tablet fractures into light and reforms as S.B.Z, turning strategic advantage into a signature mark.",
-    markers: ["Dual-sector mastery", "Luxury judgment", "Identity as infrastructure"],
+    eyebrow: "RERA CERTIFIED",
+    stat: "37460",
+    unit: "Official RERA Seal",
+    title: "Clearance",
+    body: "Government-sealed clearance completes the credential � precision, authority, and trust fused into a single licence to operate at the highest tier of Dubai real estate.",
   },
 ];
 
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
-}
-
-function smoothstep(min: number, max: number, value: number) {
-  const t = THREE.MathUtils.clamp((value - min) / (max - min), 0, 1);
-  return t * t * (3 - 2 * t);
-}
-
-function LaserGrid({ progress }: { progress: number }) {
-  const groupRef = useRef<THREE.Group>(null);
-
-  const lines = useMemo(() => {
-    const result: Array<[THREE.Vector3, THREE.Vector3]> = [];
-    for (let x = -22; x <= 22; x += 2) {
-      result.push([new THREE.Vector3(x, -3.2, -24), new THREE.Vector3(x, -3.2, 18)]);
-    }
-    for (let z = -24; z <= 18; z += 2) {
-      result.push([new THREE.Vector3(-22, -3.2, z), new THREE.Vector3(22, -3.2, z)]);
-    }
-    return result;
-  }, []);
-
-  useFrame((state) => {
-    if (!groupRef.current) return;
-    groupRef.current.position.z = (state.clock.elapsedTime * 1.8) % 2;
-    groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.12) * 0.04;
-  });
-
-  return (
-    <group ref={groupRef}>
-      {lines.map(([start, end], index) => (
-        <Line
-          key={index}
-          points={[start, end]}
-          color="#b98d41"
-          transparent
-          opacity={0.18 + progress * 0.08}
-          lineWidth={0.6}
-        />
-      ))}
-    </group>
-  );
-}
-
-function VaultDoor({ amount }: { amount: number }) {
-  const groupRef = useRef<THREE.Group>(null);
-
-  useFrame((state) => {
-    if (!groupRef.current) return;
-    groupRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 0.6) * 0.02 * amount;
-    groupRef.current.position.z = lerp(-0.4, 0.2, amount);
-  });
-
-  const ringPoints = useMemo(() => {
-    const points: THREE.Vector3[] = [];
-    for (let index = 0; index <= 96; index += 1) {
-      const angle = (index / 96) * Math.PI * 2;
-      points.push(new THREE.Vector3(Math.cos(angle) * 1.2, Math.sin(angle) * 1.2, 0));
-    }
-    return points;
-  }, []);
-
-  const spokes = useMemo(
-    () => [
-      [new THREE.Vector3(-0.9, 0, 0), new THREE.Vector3(0.9, 0, 0)],
-      [new THREE.Vector3(0, -0.9, 0), new THREE.Vector3(0, 0.9, 0)],
-      [new THREE.Vector3(-0.62, -0.62, 0), new THREE.Vector3(0.62, 0.62, 0)],
-      [new THREE.Vector3(-0.62, 0.62, 0), new THREE.Vector3(0.62, -0.62, 0)],
-    ],
-    [],
-  );
-
-  return (
-    <group ref={groupRef} position={[0, 0, -0.45]} scale={amount}>
-      <Line points={ringPoints} color="#d7b16e" transparent opacity={0.8} lineWidth={1} />
-      <Line points={[new THREE.Vector3(-1.45, 0, 0), new THREE.Vector3(-1.05, 0, 0)]} color="#d7b16e" transparent opacity={0.65} lineWidth={1} />
-      <Line points={[new THREE.Vector3(1.05, 0, 0), new THREE.Vector3(1.45, 0, 0)]} color="#d7b16e" transparent opacity={0.65} lineWidth={1} />
-      {spokes.map((points, index) => (
-        <Line key={index} points={points} color="#d7b16e" transparent opacity={0.72} lineWidth={1} />
-      ))}
-    </group>
-  );
-}
-
-function SkylineCluster({ amount }: { amount: number }) {
-  const groupRef = useRef<THREE.Group>(null);
-  const heights = [1.8, 2.6, 1.5, 3.1, 2.1, 2.8];
-  const positions = [-1.6, -1, -0.25, 0.45, 1.05, 1.65];
-
-  useFrame((state) => {
-    if (!groupRef.current) return;
-    groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.4) * 0.12;
-    groupRef.current.position.y = -0.2 + Math.sin(state.clock.elapsedTime * 0.8) * 0.04;
-  });
-
-  return (
-    <group ref={groupRef} position={[0, -0.3, -0.5]} scale={amount}>
-      {heights.map((height, index) => (
-        <mesh key={index} position={[positions[index], height / 2 - 1.25, 0]}>
-          <boxGeometry args={[0.28 + (index % 2) * 0.14, height, 0.28]} />
-          <meshStandardMaterial
-            color="#c59a59"
-            emissive="#9c6f2a"
-            emissiveIntensity={0.35}
-            wireframe
-            transparent
-            opacity={0.8}
-          />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-function GoldFlow({ amount }: { amount: number }) {
-  const lineRef = useRef<THREE.Line>(null);
-  const points = useMemo(
-    () =>
-      Array.from({ length: 80 }, (_, index) => {
-        const x = THREE.MathUtils.mapLinear(index, 0, 79, -2.2, 2.2);
-        return new THREE.Vector3(x, Math.sin(index * 0.24) * 0.18, 0);
-      }),
-    [],
-  );
-
-  const geometry = useMemo(() => {
-    const flowGeometry = new THREE.BufferGeometry();
-    flowGeometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(points.flatMap((point) => [point.x, point.y, point.z]), 3),
-    );
-    return flowGeometry;
-  }, [points]);
-
-  const material = useMemo(
-    () => new THREE.LineBasicMaterial({ color: "#d4a657", transparent: true, opacity: 0.85 }),
-    [],
-  );
-
-  const flowLine = useMemo(() => new THREE.Line(geometry, material), [geometry, material]);
-
-  useEffect(() => {
-    return () => {
-      geometry.dispose();
-      material.dispose();
-    };
-  }, [geometry, material]);
-
-  useFrame((state) => {
-    if (!lineRef.current) return;
-    const position = geometry.attributes.position as THREE.BufferAttribute;
-    for (let index = 0; index < position.count; index += 1) {
-      const x = THREE.MathUtils.mapLinear(index, 0, position.count - 1, -2.2, 2.2);
-      position.setY(index, Math.sin(index * 0.18 + state.clock.elapsedTime * 2.6) * 0.22);
-      position.setZ(index, Math.cos(x * 2 + state.clock.elapsedTime * 1.4) * 0.08);
-    }
-    position.needsUpdate = true;
-    lineRef.current.position.z = -0.34;
-    lineRef.current.scale.setScalar(amount);
-  });
-
-  return <primitive ref={lineRef} object={flowLine} />;
-}
-
-function ParticleLogo({ amount }: { amount: number }) {
-  const pointsRef = useRef<THREE.Points>(null);
-  const particleCount = 520;
-
-  const data = useMemo(() => {
-    const positions = new Float32Array(particleCount * 3);
-    const targets = new Float32Array(particleCount * 3);
-
-    for (let index = 0; index < particleCount; index += 1) {
-      positions[index * 3] = (Math.random() - 0.5) * 8;
-      positions[index * 3 + 1] = (Math.random() - 0.5) * 5;
-      positions[index * 3 + 2] = (Math.random() - 0.5) * 4;
-
-      const t = index / particleCount;
-      let x = 0;
-      let y = 0;
-
-      if (t < 0.33) {
-        const local = t / 0.33;
-        const angle = local * Math.PI * 1.6 + 0.3;
-        x = -1.5 + Math.sin(angle) * 0.65;
-        y = Math.cos(angle) * 0.95;
-      } else if (t < 0.66) {
-        const local = (t - 0.33) / 0.33;
-        const angle = local * Math.PI * 1.8 + 0.2;
-        x = 0.1 + Math.sin(angle) * 0.66;
-        y = Math.cos(angle) * 0.96;
-      } else {
-        const local = (t - 0.66) / 0.34;
-        if (local < 0.35) {
-          x = 1.7 - local * 1.6;
-          y = 0.95;
-        } else if (local < 0.65) {
-          x = 1.14 + Math.sin((local - 0.35) / 0.3 * Math.PI) * 0.52;
-          y = 0.12;
-        } else {
-          x = 1.7 - (local - 0.65) / 0.35 * 1.6;
-          y = -0.95;
-        }
-      }
-
-      targets[index * 3] = x;
-      targets[index * 3 + 1] = y;
-      targets[index * 3 + 2] = 0;
-    }
-
-    return { positions, targets };
-  }, []);
-
-  useFrame((state) => {
-    if (!pointsRef.current) return;
-    const position = pointsRef.current.geometry.attributes.position as THREE.BufferAttribute;
-    for (let index = 0; index < particleCount; index += 1) {
-      const base = index * 3;
-      const startX = data.positions[base];
-      const startY = data.positions[base + 1];
-      const startZ = data.positions[base + 2];
-      const targetX = data.targets[base];
-      const targetY = data.targets[base + 1];
-      const targetZ = data.targets[base + 2];
-      const drift = (1 - amount) * 0.45;
-      position.setX(index, lerp(startX + Math.sin(index + state.clock.elapsedTime) * drift, targetX, amount));
-      position.setY(index, lerp(startY + Math.cos(index * 0.7 + state.clock.elapsedTime * 1.4) * drift, targetY, amount));
-      position.setZ(index, lerp(startZ, targetZ, amount));
-    }
-    position.needsUpdate = true;
-  });
-
-  return (
-    <points ref={pointsRef} position={[0, 0, -0.12]}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" array={data.positions} count={particleCount} itemSize={3} />
-      </bufferGeometry>
-      <pointsMaterial color="#e7c47b" size={0.055} sizeAttenuation transparent opacity={0.9} />
-    </points>
-  );
-}
-
-function TabletScene({ progress }: { progress: number }) {
-  const tabletRef = useRef<THREE.Group>(null);
-  const edgeRef = useRef<THREE.Mesh>(null);
-
-  const dnaAmount = 1 - smoothstep(0.22, 0.4, progress);
-  const geometryAmount = smoothstep(0.2, 0.42, progress) * (1 - smoothstep(0.48, 0.68, progress));
-  const scaleAmount = smoothstep(0.5, 0.74, progress) * (1 - smoothstep(0.78, 0.92, progress));
-  const blendAmount = smoothstep(0.82, 1, progress);
-
-  useFrame((state) => {
-    if (!tabletRef.current) return;
-    const targetRotationX = -0.18 + progress * 0.04;
-    const targetRotationY = THREE.MathUtils.lerp(-0.08, 0.08, progress);
-    const targetPositionY = 0.18 + Math.sin(state.clock.elapsedTime * 0.35) * 0.025;
-    tabletRef.current.rotation.x = THREE.MathUtils.lerp(tabletRef.current.rotation.x, targetRotationX, 0.045);
-    tabletRef.current.rotation.y = THREE.MathUtils.lerp(tabletRef.current.rotation.y, targetRotationY, 0.045);
-    tabletRef.current.position.y = THREE.MathUtils.lerp(tabletRef.current.position.y, targetPositionY, 0.045);
-    if (edgeRef.current) {
-      const material = edgeRef.current.material as THREE.MeshStandardMaterial;
-      material.emissiveIntensity = 0.32 + Math.sin(state.clock.elapsedTime * 0.8) * 0.03 + blendAmount * 0.22;
-    }
-  });
-
-  return (
-    <>
-      <color attach="background" args={["#040404"]} />
-      <fog attach="fog" args={["#050505", 8, 28]} />
-      <ambientLight intensity={0.35} />
-      <directionalLight position={[2, 6, 6]} intensity={1.2} color="#f2d29a" />
-      <pointLight position={[-5, 2, 6]} intensity={2.2} color="#b8873d" />
-      <pointLight position={[0, -1, -2]} intensity={1.4} color="#7d5a28" />
-
-      <LaserGrid progress={progress} />
-
-      <Reflector
-        resolution={512}
-        args={[30, 18]}
-        mirror={0.45}
-        mixStrength={0.8}
-        blur={[300, 60]}
-        minDepthThreshold={0.8}
-        maxDepthThreshold={1.3}
-        position={[0, -3.35, -1.5]}
-        rotation={[-Math.PI / 2, 0, 0]}
-      />
-
-      <group ref={tabletRef} position={[0, 0.18, 0]}>
-        <mesh ref={edgeRef} position={[0, 0, -0.02]}>
-          <boxGeometry args={[5.45, 3.3, 0.18]} />
-          <meshStandardMaterial color="#b98d41" emissive="#8a6022" emissiveIntensity={0.4} metalness={0.95} roughness={0.2} />
-        </mesh>
-
-        <RoundedBox args={[5.25, 3.08, 0.12]} radius={0.15} smoothness={6}>
-          <meshPhysicalMaterial
-            color="#f5ead7"
-            transparent
-            opacity={0.22}
-            transmission={0.95}
-            roughness={0.05}
-            thickness={0.6}
-            ior={1.2}
-            metalness={0.08}
-            reflectivity={0.65}
-            attenuationDistance={1.5}
-            attenuationColor="#f0c477"
-          />
-        </RoundedBox>
-
-        <mesh position={[0, 0, 0.03]}>
-          <planeGeometry args={[4.92, 2.76]} />
-          <meshBasicMaterial color="#0b0b0b" transparent opacity={0.42} />
-        </mesh>
-
-        <VaultDoor amount={dnaAmount} />
-        <SkylineCluster amount={geometryAmount} />
-        <GoldFlow amount={scaleAmount} />
-        <ParticleLogo amount={blendAmount} />
-      </group>
-    </>
-  );
-}
+/* -------------------------------------------
+   BankingAdvantage � scroll-pinned, pure CSS/GSAP
+   Three phases revealed on scroll, giant stat
+   numbers as the visual hero, gold timeline.
+   ------------------------------------------- */
 
 const BankingAdvantage = () => {
-  const sectionRef = useRef<HTMLElement>(null);
-  const headerRef = useRef<HTMLDivElement>(null);
-  const tabletCopyRef = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0);
-
-  const activeIndex = Math.min(slides.length - 1, Math.floor(progress * slides.length));
-  const activeSlide = slides[activeIndex];
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const pinRef = useRef<HTMLDivElement>(null);
+  const timelineTrackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const section = sectionRef.current;
-    if (!section) return;
+    const pin = pinRef.current;
+    if (!section || !pin) return;
 
     const ctx = gsap.context(() => {
-      if (headerRef.current) {
-        const children = Array.from(headerRef.current.children);
+      const SCROLL_END = IS_TOUCH ? "+=200%" : "+=300%";
+
+      /* Pin the viewport */
+      ScrollTrigger.create({
+        trigger: section,
+        start: "top top",
+        end: SCROLL_END,
+        pin: pin,
+        pinSpacing: true,
+      });
+
+      /* Timeline track fill */
+      if (timelineTrackRef.current) {
         gsap.fromTo(
-          children,
-          { opacity: 0, y: 40 },
+          timelineTrackRef.current,
+          { scaleY: 0 },
           {
-            opacity: 1,
-            y: 0,
-            duration: 1.2,
-            stagger: 0.1,
-            ease: "power3.out",
-            scrollTrigger: { trigger: section, start: "top 80%" },
+            scaleY: 1,
+            ease: "none",
+            scrollTrigger: {
+              trigger: section,
+              start: "top top",
+              end: SCROLL_END,
+              scrub: 1,
+            },
           },
         );
       }
 
-      ScrollTrigger.create({
-        trigger: section,
-        start: "top top",
-        end: "bottom bottom",
-        scrub: 1.2,
-        onUpdate: (self) => {
-          setProgress(self.progress);
-        },
+      /* Phase reveals */
+      const phases = section.querySelectorAll<HTMLElement>(".ba-phase");
+      phases.forEach((phase, i) => {
+        const els = phase.querySelectorAll<HTMLElement>(".ba-r");
+        const bigNum = phase.querySelector<HTMLElement>(".ba-big");
+        const dot = phase.querySelector<HTMLElement>(".ba-dot");
+
+        // Set initial state
+        gsap.set(els, { opacity: 0, y: 60 });
+        if (bigNum) gsap.set(bigNum, { opacity: 0, scale: 0.7, rotateX: 40 });
+        if (dot) gsap.set(dot, { scale: 0 });
+
+        const enterStart = i * 33.33;
+        const enterEnd = enterStart + 14;
+        const exitStart = enterStart + 26;
+        const exitEnd = enterStart + 33;
+
+        // Enter
+        const enterTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: `top+=${enterStart}% top`,
+            end: `top+=${enterEnd}% top`,
+            scrub: 1,
+          },
+        });
+
+        if (dot) enterTl.to(dot, { scale: 1, duration: 0.2, ease: "back.out(2)" }, 0);
+        if (bigNum)
+          enterTl.to(
+            bigNum,
+            { opacity: 1, scale: 1, rotateX: 0, duration: 0.6, ease: "power3.out" },
+            0,
+          );
+        enterTl.to(
+          els,
+          { opacity: 1, y: 0, stagger: 0.1, duration: 0.6, ease: "power3.out" },
+          0.1,
+        );
+
+        // Exit (except last)
+        if (i < PHASES.length - 1) {
+          const exitTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: section,
+              start: `top+=${exitStart}% top`,
+              end: `top+=${exitEnd}% top`,
+              scrub: 1,
+            },
+          });
+
+          if (bigNum)
+            exitTl.to(
+              bigNum,
+              { opacity: 0, scale: 1.15, rotateX: -20, duration: 0.5, ease: "power2.in" },
+              0,
+            );
+          exitTl.to(
+            els,
+            { opacity: 0, y: -40, stagger: 0.04, duration: 0.4, ease: "power2.in" },
+            0.05,
+          );
+          if (dot) exitTl.to(dot, { scale: 0, duration: 0.3 }, 0);
+        }
       });
     }, section);
 
     return () => ctx.revert();
   }, []);
 
-  useEffect(() => {
-    if (!tabletCopyRef.current) return;
-    const children = Array.from(tabletCopyRef.current.children);
-    gsap.killTweensOf(children);
-    gsap.fromTo(
-      children,
-      { opacity: 0, y: 12, filter: "blur(6px)" },
-      {
-        opacity: 1,
-        y: 0,
-        filter: "blur(0px)",
-        duration: 0.5,
-        stagger: 0.05,
-        ease: "power3.out",
-      },
-    );
-  }, [activeSlide]);
-
   return (
-    <section
-      ref={sectionRef}
-      className="relative overflow-hidden"
-      style={{
-        minHeight: "300vh",
-        background:
-          "radial-gradient(circle at 50% 20%, hsl(40 28% 10% / 0.18), transparent 28%), linear-gradient(180deg, hsl(0 0% 2%) 0%, hsl(0 0% 3%) 40%, hsl(0 0% 2%) 100%)",
-      }}
-      data-section="banking-advantage"
-    >
+    <section ref={sectionRef} className="relative" data-section="banking-advantage">
       <div
-        className="pointer-events-none absolute inset-0 opacity-60"
-        style={{ background: "linear-gradient(90deg, transparent 0%, hsl(40 46% 56% / 0.035) 48%, transparent 52%, transparent 100%)" }}
-      />
-
-      <div className="sticky top-0 h-screen overflow-hidden">
-        <div className="absolute inset-0">
-          <Canvas camera={{ position: [0, 0.25, 8.2], fov: 31 }} dpr={[1, 1.5]} gl={{ antialias: true, alpha: true }}>
-            <TabletScene progress={progress} />
-          </Canvas>
+        ref={pinRef}
+        className="relative h-screen overflow-hidden"
+        style={{
+          background: `
+            radial-gradient(ellipse at 30% 40%, hsl(40 30% 10% / 0.2) 0%, transparent 55%),
+            radial-gradient(ellipse at 80% 70%, hsl(40 40% 12% / 0.12) 0%, transparent 45%),
+            linear-gradient(180deg, hsl(0 0% 3%) 0%, hsl(0 0% 4.5%) 50%, hsl(0 0% 3%) 100%)
+          `,
+        }}
+      >
+        {/* Ambient gold particles */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {Array.from({ length: IS_TOUCH ? 10 : 30 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                width: `${Math.random() * 2.5 + 0.5}px`,
+                height: `${Math.random() * 2.5 + 0.5}px`,
+                background: `hsl(40 46% 56% / ${Math.random() * 0.25 + 0.05})`,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animation: `float ${6 + Math.random() * 12}s ease-in-out infinite`,
+                animationDelay: `${Math.random() * 6}s`,
+              }}
+            />
+          ))}
         </div>
 
-        <div className="relative z-10 mx-auto flex h-full w-full max-w-[1000px] items-center px-6 py-8 md:px-10 md:py-10">
-          <div className="grid w-full gap-5 md:gap-7">
-          <div ref={headerRef} className="max-w-[540px]">
+        {/* Subtle horizontal accent lines */}
+        <div
+          className="absolute left-0 top-[35%] w-full h-px pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent 8%, hsl(40 46% 56% / 0.06) 35%, hsl(40 46% 56% / 0.1) 50%, hsl(40 46% 56% / 0.06) 65%, transparent 92%)",
+          }}
+        />
+        <div
+          className="absolute left-0 top-[65%] w-full h-px pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent 8%, hsl(40 46% 56% / 0.04) 35%, hsl(40 46% 56% / 0.07) 50%, hsl(40 46% 56% / 0.04) 65%, transparent 92%)",
+          }}
+        />
+
+        {/* ── Arabian Pillar — LEFT (hidden on small screens) ── */}
+        <div
+          className="absolute pointer-events-none hidden md:flex"
+          style={{
+            left: "clamp(20px, 3.5vw, 56px)",
+            top: "28px",
+            bottom: "28px",
+            width: "clamp(32px, 3.5vw, 52px)",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          {/* ▲ Crown — pointed Islamic arch + crescent */}
+          <svg viewBox="0 0 52 60" style={{ width: "100%", height: "60px", flexShrink: 0 }}>
+            {/* Outer pointed arch */}
+            <path d="M4,60 L4,30 Q4,6 26,2 Q48,6 48,30 L48,60" fill="none" stroke="hsl(40 46% 56% / 0.35)" strokeWidth="1" />
+            {/* Inner pointed arch */}
+            <path d="M10,60 L10,32 Q10,12 26,8 Q42,12 42,32 L42,60" fill="none" stroke="hsl(40 46% 56% / 0.2)" strokeWidth="0.7" />
+            {/* Crescent at apex */}
+            <circle cx="26" cy="10" r="4" fill="none" stroke="hsl(40 50% 65% / 0.5)" strokeWidth="0.8" />
+            <circle cx="27.5" cy="9" r="3" fill="hsl(0 0% 3%)" stroke="none" />
+            {/* Star motif */}
+            <polygon points="26,18 27.2,21 30.5,21 27.8,23 28.8,26 26,24 23.2,26 24.2,23 21.5,21 24.8,21" fill="hsl(40 50% 65% / 0.3)" stroke="hsl(40 46% 56% / 0.4)" strokeWidth="0.5" />
+            {/* Geometric diamond pattern inside arch */}
+            <rect x="22" y="32" width="8" height="8" rx="0" fill="none" stroke="hsl(40 46% 56% / 0.15)" strokeWidth="0.5" transform="rotate(45 26 36)" />
+            <rect x="22" y="42" width="8" height="8" rx="0" fill="none" stroke="hsl(40 46% 56% / 0.12)" strokeWidth="0.5" transform="rotate(45 26 46)" />
+            {/* Horizontal tier lines */}
+            <line x1="6" y1="56" x2="46" y2="56" stroke="hsl(40 46% 56% / 0.3)" strokeWidth="0.8" />
+            <line x1="8" y1="52" x2="44" y2="52" stroke="hsl(40 46% 56% / 0.2)" strokeWidth="0.6" />
+          </svg>
+
+          {/* ▮ Shaft — fluted with Islamic geometric repeating pattern */}
+          <div style={{
+            flex: 1,
+            width: "100%",
+            position: "relative",
+            overflow: "hidden",
+            background: "linear-gradient(90deg, hsl(40 46% 56% / 0.02) 0%, hsl(40 46% 56% / 0.07) 25%, hsl(40 50% 60% / 0.1) 50%, hsl(40 46% 56% / 0.07) 75%, hsl(40 46% 56% / 0.02) 100%)",
+            borderLeft: "1px solid hsl(40 46% 56% / 0.1)",
+            borderRight: "1px solid hsl(40 46% 56% / 0.1)",
+          }}>
+            {/* Centre groove (brighter) */}
+            <div style={{ position: "absolute", top: 0, bottom: 0, left: "50%", width: "1px", transform: "translateX(-50%)", background: "linear-gradient(180deg, hsl(40 46% 56% / 0.08) 0%, hsl(40 50% 65% / 0.2) 50%, hsl(40 46% 56% / 0.08) 100%)" }} />
+            {/* Side grooves */}
+            <div style={{ position: "absolute", top: 0, bottom: 0, left: "25%", width: "1px", background: "hsl(40 46% 56% / 0.08)" }} />
+            <div style={{ position: "absolute", top: 0, bottom: 0, left: "75%", width: "1px", background: "hsl(40 46% 56% / 0.08)" }} />
+            {/* Repeating diamond lattice (Islamic geometric) */}
+            <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.12 }} preserveAspectRatio="none">
+              <defs>
+                <pattern id="islamicL" x="0" y="0" width="52" height="52" patternUnits="userSpaceOnUse">
+                  <rect x="18" y="18" width="16" height="16" fill="none" stroke="hsl(40 46% 56%)" strokeWidth="0.6" transform="rotate(45 26 26)" />
+                  <circle cx="26" cy="26" r="2" fill="none" stroke="hsl(40 46% 56%)" strokeWidth="0.5" />
+                  <line x1="26" y1="0" x2="26" y2="52" stroke="hsl(40 46% 56%)" strokeWidth="0.3" />
+                  <line x1="0" y1="26" x2="52" y2="26" stroke="hsl(40 46% 56%)" strokeWidth="0.3" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#islamicL)" />
+            </svg>
+            {/* Shimmer */}
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(180deg, transparent 0%, hsl(40 50% 65% / 0.18) 48%, hsl(40 55% 70% / 0.28) 50%, hsl(40 50% 65% / 0.18) 52%, transparent 100%)",
+              backgroundSize: "100% 200%",
+              animation: "pillarShimmer 6s ease-in-out infinite",
+            }} />
+            {/* Scroll-driven gold fill */}
+            <div
+              ref={timelineTrackRef}
+              className="absolute inset-x-0 top-0 bottom-0 origin-top"
+              style={{
+                background: "linear-gradient(180deg, hsl(40 50% 65% / 0.25) 0%, hsl(40 46% 56% / 0.15) 50%, hsl(40 42% 50% / 0.05) 100%)",
+                boxShadow: "0 0 10px hsl(40 46% 56% / 0.15)",
+              }}
+            />
+          </div>
+
+          {/* ▼ Base — stepped pedestal with geometric motif */}
+          <svg viewBox="0 0 52 50" style={{ width: "100%", height: "50px", flexShrink: 0 }}>
+            {/* Stepped base tiers */}
+            <rect x="8" y="0" width="36" height="3" rx="0.5" fill="hsl(40 46% 56% / 0.15)" stroke="hsl(40 46% 56% / 0.3)" strokeWidth="0.6" />
+            <rect x="4" y="5" width="44" height="4" rx="0.5" fill="hsl(40 46% 56% / 0.1)" stroke="hsl(40 46% 56% / 0.25)" strokeWidth="0.6" />
+            <rect x="0" y="11" width="52" height="5" rx="0.5" fill="hsl(40 46% 56% / 0.08)" stroke="hsl(40 46% 56% / 0.2)" strokeWidth="0.6" />
+            {/* Bottom plinth with diamond */}
+            <rect x="0" y="18" width="52" height="32" rx="1" fill="hsl(40 46% 56% / 0.04)" stroke="hsl(40 46% 56% / 0.15)" strokeWidth="0.6" />
+            <rect x="18" y="26" width="16" height="16" fill="none" stroke="hsl(40 46% 56% / 0.2)" strokeWidth="0.6" transform="rotate(45 26 34)" />
+            <circle cx="26" cy="34" r="3" fill="none" stroke="hsl(40 50% 65% / 0.25)" strokeWidth="0.6" />
+            {/* Accent lines */}
+            <line x1="6" y1="22" x2="46" y2="22" stroke="hsl(40 46% 56% / 0.15)" strokeWidth="0.5" />
+            <line x1="6" y1="46" x2="46" y2="46" stroke="hsl(40 46% 56% / 0.15)" strokeWidth="0.5" />
+          </svg>
+        </div>
+
+        {/* ── Arabian Pillar — RIGHT (hidden on small screens) ── */}
+        <div
+          className="absolute pointer-events-none hidden md:flex"
+          style={{
+            right: "clamp(20px, 3.5vw, 56px)",
+            top: "28px",
+            bottom: "28px",
+            width: "clamp(32px, 3.5vw, 52px)",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          {/* ▲ Crown */}
+          <svg viewBox="0 0 52 60" style={{ width: "100%", height: "60px", flexShrink: 0 }}>
+            <path d="M4,60 L4,30 Q4,6 26,2 Q48,6 48,30 L48,60" fill="none" stroke="hsl(40 46% 56% / 0.35)" strokeWidth="1" />
+            <path d="M10,60 L10,32 Q10,12 26,8 Q42,12 42,32 L42,60" fill="none" stroke="hsl(40 46% 56% / 0.2)" strokeWidth="0.7" />
+            <circle cx="26" cy="10" r="4" fill="none" stroke="hsl(40 50% 65% / 0.5)" strokeWidth="0.8" />
+            <circle cx="27.5" cy="9" r="3" fill="hsl(0 0% 3%)" stroke="none" />
+            <polygon points="26,18 27.2,21 30.5,21 27.8,23 28.8,26 26,24 23.2,26 24.2,23 21.5,21 24.8,21" fill="hsl(40 50% 65% / 0.3)" stroke="hsl(40 46% 56% / 0.4)" strokeWidth="0.5" />
+            <rect x="22" y="32" width="8" height="8" rx="0" fill="none" stroke="hsl(40 46% 56% / 0.15)" strokeWidth="0.5" transform="rotate(45 26 36)" />
+            <rect x="22" y="42" width="8" height="8" rx="0" fill="none" stroke="hsl(40 46% 56% / 0.12)" strokeWidth="0.5" transform="rotate(45 26 46)" />
+            <line x1="6" y1="56" x2="46" y2="56" stroke="hsl(40 46% 56% / 0.3)" strokeWidth="0.8" />
+            <line x1="8" y1="52" x2="44" y2="52" stroke="hsl(40 46% 56% / 0.2)" strokeWidth="0.6" />
+          </svg>
+          {/* ▮ Shaft */}
+          <div style={{
+            flex: 1,
+            width: "100%",
+            position: "relative",
+            overflow: "hidden",
+            background: "linear-gradient(90deg, hsl(40 46% 56% / 0.02) 0%, hsl(40 46% 56% / 0.07) 25%, hsl(40 50% 60% / 0.1) 50%, hsl(40 46% 56% / 0.07) 75%, hsl(40 46% 56% / 0.02) 100%)",
+            borderLeft: "1px solid hsl(40 46% 56% / 0.1)",
+            borderRight: "1px solid hsl(40 46% 56% / 0.1)",
+          }}>
+            <div style={{ position: "absolute", top: 0, bottom: 0, left: "50%", width: "1px", transform: "translateX(-50%)", background: "linear-gradient(180deg, hsl(40 46% 56% / 0.08) 0%, hsl(40 50% 65% / 0.2) 50%, hsl(40 46% 56% / 0.08) 100%)" }} />
+            <div style={{ position: "absolute", top: 0, bottom: 0, left: "25%", width: "1px", background: "hsl(40 46% 56% / 0.08)" }} />
+            <div style={{ position: "absolute", top: 0, bottom: 0, left: "75%", width: "1px", background: "hsl(40 46% 56% / 0.08)" }} />
+            <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.12 }} preserveAspectRatio="none">
+              <defs>
+                <pattern id="islamicR" x="0" y="0" width="52" height="52" patternUnits="userSpaceOnUse">
+                  <rect x="18" y="18" width="16" height="16" fill="none" stroke="hsl(40 46% 56%)" strokeWidth="0.6" transform="rotate(45 26 26)" />
+                  <circle cx="26" cy="26" r="2" fill="none" stroke="hsl(40 46% 56%)" strokeWidth="0.5" />
+                  <line x1="26" y1="0" x2="26" y2="52" stroke="hsl(40 46% 56%)" strokeWidth="0.3" />
+                  <line x1="0" y1="26" x2="52" y2="26" stroke="hsl(40 46% 56%)" strokeWidth="0.3" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#islamicR)" />
+            </svg>
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(180deg, transparent 0%, hsl(40 50% 65% / 0.18) 48%, hsl(40 55% 70% / 0.28) 50%, hsl(40 50% 65% / 0.18) 52%, transparent 100%)",
+              backgroundSize: "100% 200%",
+              animation: "pillarShimmer 6s ease-in-out infinite",
+              animationDelay: "3s",
+            }} />
+          </div>
+          {/* ▼ Base */}
+          <svg viewBox="0 0 52 50" style={{ width: "100%", height: "50px", flexShrink: 0 }}>
+            <rect x="8" y="0" width="36" height="3" rx="0.5" fill="hsl(40 46% 56% / 0.15)" stroke="hsl(40 46% 56% / 0.3)" strokeWidth="0.6" />
+            <rect x="4" y="5" width="44" height="4" rx="0.5" fill="hsl(40 46% 56% / 0.1)" stroke="hsl(40 46% 56% / 0.25)" strokeWidth="0.6" />
+            <rect x="0" y="11" width="52" height="5" rx="0.5" fill="hsl(40 46% 56% / 0.08)" stroke="hsl(40 46% 56% / 0.2)" strokeWidth="0.6" />
+            <rect x="0" y="18" width="52" height="32" rx="1" fill="hsl(40 46% 56% / 0.04)" stroke="hsl(40 46% 56% / 0.15)" strokeWidth="0.6" />
+            <rect x="18" y="26" width="16" height="16" fill="none" stroke="hsl(40 46% 56% / 0.2)" strokeWidth="0.6" transform="rotate(45 26 34)" />
+            <circle cx="26" cy="34" r="3" fill="none" stroke="hsl(40 50% 65% / 0.25)" strokeWidth="0.6" />
+            <line x1="6" y1="22" x2="46" y2="22" stroke="hsl(40 46% 56% / 0.15)" strokeWidth="0.5" />
+            <line x1="6" y1="46" x2="46" y2="46" stroke="hsl(40 46% 56% / 0.15)" strokeWidth="0.5" />
+          </svg>
+        </div>
+
+        {/* -- Section header + Phase cards in one flex column -- */}
+        <div className="absolute inset-0 flex flex-col justify-center px-6 md:px-10 lg:px-14 z-10 md:ml-[clamp(48px,8vw,110px)]"
+        >
+          {/* Header — fixed at top of the centered block */}
+          <div className="mb-10">
             <p
-              className="mb-4 text-[10px] uppercase tracking-[0.6em]"
-              style={{ fontFamily: MONO_FONT, color: "hsl(40 46% 56%)" }}
+              className="text-[10px] uppercase tracking-[0.6em]"
+              style={{ fontFamily: MONO, color: "hsl(40 46% 56%)" }}
             >
-              Strategic Edge
+              The Credential
             </p>
             <h2
-              className="text-4xl leading-[0.92] md:text-6xl lg:text-[5.2rem]"
-              style={{ fontFamily: SERIF_FONT, fontWeight: 200, color: "hsl(0 0% 95%)" }}
-            >
-              Glass
-              <br />
-              <span className="gold-text-gradient">Monograph</span>
-            </h2>
-            <p
-              className="mt-5 max-w-md text-sm leading-relaxed md:text-base"
-              style={{ fontFamily: "'Cormorant Garamond', serif", color: "hsl(0 0% 64%)" }}
-            >
-              A single monolithic tablet replaces the old list layout. Scroll to move through institutional depth, market geometry, sovereign-scale access, and the final signature blend.
-            </p>
-          </div>
-
-          <div className="pointer-events-none relative flex w-full items-center justify-center">
-            <div
-              className="pointer-events-auto relative w-full max-w-[860px] rounded-[40px] border px-6 py-6 md:px-10 md:py-8"
+              className="mt-2 text-[1.8rem] leading-[1.1] md:text-[2.4rem] lg:text-[2.8rem]"
               style={{
-                background: "linear-gradient(180deg, hsl(0 0% 7% / 0.22), hsl(0 0% 4% / 0.18))",
-                borderColor: "hsl(40 46% 56% / 0.18)",
-                boxShadow: "0 26px 90px hsl(0 0% 0% / 0.28), inset 0 1px 0 hsl(40 46% 56% / 0.12)",
-                backdropFilter: "blur(20px)",
+                fontFamily: SERIF,
+                fontWeight: 200,
+                color: "hsl(0 0% 95%)",
               }}
             >
-              <div className="mb-5 flex items-start justify-between gap-5">
-                <div>
-                  <p
-                    className="text-[10px] uppercase tracking-[0.38em]"
-                    style={{ fontFamily: MONO_FONT, color: "hsl(40 46% 56%)" }}
-                  >
-                    {activeSlide.eyebrow}
-                  </p>
-                </div>
+              Built to{" "}
+              <span
+                style={{
+                  background:
+                    "linear-gradient(135deg, hsl(40 50% 65%) 0%, hsl(40 46% 56%) 50%, hsl(40 42% 50%) 100%)",
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                Last
+              </span>
+            </h2>
+          </div>
+
+          {/* Phase cards — stacked below heading */}
+          <div className="relative w-full max-w-5xl" style={{ perspective: "1200px" }}>
+            {PHASES.map((phase, i) => (
+              <div
+                key={i}
+                className="ba-phase"
+                style={{
+                  position: i === 0 ? "relative" : "absolute",
+                  inset: i === 0 ? undefined : 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "clamp(24px, 5vw, 80px)",
+                  flexWrap: "wrap",
+                }}
+              >
+                {/* Phase number indicator */}
                 <div
-                  className="rounded-full border px-4 py-2 text-[10px] uppercase tracking-[0.32em]"
+                  className="ba-dot absolute -left-8 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center"
                   style={{
-                    fontFamily: MONO_FONT,
-                    color: "hsl(40 46% 56%)",
-                    borderColor: "hsl(40 46% 56% / 0.18)",
-                    background: "hsl(40 46% 56% / 0.05)",
+                    width: "24px",
+                    height: "24px",
+                    borderRadius: "50%",
+                    background: "hsl(40 46% 56% / 0.08)",
+                    border: "1px solid hsl(40 46% 56% / 0.25)",
+                    boxShadow: "0 0 12px hsl(40 46% 56% / 0.15)",
                   }}
                 >
-                  {String(activeIndex + 1).padStart(2, "0")} / {slides.length.toString().padStart(2, "0")}
+                  <span style={{ fontFamily: MONO, fontSize: "9px", color: "hsl(40 50% 65%)", letterSpacing: "0.05em" }}>{String(i + 1).padStart(2, "0")}</span>
                 </div>
-              </div>
 
-              <div ref={tabletCopyRef} key={activeSlide.id} className="grid gap-6 md:grid-cols-[minmax(0,1fr)_220px] md:gap-10">
-                <div>
+                {/* Giant stat number */}
+                <div
+                  className="ba-big flex-shrink-0"
+                  style={{
+                    fontFamily: SERIF,
+                    fontSize: "clamp(4rem, 14vw, 14rem)",
+                    fontWeight: 100,
+                    lineHeight: 0.85,
+                    letterSpacing: "-0.04em",
+                    color: "transparent",
+                    WebkitTextStroke: "1.5px hsl(40 46% 56% / 0.3)",
+                    backgroundImage:
+                      "linear-gradient(160deg, hsl(40 50% 65% / 0.2) 0%, hsl(40 46% 56% / 0.08) 50%, hsl(40 50% 65% / 0.18) 100%)",
+                    backgroundClip: "text",
+                    WebkitBackgroundClip: "text",
+                    textShadow: "0 0 60px hsl(40 46% 56% / 0.12)",
+                    transformStyle: "preserve-3d",
+                    willChange: "transform, opacity",
+                    userSelect: "none",
+                  }}
+                >
+                  {phase.stat}
+                </div>
+
+                {/* Text content */}
+                <div className="flex-1 min-w-0 sm:min-w-[260px] max-w-[460px]">
+                  <p
+                    className="ba-r text-[10px] uppercase tracking-[0.5em]"
+                    style={{ fontFamily: MONO, color: "hsl(40 46% 56%)" }}
+                  >
+                    {phase.eyebrow}
+                  </p>
+
                   <h3
-                    className="max-w-[520px] text-2xl leading-[1.04] md:text-[2.65rem]"
-                    style={{ fontFamily: SERIF_FONT, fontWeight: 200, color: "hsl(0 0% 96%)" }}
-                  >
-                    {activeSlide.title}
-                  </h3>
-                  <p
-                    className="mt-5 max-w-[520px] text-base leading-relaxed"
-                    style={{ fontFamily: "'Cormorant Garamond', serif", color: "hsl(0 0% 74%)" }}
-                  >
-                    {activeSlide.body}
-                  </p>
-                  <p
-                    className="mt-5 max-w-[560px] rounded-[18px] border px-4 py-4 text-sm leading-relaxed"
+                    className="ba-r mt-3 text-[1.6rem] md:text-[2rem] leading-[1.1]"
                     style={{
-                      fontFamily: MONO_FONT,
-                      color: "hsl(0 0% 72%)",
-                      borderColor: "hsl(40 46% 56% / 0.12)",
-                      background: "hsl(40 46% 56% / 0.04)",
+                      fontFamily: SERIF,
+                      fontWeight: 300,
+                      color: "hsl(0 0% 92%)",
                     }}
                   >
-                    {activeSlide.note}
-                  </p>
-                </div>
+                    {phase.title}
+                  </h3>
 
-                <div className="flex flex-col justify-between gap-5">
-                  <div>
+                  <div
+                    className="ba-r mt-2 flex items-center gap-3"
+                  >
                     <div
-                      className="text-5xl leading-none md:text-[4.5rem]"
-                      style={{ fontFamily: SERIF_FONT, fontWeight: 200, color: "hsl(40 58% 72%)" }}
+                      className="h-px flex-1 max-w-[40px]"
+                      style={{ background: "hsl(40 46% 56% / 0.3)" }}
+                    />
+                    <span
+                      className="text-[10px] uppercase tracking-[0.35em]"
+                      style={{ fontFamily: MONO, color: "hsl(40 46% 56% / 0.6)" }}
                     >
-                      {activeSlide.stat}
-                    </div>
-                    <div
-                      className="mt-2 text-[10px] uppercase tracking-[0.34em]"
-                      style={{ fontFamily: MONO_FONT, color: "hsl(40 46% 56%)" }}
-                    >
-                      {activeSlide.unit}
-                    </div>
+                      {phase.unit}
+                    </span>
                   </div>
 
-                  <div className="grid gap-3">
-                    {activeSlide.markers.map((marker) => (
-                      <div
-                        key={marker}
-                        className="rounded-[16px] border px-4 py-3"
-                        style={{
-                          borderColor: "hsl(40 46% 56% / 0.12)",
-                          background: "hsl(0 0% 100% / 0.02)",
-                        }}
-                      >
-                        <p
-                          className="text-[10px] uppercase tracking-[0.25em]"
-                          style={{ fontFamily: MONO_FONT, color: "hsl(40 46% 56%)" }}
-                        >
-                          Marker
-                        </p>
-                        <p
-                          className="mt-2 text-sm leading-relaxed"
-                          style={{ fontFamily: "'Cormorant Garamond', serif", color: "hsl(0 0% 82%)" }}
-                        >
-                          {marker}
-                        </p>
-                      </div>
-                    ))}
+                  <p
+                    className="ba-r mt-5 text-[1.05rem] md:text-[1.15rem] leading-[1.7]"
+                    style={{ fontFamily: BODY, color: "hsl(0 0% 58%)" }}
+                  >
+                    {phase.body}
+                  </p>
+
+                  <div
+                    className="ba-r mt-6 inline-flex items-center gap-2.5 border px-5 py-2.5"
+                    style={{
+                      borderColor: "hsl(40 46% 56% / 0.12)",
+                      background: "hsl(40 46% 56% / 0.03)",
+                    }}
+                  >
+                    <div
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{
+                        background: "hsl(40 58% 72%)",
+                        boxShadow: "0 0 8px hsl(40 58% 72% / 0.5)",
+                      }}
+                    />
+                    <span
+                      className="text-[10px] uppercase tracking-[0.3em]"
+                      style={{ fontFamily: MONO, color: "hsl(40 46% 56%)" }}
+                    >
+                      {phase.title}
+                    </span>
                   </div>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
+        </div>
 
-          <div className="mx-auto w-full max-w-[1000px]">
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              {slides.map((slide, index) => {
-                const active = index === activeIndex;
-                return (
-                  <div
-                    key={slide.id}
-                    className="rounded-[16px] border px-4 py-3"
-                    style={{
-                      borderColor: active ? "hsl(40 46% 56% / 0.28)" : "hsl(0 0% 100% / 0.08)",
-                      background: active
-                        ? "linear-gradient(180deg, hsl(40 46% 56% / 0.1), hsl(0 0% 7% / 0.5))"
-                        : "linear-gradient(180deg, hsl(0 0% 7% / 0.5), hsl(0 0% 5% / 0.4))",
-                    }}
-                  >
-                    <p
-                      className="text-[10px] uppercase tracking-[0.3em]"
-                      style={{ fontFamily: MONO_FONT, color: "hsl(40 46% 56%)" }}
-                    >
-                      {String(index + 1).padStart(2, "0")}
-                    </p>
-                    <p className="mt-2 text-sm leading-relaxed" style={{ fontFamily: SERIF_FONT, color: "hsl(0 0% 88%)" }}>
-                      {slide.eyebrow}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
+        {/* Corner marks */}
+        <div className="pointer-events-none absolute inset-0 z-[5]">
+          <div className="absolute left-6 top-6 md:left-10 md:top-10">
+            <div className="h-8 w-px" style={{ background: "hsl(40 46% 56% / 0.15)" }} />
+            <div className="absolute left-0 top-0 h-px w-8" style={{ background: "hsl(40 46% 56% / 0.15)" }} />
           </div>
+          <div className="absolute bottom-6 right-6 md:bottom-10 md:right-10">
+            <div className="h-8 w-px" style={{ background: "hsl(40 46% 56% / 0.15)" }} />
+            <div className="absolute bottom-0 right-0 h-px w-8" style={{ background: "hsl(40 46% 56% / 0.15)" }} />
           </div>
+        </div>
+
+        {/* Scroll hint */}
+        <div className="pointer-events-none absolute bottom-8 left-1/2 z-[5] -translate-x-1/2 text-center">
+          <div
+            className="mx-auto mb-2 h-6 w-px"
+            style={{
+              background: "linear-gradient(180deg, transparent, hsl(40 46% 56% / 0.4))",
+              animation: "bankingFloat 2s ease-in-out infinite",
+            }}
+          />
+          <p
+            className="text-[9px] uppercase tracking-[0.5em]"
+            style={{ fontFamily: MONO, color: "hsl(40 46% 56% / 0.35)" }}
+          >
+            Scroll to explore
+          </p>
         </div>
       </div>
     </section>
