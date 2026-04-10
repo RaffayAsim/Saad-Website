@@ -1,10 +1,14 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useIsMobile } from "../hooks/use-mobile";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const IS_TOUCH = typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+
+const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
+const interpolate = (start: number, end: number, progress: number) => start + (end - start) * progress;
 
 /* ── Dubai skyline building data ── */
 const buildings = [
@@ -41,13 +45,14 @@ const buildings = [
 
 const milestones = [
   { year: 2005, label: "ABN AMRO", desc: "Private Banking Career Begins", pct: 0 },
-  { year: 2012, label: "Savills", desc: "Senior Consultant — Global Real Estate", pct: 25 },
-  { year: 2018, label: "Cushman & Wakefield", desc: "Luxury Retail Expansion", pct: 50 },
-  { year: 2023, label: "Dubai", desc: "Market Leadership — RERA 37460", pct: 75 },
-  { year: 2026, label: "The Monograph", desc: "Two Decades of Excellence", pct: 95 },
+  { year: 2012, label: "Savills", desc: "Senior Consultant — Global Real Estate", pct: 33.3 },
+  { year: 2018, label: "Cushman & Wakefield", desc: "Luxury Retail Expansion", pct: 61.9 },
+  { year: 2023, label: "Dubai", desc: "Market Leadership — RERA 37460", pct: 85.7 },
+  { year: 2026, label: "The Monograph", desc: "Two Decades of Excellence", pct: 100 },
 ];
 
 const TwoDecadesSection = () => {
+  const isMobile = useIsMobile();
   const sectionRef = useRef<HTMLDivElement>(null);
   const pinRef = useRef<HTMLDivElement>(null);
   const yearRef = useRef<HTMLSpanElement>(null);
@@ -57,39 +62,40 @@ const TwoDecadesSection = () => {
   const statsRef = useRef<HTMLDivElement>(null);
   const sweepRef = useRef<HTMLDivElement>(null);
   const sunRef = useRef<HTMLDivElement>(null);
+  const timelineFillRef = useRef<HTMLDivElement>(null);
 
-  const view = IS_TOUCH
+  const view = isMobile
     ? {
-        scrollEnd: "+=200%",
-        headingTriggerStart: "top top",
-        sunBottom: "24%",
-        skylineHeight: "45%",
-        particles: 15,
-        buildStart: (era: number) => era * 150,
-        buildEnd: (era: number) => (era + 0.22) * 150,
-        milestoneBase: (pct: number) => pct * 2,
-        milestoneEnterStart: -4,
-        milestoneEnterEnd: 20,
-        milestoneExitStart: 24,
-        milestoneExitEnd: 44,
-        statsStart: 170,
-        statsEnd: 190,
+        scrollEnd: "+=340%",
+        sectionHeight: "420dvh",
+        headingTriggerStart: "top 82%",
+        sunBottom: "28%",
+        sunRiseY: -88,
+        skylineHeight: "42%",
+        skylineBottom: "4%",
+        particles: 22,
+        yearScale: 1.56,
+        yearOpacity: 0.18,
+        buildingDrift: 4,
+        buildWindow: 0.2,
+        milestoneWindow: 0.24,
+        statsRevealStart: 0.8,
       }
     : {
-        scrollEnd: "+=300%",
+        scrollEnd: "+=320%",
+      sectionHeight: "420vh",
         headingTriggerStart: "top 75%",
         sunBottom: "25%",
+        sunRiseY: -120,
         skylineHeight: "45%",
+        skylineBottom: "0%",
         particles: 50,
-        buildStart: (era: number) => era * 75,
-        buildEnd: (era: number) => (era + 0.22) * 75,
-        milestoneBase: (pct: number) => pct,
-        milestoneEnterStart: -2,
-        milestoneEnterEnd: 10,
-        milestoneExitStart: 12,
-        milestoneExitEnd: 22,
-        statsStart: 260,
-        statsEnd: 290,
+        yearScale: 2.2,
+        yearOpacity: 0.25,
+        buildingDrift: 8,
+        buildWindow: 0.18,
+        milestoneWindow: 0.18,
+        statsRevealStart: 0.86,
       };
 
   useEffect(() => {
@@ -99,117 +105,20 @@ const TwoDecadesSection = () => {
 
     const ctx = gsap.context(() => {
       const SCROLL_END = view.scrollEnd;
-
-      // Pin the inner viewport
-      ScrollTrigger.create({
-        trigger: section,
-        start: "top top",
-        end: SCROLL_END,
-        pin: pin,
-        pinSpacing: true,
-      });
-
-      // Year counter 2005 → 2026
-      const counter = { value: 2005 };
-      gsap.to(counter, {
-        value: 2026,
-        ease: "power1.inOut",
-        scrollTrigger: {
-          trigger: section,
-          start: "top top",
-          end: SCROLL_END,
-          scrub: 1.2,
-        },
-        onUpdate: () => {
-          if (yearRef.current) {
-            yearRef.current.textContent = Math.round(counter.value).toString();
-          }
-        },
-      });
-
-      // Year text 3D scale + perspective with enhanced effects
-      if (yearRef.current) {
-        gsap.fromTo(
-          yearRef.current,
-          { scale: 0.3, opacity: 0.01, rotateX: 45, z: -200 },
-          {
-            scale: 2.2,
-            opacity: 0.25,
-            rotateX: -12,
-            z: 100,
-            ease: "power2.inOut",
-            scrollTrigger: {
-              trigger: section,
-              start: "top top",
-              end: SCROLL_END,
-              scrub: 1.5,
-            },
-          },
-        );
-      }
-
-      // Sun / lens flare rises with glow intensification
-      if (sunRef.current) {
-        gsap.fromTo(
-          sunRef.current,
-          { y: 150, opacity: 0, scale: 0.6 },
-          {
-            y: -120,
-            opacity: 1.3,
-            scale: 1.4,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: section,
-              start: "top top",
-              end: "+=200%",
-              scrub: 1.2,
-            },
-          },
-        );
-      }
-
-      // Buildings grow from ground with cascading effect
-      if (skylineRef.current) {
-        const buildingEls = skylineRef.current.querySelectorAll(".building");
-        buildingEls.forEach((el, i) => {
-          const b = buildings[i];
-          if (!b) return;
-          gsap.fromTo(
-            el,
-            { scaleY: 0, opacity: 0, y: 40 },
-            {
-              scaleY: 1,
-              opacity: 1,
-              y: 0,
-              ease: "elastic.out(1, 0.4)",
-              scrollTrigger: {
-                trigger: section,
-                start: `top+=${view.buildStart(b.era)}% top`,
-                end: `top+=${view.buildEnd(b.era)}% top`,
-                scrub: 0.8,
-              },
-            },
-          );
-          
-          // Parallax tilt effect
-          gsap.to(el, {
-            y: -Math.random() * 8,
-            ease: "sine.inOut",
-            scrollTrigger: {
-              trigger: section,
-              start: "top top",
-              end: SCROLL_END,
-              scrub: 2,
-            },
-          });
-        });
-      }
+      const headingChildren = headingRef.current ? Array.from(headingRef.current.children) : [];
+      const buildingEls = skylineRef.current ? Array.from(skylineRef.current.querySelectorAll<HTMLElement>(".building")) : [];
+      const milestoneEls = milestonesRef.current ? Array.from(milestonesRef.current.querySelectorAll<HTMLElement>(".milestone")) : [];
+      const statEls = statsRef.current ? Array.from(statsRef.current.querySelectorAll<HTMLElement>(".stat-item")) : [];
+      const timelineMarkers = timelineFillRef.current?.parentElement?.nextElementSibling
+        ? Array.from(timelineFillRef.current.parentElement.nextElementSibling.querySelectorAll<HTMLElement>("span:last-child"))
+        : [];
+      const powerOut = gsap.parseEase("power3.out");
+      const powerInOut = gsap.parseEase("power2.inOut");
 
       // Heading reveal with character stagger
-      if (headingRef.current) {
-        const children = Array.from(headingRef.current.children);
+      if (headingChildren.length) {
         gsap.fromTo(
-          children,
+          headingChildren,
           { y: 100, opacity: 0, scale: 0.95 },
           {
             y: 0,
@@ -223,105 +132,143 @@ const TwoDecadesSection = () => {
         );
       }
 
-      // Milestones appear & disappear with enhanced drama
-      if (milestonesRef.current) {
-        const items = milestonesRef.current.querySelectorAll(".milestone");
-        items.forEach((item, i) => {
-          const m = milestones[i];
-          const p = view.milestoneBase(m.pct);
-          // Enter — simpler on mobile (no 3D flip)
-          gsap.fromTo(
-            item,
-            { y: 60, opacity: 0, scale: 0.7, ...(IS_TOUCH ? {} : { rotateY: 90 }) },
-            {
-              y: 0,
-              opacity: 1,
-              scale: 1,
-              ...(IS_TOUCH ? {} : { rotateY: 0 }),
-              ease: "back.out(1.2)",
-              scrollTrigger: {
-                trigger: section,
-                start: `top+=${p + view.milestoneEnterStart}% top`,
-                end: `top+=${p + view.milestoneEnterEnd}% top`,
-                scrub: 1.2,
-              },
-            },
-          );
-          // Exit (except last) with fade and lift
-          if (i < milestones.length - 1) {
-            gsap.to(item, {
-              y: -50,
-              opacity: 0,
-              scale: 0.85,
-              ...(IS_TOUCH ? {} : { rotateY: -90 }),
-              ease: "power2.in",
-              scrollTrigger: {
-                trigger: section,
-                start: `top+=${p + view.milestoneExitStart}% top`,
-                end: `top+=${p + view.milestoneExitEnd}% top`,
-                scrub: 1.2,
-              },
+      gsap.set(buildingEls, { scaleY: 0, opacity: 0, y: 42, transformOrigin: "bottom center" });
+      gsap.set(milestoneEls, { opacity: 0, y: 54, scale: 0.82, rotateY: isMobile ? 0 : 18, transformOrigin: "center center" });
+      gsap.set(statEls, { opacity: 0, y: 72, rotateX: isMobile ? 0 : -24, rotateZ: isMobile ? 0 : -8, transformOrigin: "center center" });
+      if (timelineFillRef.current) gsap.set(timelineFillRef.current, { scaleX: 0.04, opacity: 0.55, transformOrigin: "left center" });
+
+      const updateScene = (progress: number) => {
+          const yearProgress = powerInOut(progress);
+          const yearValue = Math.round(interpolate(2005, 2026, progress));
+
+          if (yearRef.current) {
+            yearRef.current.textContent = yearValue.toString();
+            gsap.set(yearRef.current, {
+              scale: interpolate(0.48, view.yearScale, yearProgress),
+              opacity: interpolate(0.03, view.yearOpacity, progress),
+              rotateX: interpolate(42, -12, yearProgress),
+              z: interpolate(-180, 100, yearProgress),
+              yPercent: interpolate(8, 0, Math.min(progress / 0.22, 1)),
             });
           }
-        });
-      }
 
-      // Stats fly in at end with rotation
-      if (statsRef.current) {
-        const statEls = statsRef.current.querySelectorAll(".stat-item");
-        gsap.fromTo(
-          statEls,
-          { y: 100, opacity: 0, ...(IS_TOUCH ? {} : { rotateX: -40, rotateZ: -15 }) },
-          {
-            y: 0,
-            opacity: 1,
-            ...(IS_TOUCH ? {} : { rotateX: 0, rotateZ: 0 }),
-            stagger: 0.2,
-            ease: "back.out(1.4)",
-            scrollTrigger: {
-              trigger: section,
-              start: `top+=${view.statsStart}% top`,
-              end: `top+=${view.statsEnd}% top`,
-              scrub: 1.5,
-            },
-          },
-        );
-      }
+          if (sunRef.current) {
+            const sunProgress = clamp01(progress / 0.62);
+            const easedSun = powerOut(sunProgress);
+            gsap.set(sunRef.current, {
+              y: interpolate(150, view.sunRiseY, easedSun),
+              opacity: interpolate(0, 1.15, easedSun),
+              scale: interpolate(0.6, 1.35, easedSun),
+            });
+          }
 
-      // Light sweep with more dramatic effect
-      if (sweepRef.current) {
-        gsap.fromTo(
-          sweepRef.current,
-          { x: "-120%" },
-          {
-            x: "400%",
-            ease: "sine.inOut",
-            scrollTrigger: {
-              trigger: section,
-              start: "top top",
-              end: SCROLL_END,
-              scrub: 2.5,
-            },
-          },
-        );
-      }
+          if (skylineRef.current) {
+            gsap.set(skylineRef.current, {
+              clipPath: `inset(0 ${Math.max(0, 100 - progress * 102)}% 0 0)`,
+            });
+          }
+
+          buildingEls.forEach((el, i) => {
+            const building = buildings[i];
+            if (!building) return;
+            const local = clamp01((progress - building.era) / view.buildWindow);
+            const eased = powerOut(local);
+            const drift = Math.sin((progress + building.era) * Math.PI * 1.25) * view.buildingDrift * eased;
+            gsap.set(el, {
+              scaleY: eased,
+              opacity: interpolate(0.12, 1, eased),
+              y: interpolate(42, 0, eased) - drift,
+            });
+          });
+
+          milestoneEls.forEach((el, i) => {
+            const stop = milestones[i] ? milestones[i].pct / 100 : 0;
+            const prevStop = i === 0 ? 0 : milestones[i - 1].pct / 100;
+            const nextStop = i === milestones.length - 1 ? 1 : milestones[i + 1].pct / 100;
+            const segmentStart = i === 0 ? 0 : (prevStop + stop) / 2;
+            const segmentEnd = i === milestones.length - 1 ? 1 : (stop + nextStop) / 2;
+
+            let focus = 0;
+            if (progress >= segmentStart && progress <= segmentEnd) {
+              if (progress <= stop) {
+                focus = stop === segmentStart ? 1 : clamp01((progress - segmentStart) / (stop - segmentStart));
+              } else {
+                focus = stop === segmentEnd ? 1 : clamp01((segmentEnd - progress) / (segmentEnd - stop));
+              }
+            }
+
+            const eased = powerOut(focus);
+            gsap.set(el, {
+              opacity: eased,
+              y: interpolate(38, 0, eased) - (progress > stop ? (1 - eased) * 14 : 0),
+              scale: interpolate(0.82, 1, eased),
+              rotateY: isMobile ? 0 : interpolate(18, 0, eased),
+            });
+          });
+
+          if (timelineFillRef.current) {
+            gsap.set(timelineFillRef.current, {
+              scaleX: Math.max(0.04, progress),
+              opacity: interpolate(0.55, 1, progress),
+            });
+          }
+
+          timelineMarkers.forEach((marker, i) => {
+            const stop = milestones[i]?.pct ? milestones[i].pct / 100 : 0;
+            const active = clamp01(1 - Math.abs(progress - stop) / 0.12);
+            marker.style.opacity = `${0.45 + active * 0.55}`;
+            marker.style.transform = `scale(${0.96 + active * 0.1})`;
+          });
+
+          const statsProgress = clamp01((progress - view.statsRevealStart) / (1 - view.statsRevealStart));
+          statEls.forEach((el, i) => {
+            const local = clamp01((statsProgress - i * 0.14) / 0.46);
+            const eased = powerOut(local);
+            gsap.set(el, {
+              opacity: eased,
+              y: interpolate(72, 0, eased),
+              rotateX: isMobile ? 0 : interpolate(-24, 0, eased),
+              rotateZ: isMobile ? 0 : interpolate(-8, 0, eased),
+            });
+          });
+
+          if (sweepRef.current) {
+            gsap.set(sweepRef.current, {
+              x: `${interpolate(-120, 400, progress)}%`,
+            });
+          }
+      };
+
+      ScrollTrigger.create({
+        trigger: section,
+        start: "top top",
+        end: "bottom bottom",
+        scrub: 1,
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          updateScene(self.progress);
+        },
+      });
+
+      updateScene(0);
+      requestAnimationFrame(() => ScrollTrigger.refresh());
     }, section);
 
     return () => ctx.revert();
-  }, []);
+  }, [isMobile, view.buildWindow, view.buildingDrift, view.headingTriggerStart, view.milestoneWindow, view.scrollEnd, view.statsRevealStart, view.sunRiseY, view.yearOpacity, view.yearScale]);
 
   return (
-    <section ref={sectionRef} className="relative" data-section="decades">
+    <section ref={sectionRef} className="relative" data-section="decades" style={{ minHeight: view.sectionHeight }}>
       <div
         ref={pinRef}
-        className={IS_TOUCH ? "relative h-screen overflow-hidden" : "relative h-screen flex items-center justify-center"}
+        className={isMobile ? "sticky top-0 flex h-[100dvh] min-h-[100dvh] items-center justify-center overflow-hidden" : "sticky top-0 flex h-screen items-center justify-center overflow-hidden"}
         style={{
           background: `
             radial-gradient(ellipse at 20% 30%, hsl(40 46% 20% / 0.12) 0%, transparent 55%),
             radial-gradient(ellipse at 80% 70%, hsl(40 46% 30% / 0.08) 0%, transparent 45%),
             linear-gradient(180deg, hsl(0 0% 3%) 0%, hsl(0 0% 5%) 30%, hsl(0 0% 7%) 50%, hsl(0 0% 5%) 70%, hsl(0 0% 3%) 100%)
           `,
-          overflow: IS_TOUCH ? "hidden" : "visible",
+          overflow: isMobile ? "hidden" : "visible",
         }}
       >
         {/* Gold ambient particles */}
@@ -366,9 +313,9 @@ const TwoDecadesSection = () => {
           className="absolute pointer-events-none"
           style={{
             bottom: view.sunBottom,
-            left: "45%",
-            width: "220px",
-            height: "220px",
+            left: isMobile ? "50%" : "45%",
+            width: isMobile ? "180px" : "220px",
+            height: isMobile ? "180px" : "220px",
             borderRadius: "50%",
             background:
               "radial-gradient(circle, hsl(40 50% 65% / 0.3) 0%, hsl(40 46% 56% / 0.12) 35%, hsl(40 45% 50% / 0.04) 65%, transparent 85%)",
@@ -389,7 +336,7 @@ const TwoDecadesSection = () => {
           className="absolute select-none pointer-events-none"
           style={{
             fontFamily: "'Playfair Display', serif",
-            fontSize: "clamp(220px, 40vw, 1000px)",
+            fontSize: isMobile ? "clamp(180px, 54vw, 320px)" : "clamp(220px, 40vw, 1000px)",
             fontWeight: 100,
             lineHeight: 1,
             WebkitTextStroke: "1px hsl(40 46% 56% / 0.12)",
@@ -423,7 +370,7 @@ const TwoDecadesSection = () => {
         <div
           ref={skylineRef}
           className="absolute bottom-0 left-0 right-0 pointer-events-none"
-          style={{ height: view.skylineHeight, zIndex: 1 }}
+          style={{ height: view.skylineHeight, bottom: view.skylineBottom, zIndex: 1 }}
         >
           {/* Ground glow */}
           <div
@@ -516,29 +463,31 @@ const TwoDecadesSection = () => {
         />
 
         {/* Content overlay */}
-        {IS_TOUCH ? (
-          <div className="absolute inset-0 z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 pt-6 text-center md:px-10 md:pt-8 lg:px-14 lg:pt-10">
-            <div ref={headingRef} className="mx-auto max-w-4xl">
+        {isMobile ? (
+          <div className="absolute inset-0 z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-4 pb-5 pt-[4.5rem] text-center sm:px-5">
+            <div ref={headingRef} className="mx-auto max-w-[19.75rem] flex-shrink-0 sm:max-w-[21rem]">
               <p
-                className="mb-4 font-sans text-[10px] uppercase tracking-[0.4em] md:mb-5 md:text-xs lg:mb-6"
+                className="mb-3 font-sans text-[9px] uppercase tracking-[0.32em]"
                 style={{ color: "hsl(40 46% 56%)", letterSpacing: "0.26em" }}
               >
                 Two Decades of Excellence
               </p>
 
               <h2
-                className="text-[clamp(2.8rem,6vw,5.2rem)] text-gallery leading-[0.9] md:text-[clamp(3.8rem,6.8vw,6rem)] lg:text-[clamp(4.4rem,7vw,6.6rem)]"
+                className="text-[clamp(1.95rem,10.2vw,3.25rem)] text-gallery leading-[0.92]"
                 style={{
                   fontFamily: "'Playfair Display', serif",
                   fontWeight: 100,
-                  letterSpacing: "-0.02em",
+                  letterSpacing: "-0.025em",
                   textShadow: `
                     0 2px 4px rgba(0,0,0,0.3),
                     0 8px 16px hsl(40 46% 56% / 0.08)
                   `,
                 }}
               >
-                From Private Banking
+                From Private
+                <br />
+                Banking
                 <br />
                 <span className="gold-text-gradient" style={{
                   background: "linear-gradient(135deg, hsl(40 50% 65%) 0%, hsl(40 46% 56%) 50%, hsl(40 42% 50%) 100%)",
@@ -550,16 +499,16 @@ const TwoDecadesSection = () => {
               </h2>
             </div>
 
-            <div ref={milestonesRef} className="relative mt-[14vh] h-32 w-full max-w-4xl sm:h-28 md:mt-[16vh] lg:mt-[18vh]">
+            <div ref={milestonesRef} className="relative mt-[4.5vh] h-[10rem] w-full max-w-[20rem] sm:mt-[5.5vh] sm:h-[9.4rem]">
               {milestones.map((m) => (
                 <div
                   key={m.year}
                   className="milestone absolute inset-0 flex flex-col items-center justify-center opacity-0"
                 >
-                  <div className="mb-4 flex items-center gap-4">
-                    <div className="w-12 h-px gold-gradient" />
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="h-px w-10 gold-gradient" />
                     <span
-                      className="font-sans text-lg font-light tracking-[0.3em] md:text-2xl"
+                      className="font-sans text-base font-light tracking-[0.26em]"
                       style={{
                         color: "hsl(40 46% 56%)",
                         textShadow: "0 0 12px hsl(40 46% 56% / 0.2)"
@@ -567,10 +516,10 @@ const TwoDecadesSection = () => {
                     >
                       {m.year}
                     </span>
-                    <div className="w-12 h-px gold-gradient" />
+                    <div className="h-px w-10 gold-gradient" />
                   </div>
                   <span
-                    className="mb-2 text-2xl text-gallery md:text-3xl"
+                    className="mb-2 text-[1.85rem] leading-none text-gallery"
                     style={{
                       fontFamily: "'Playfair Display', serif",
                       fontWeight: 200,
@@ -581,8 +530,8 @@ const TwoDecadesSection = () => {
                     {m.label}
                   </span>
                   <span
-                    className="font-sans text-xs tracking-[0.15em] text-muted-foreground md:text-sm"
-                    style={{ color: "hsl(40 46% 56% / 0.7)" }}
+                    className="max-w-[17rem] font-sans text-[10px] tracking-[0.08em] text-muted-foreground"
+                    style={{ color: "hsl(40 46% 56% / 0.7)", lineHeight: 1.5 }}
                   >
                     {m.desc}
                   </span>
@@ -590,9 +539,49 @@ const TwoDecadesSection = () => {
               ))}
             </div>
 
+            <div className="mt-8 w-full max-w-[21rem] px-1">
+              <div
+                className="relative h-px overflow-hidden rounded-full"
+                style={{ background: "linear-gradient(90deg, hsl(40 46% 56% / 0.08), hsl(40 46% 56% / 0.22), hsl(40 46% 56% / 0.08))" }}
+              >
+                <div
+                  ref={timelineFillRef}
+                  className="absolute inset-y-0 left-0 origin-left rounded-full"
+                  style={{
+                    width: "100%",
+                    transform: "scaleX(0.04)",
+                    background: "linear-gradient(90deg, hsl(40 42% 44%), hsl(40 50% 65%), hsl(40 46% 56%))",
+                    boxShadow: "0 0 18px hsl(40 46% 56% / 0.35)",
+                  }}
+                />
+              </div>
+              <div className="mt-4 flex justify-between gap-2">
+                {milestones.map((m) => (
+                  <div key={m.year} className="flex flex-col items-center gap-2">
+                    <span
+                      className="block h-2.5 w-2.5 rounded-full"
+                      style={{
+                        background: "hsl(40 46% 56%)",
+                        boxShadow: "0 0 10px hsl(40 46% 56% / 0.35)",
+                      }}
+                    />
+                    <span
+                      className="font-sans text-[8px] uppercase"
+                      style={{
+                        color: "hsl(40 46% 56% / 0.7)",
+                        letterSpacing: "0.12em",
+                      }}
+                    >
+                      {m.year}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div
               ref={statsRef}
-              className="mt-auto flex justify-center gap-10 pb-12 md:gap-16 md:pb-14 lg:gap-24 lg:pb-16"
+              className="mt-auto grid w-full max-w-[22rem] grid-cols-3 gap-2 px-2 pb-[4.6rem] pt-5"
               style={{ perspective: "800px" }}
             >
               {[
@@ -600,7 +589,7 @@ const TwoDecadesSection = () => {
                 { value: "ABN", label: "AMRO Legacy" },
                 { value: "37460", label: "RERA ID" },
               ].map((stat) => (
-                <div key={stat.label} className="stat-item relative text-center opacity-0 group">
+                <div key={stat.label} className="stat-item relative min-w-0 text-center opacity-0 group">
                   <div
                     className="absolute -inset-6 rounded-3xl opacity-0 transition-all duration-700 group-hover:scale-110 group-hover:opacity-100"
                     style={{
@@ -609,10 +598,11 @@ const TwoDecadesSection = () => {
                     }}
                   />
                   <div
-                    className="relative mb-4 text-5xl gold-text-gradient md:text-7xl"
+                    className="relative mb-2 gold-text-gradient"
                     style={{
                       fontFamily: "'Playfair Display', serif",
                       fontWeight: 100,
+                      fontSize: stat.value.length >= 5 ? "1.85rem" : stat.value.length >= 3 ? "2.1rem" : "2.35rem",
                       letterSpacing: "-0.02em",
                       textShadow: `
                         0 4px 12px hsl(40 46% 56% / 0.15),
@@ -623,10 +613,11 @@ const TwoDecadesSection = () => {
                     {stat.value}
                   </div>
                   <div
-                    className="relative font-sans text-[10px] uppercase tracking-[0.3em] md:text-xs"
+                    className="relative font-sans text-[7px] uppercase tracking-[0.18em]"
                     style={{
                       color: "hsl(40 46% 56%)",
-                      letterSpacing: "0.15em"
+                      letterSpacing: "0.1em",
+                      lineHeight: 1.35,
                     }}
                   >
                     {stat.label}

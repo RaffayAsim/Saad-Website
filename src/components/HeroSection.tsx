@@ -1,12 +1,26 @@
-import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import saadPortrait from "../assets/saad-bin-zain-2.jpg";
+import { useIsMobile } from "../hooks/use-mobile";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const NAVBAR_GUARD = 80;
 const IS_TOUCH = typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+const MOBILE_LABELS = [
+  "JUMEIRAH",
+  "CITY WALK",
+  "AL WASL",
+  "DOWNTOWN",
+  "DIFC",
+  "BUSINESS BAY",
+  "MEYDAN",
+  "PALM JUMEIRAH",
+  "DUBAI MARINA",
+  "EMIRATES HILLS",
+  "EXPO CITY",
+];
 
 // ── Dubai Cartographic Map ─────────────────────────────────────────────────
 function drawDubaiMap(ctx: CanvasRenderingContext2D, w: number, h: number) {
@@ -195,45 +209,6 @@ function drawDubaiMap(ctx: CanvasRenderingContext2D, w: number, h: number) {
     ctx.stroke();
   });
 
-  // ── FINE STREET GRID (Downtown) ───────────────────────────────
-  ctx.strokeStyle = "rgba(192, 152, 60, 0.22)";
-  ctx.lineWidth = px(0.55);
-  for (let gx = px(745); gx <= px(950); gx += px(13)) {
-    ctx.beginPath(); ctx.moveTo(gx, py(312)); ctx.lineTo(gx, py(480)); ctx.stroke();
-  }
-  for (let gy = py(312); gy <= py(480); gy += py(16)) {
-    ctx.beginPath(); ctx.moveTo(px(745), gy); ctx.lineTo(px(950), gy); ctx.stroke();
-  }
-  // Deira grid
-  ctx.strokeStyle = "rgba(192, 152, 60, 0.18)";
-  for (let gx = px(1058); gx <= px(1342); gx += px(11)) {
-    ctx.beginPath(); ctx.moveTo(gx, py(265)); ctx.lineTo(gx, py(462)); ctx.stroke();
-  }
-  for (let gy = py(265); gy <= py(462); gy += py(13)) {
-    ctx.beginPath(); ctx.moveTo(px(1058), gy); ctx.lineTo(px(1342), gy); ctx.stroke();
-  }
-
-  // ── MAP COMPASS ROSE (subtle, top-right) ─────────────────────
-  const crx = px(1520), cry = py(80), crr = px(28);
-  ctx.strokeStyle = "rgba(192, 152, 60, 0.45)";
-  ctx.lineWidth = px(1.2);
-  ctx.beginPath(); ctx.moveTo(crx, cry - crr); ctx.lineTo(crx, cry + crr); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(crx - crr, cry); ctx.lineTo(crx + crr, cry); ctx.stroke();
-  ctx.font = `${px(14)}px Inter,sans-serif`;
-  ctx.fillStyle = "rgba(192, 152, 60, 0.58)";
-  ctx.textAlign = "center";
-  ctx.fillText("N", crx, cry - crr - px(5));
-
-  // ── TOPOGRAPHIC BACKGROUND GRID ──────────────────────────────
-  ctx.strokeStyle = "rgba(180, 140, 60, 0.028)";
-  ctx.lineWidth = px(0.5);
-  for (let gx = 0; gx < w; gx += px(80)) {
-    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, h); ctx.stroke();
-  }
-  for (let gy = 0; gy < h; gy += py(80)) {
-    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke();
-  }
-
   // ── EDGE VIGNETTE ─────────────────────────────────────────────
   const vig = ctx.createRadialGradient(w * 0.5, h * 0.5, h * 0.22, w * 0.5, h * 0.5, h * 0.92);
   vig.addColorStop(0, "rgba(0,0,0,0)");
@@ -248,23 +223,31 @@ function DubaiMapBackground() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !canvas.parentElement) return;
-    const { width, height } = canvas.parentElement.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio, 2);
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.scale(dpr, dpr);
-    drawDubaiMap(ctx, width, height);
+
+    const render = () => {
+      const { width, height } = canvas.parentElement!.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio, 2);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+      drawDubaiMap(ctx, width, height);
+    };
+
+    render();
+    window.addEventListener("resize", render, { passive: true });
+    return () => window.removeEventListener("resize", render);
   }, []);
 
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />;
 }
 
 // ── Scattered district name labels — hidden until smoke is cleared ─────────
-function DistrictNames({ smoke }: { smoke: MutableRefObject<HTMLDivElement | null> }) {
+function DistrictNames({ smoke, isMobile, elevate = false }: { smoke: MutableRefObject<HTMLDivElement | null>; isMobile: boolean; elevate?: boolean }) {
   const names = useMemo(() => [
     // left side / heading zone
     { label: "JUMEIRAH",        left: "3%",  top: "14%", gold: true  },
@@ -272,7 +255,7 @@ function DistrictNames({ smoke }: { smoke: MutableRefObject<HTMLDivElement | nul
     { label: "AL WASL",         left: "10%", top: "72%", gold: true  },
     { label: "CITY WALK",       left: "18%", top: "30%", gold: false },
     { label: "ZAABEEL",         left: "22%", top: "63%", gold: false },
-    { label: "MEYDAN",          left: "28%", top: "80%", gold: true  },
+    { label: "MEYDAN",          left: "14%", top: "72%", gold: true  },
     // center
     { label: "DOWNTOWN",        left: "35%", top: "18%", gold: true  },
     { label: "DIFC",            left: "38%", top: "44%", gold: true  },
@@ -286,7 +269,7 @@ function DistrictNames({ smoke }: { smoke: MutableRefObject<HTMLDivElement | nul
     { label: "CREEK HARBOUR",   left: "58%", top: "56%", gold: false },
     { label: "DUBAI HILLS",     left: "76%", top: "20%", gold: false },
     { label: "EMIRATES HILLS",  left: "82%", top: "52%", gold: true  },
-    { label: "EXPO CITY",       left: "85%", top: "76%", gold: false },
+    { label: "EXPO CITY",       left: "85%", top: "76%", gold: true  },
     { label: "ARABIAN RANCHES", left: "64%", top: "86%", gold: false },
     { label: "SOUTH MARINA",    left: "89%", top: "36%", gold: true  },
     // gap-fill: top band — just one anchor, no cluster
@@ -307,48 +290,36 @@ function DistrictNames({ smoke }: { smoke: MutableRefObject<HTMLDivElement | nul
   const positionedNames = useMemo(
     () => names.map((name) => {
       const topValue = Number.parseFloat(name.top);
-      if (!IS_TOUCH && topValue < 20) {
+      if (!isMobile && topValue < 20) {
         return { ...name, top: `${topValue + 7}%` };
       }
       return name;
     }),
-    [names],
+    [isMobile, names],
   );
 
   const mobilePositions = useMemo(
     () => ({
-      JUMEIRAH: { left: "7%", top: "18%" },
-      DOWNTOWN: { left: "58%", top: "19%" },
-      DIFC: { left: "73%", top: "47%" },
-      "BUSINESS BAY": { left: "44%", top: "68%" },
-      MEYDAN: { left: "18%", top: "84%" },
+      JUMEIRAH: { left: "7%", top: "16%" },
+      "CITY WALK": { left: "9%", top: "32%" },
+      "AL WASL": { left: "8%", top: "54%" },
+      DOWNTOWN: { left: "55%", top: "18%" },
+      DIFC: { left: "69%", top: "36%" },
+      "BUSINESS BAY": { left: "45%", top: "53%" },
+      MEYDAN: { left: "2%", top: "81%" },
+      "PALM JUMEIRAH": { left: "60%", top: "14%" },
+      "DUBAI MARINA": { right: "3%", top: "74%" },
+      "EMIRATES HILLS": { right: "4%", top: "86%" },
+      "EXPO CITY": { right: "4%", top: "93%" },
     }),
     [],
   );
 
-  // On mobile/touch: show key district names statically with subtle stagger animation
-  const mobileLabels = useMemo(() => 
-    IS_TOUCH ? ["JUMEIRAH", "DOWNTOWN", "DIFC", "BUSINESS BAY", "MEYDAN"] : [],
-  []);
+  const mobileLabels = useMemo(() => (isMobile ? MOBILE_LABELS : []), [isMobile]);
 
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   useEffect(() => {
-    // On touch devices, show a curated subset of names with stagger animation
-    if (IS_TOUCH) {
-      itemRefs.current.forEach((el) => {
-        if (!el) return;
-        const label = el.getAttribute("data-label") || "";
-        if (mobileLabels.includes(label)) {
-          gsap.fromTo(el,
-            { opacity: 0, y: 8 },
-            { opacity: 0.6, y: 0, duration: 1, delay: 3.5 + Math.random() * 1.5, ease: "power2.out" },
-          );
-        }
-      });
-      return;
-    }
-
     let frameId = 0;
     const tick = () => {
       const smokeEl = smoke.current;
@@ -363,53 +334,92 @@ function DistrictNames({ smoke }: { smoke: MutableRefObject<HTMLDivElement | nul
 
       itemRefs.current.forEach((el) => {
         if (!el) return;
+        const label = el.getAttribute("data-label") || "";
+        const eligibleOnMobile = mobileLabels.includes(label);
+        if (isMobile && !eligibleOnMobile) {
+          el.style.opacity = "0";
+          el.style.transform = "scale(0.9) translateY(8px)";
+          return;
+        }
         const er = el.getBoundingClientRect();
         const ex = er.left + er.width / 2 - rect.left;
         const ey = er.top + er.height / 2 - rect.top;
         const dist = Math.hypot(mx - ex, my - ey);
-        const act = inside ? Math.max(0, Math.min(1, 1 - dist / 140)) : 0;
-        el.style.opacity = String(act > 0.05 ? act : 0);
-        el.style.transform = `scale(${0.88 + act * 0.18}) translateY(${(1 - act) * 6}px)`;
+        const revealRadius = isMobile ? 180 : 140;
+        const activation = inside ? Math.max(0, Math.min(1, 1 - dist / revealRadius)) : 0;
+        const isGold = el.getAttribute("data-gold") === "true";
+        const baseOpacity = isMobile ? 0.32 : 0;
+        const opacity = isMobile ? Math.max(baseOpacity, 0.38 + activation * 0.62) : (activation > 0.05 ? activation : 0);
+        const scale = isMobile ? 0.98 + activation * 0.14 : 0.88 + activation * 0.18;
+        const shift = isMobile ? (1 - activation) * 3 : (1 - activation) * 6;
+        el.style.opacity = String(opacity);
+        el.style.transform = `scale(${scale}) translateY(${shift}px)`;
+        if (isMobile) {
+          const glow = 14 + activation * 26;
+          el.style.color = activation > 0.2
+            ? (isGold ? "rgba(244,205,108,1)" : "rgba(255,248,232,1)")
+            : (isGold ? "rgba(228,184,82,0.98)" : "rgba(255,248,228,0.9)");
+          el.style.textShadow = isGold
+            ? `0 0 ${glow}px rgba(244,205,108,${0.34 + activation * 0.5}), 0 2px 8px rgba(0,0,0,0.88)`
+            : `0 0 ${glow - 2}px rgba(255,248,232,${0.26 + activation * 0.4}), 0 2px 8px rgba(0,0,0,0.82)`;
+          el.style.background = activation > 0.16
+            ? `linear-gradient(90deg, rgba(0,0,0,${0.18 + activation * 0.18}), rgba(0,0,0,${0.3 + activation * 0.22}), rgba(0,0,0,${0.14 + activation * 0.14}))`
+            : "rgba(0,0,0,0.16)";
+          el.style.boxShadow = activation > 0.16
+            ? `0 0 ${10 + activation * 16}px rgba(0,0,0,${0.18 + activation * 0.2}), inset 0 0 0 1px rgba(255,220,140,${0.1 + activation * 0.14})`
+            : "inset 0 0 0 1px rgba(255,220,140,0.06)";
+          el.style.borderColor = activation > 0.16
+            ? `rgba(255,220,140,${0.12 + activation * 0.16})`
+            : "rgba(255,220,140,0.06)";
+        }
       });
 
       frameId = requestAnimationFrame(tick);
     };
     frameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameId);
-  }, [smoke, mobileLabels]);
+  }, [isMobile, mobileLabels, smoke]);
 
   return (
-    <div className="pointer-events-none absolute inset-0" style={{ zIndex: 24 }} aria-hidden="true">
+    <div className="pointer-events-none absolute inset-0" style={{ zIndex: elevate ? 30 : 24 }} aria-hidden="true">
       {positionedNames.map((n, i) => {
-        const mobilePosition = IS_TOUCH ? mobilePositions[n.label as keyof typeof mobilePositions] : undefined;
-        const left = mobilePosition?.left ?? n.left;
+        const mobilePosition = isMobile ? mobilePositions[n.label as keyof typeof mobilePositions] : undefined;
+        const left = mobilePosition && "left" in mobilePosition ? mobilePosition.left : n.left;
+        const right = mobilePosition && "right" in mobilePosition ? mobilePosition.right : undefined;
         const top = mobilePosition?.top ?? n.top;
-        const isMobileVisible = !IS_TOUCH || mobileLabels.includes(n.label);
+        const isMobileVisible = !isMobile || mobileLabels.includes(n.label);
+        const isCompactMobileLabel = isMobile && ["MEYDAN", "DUBAI MARINA", "EMIRATES HILLS", "EXPO CITY"].includes(n.label);
         return (
         <div
-          key={n.label}
+          key={`${n.label}-${i}`}
           ref={el => { itemRefs.current[i] = el; }}
           data-label={n.label}
+          data-gold={n.gold ? "true" : "false"}
           className="absolute uppercase"
           style={{
-            left,
+            left: right ? undefined : left,
+            right: right ?? undefined,
             top,
             fontFamily: "'Inter', sans-serif",
-            fontSize: IS_TOUCH ? "10px" : "clamp(11px, 1.1vw, 15px)",
-            fontWeight: 700,
-            letterSpacing: IS_TOUCH ? "0.2rem" : "0.36rem",
+            fontSize: isMobile ? (isCompactMobileLabel ? "10px" : "11px") : "clamp(11px, 1.1vw, 15px)",
+            fontWeight: isMobile ? 800 : 700,
+            letterSpacing: isMobile ? (isCompactMobileLabel ? "0.14rem" : "0.2rem") : "0.36rem",
             color: n.gold ? "rgba(218,175,75,1)" : "rgba(255,248,228,0.95)",
-            opacity: isMobileVisible ? 0 : 0,
+            opacity: isMobileVisible ? (isMobile ? 0.32 : 0) : 0,
             whiteSpace: "nowrap",
             willChange: "transform, opacity",
+            padding: isMobile ? (isCompactMobileLabel ? "0.16rem 0.34rem" : "0.18rem 0.42rem") : 0,
+            borderRadius: isMobile ? "999px" : 0,
+            border: isMobile ? "1px solid rgba(255,220,140,0.06)" : "none",
+            background: isMobile ? "rgba(0,0,0,0.16)" : "transparent",
             textShadow: n.gold
               ? "0 0 18px rgba(218,175,75,0.9), 0 2px 8px rgba(0,0,0,0.8)"
               : "0 0 14px rgba(255,248,220,0.7), 0 2px 8px rgba(0,0,0,0.7)",
-            transition: "color 0.15s",
+            transition: "color 0.15s, background 0.15s, box-shadow 0.15s, border-color 0.15s",
             display: isMobileVisible ? "block" : "none",
           }}
         >
-          <svg viewBox="0 0 24 28" style={{ display:"inline-block", width:"1.3em", height:"1.3em", marginRight:"0.4rem", verticalAlign:"-0.18em", flexShrink:0, opacity: n.gold ? 0.88 : 0.72 }} aria-hidden="true">
+          <svg viewBox="0 0 24 28" style={{ display:"inline-block", width:isMobile ? "1.15em" : "1.3em", height:isMobile ? "1.15em" : "1.3em", marginRight:isMobile ? "0.32rem" : "0.4rem", verticalAlign:"-0.18em", flexShrink:0, opacity: n.gold ? 0.94 : 0.82 }} aria-hidden="true">
             <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 15 7 15s7-9.75 7-15c0-3.866-3.134-7-7-7z" fill="currentColor"/>
             <circle cx="12" cy="9" r="2.5" fill="#0a0703"/>
           </svg>
@@ -417,55 +427,20 @@ function DistrictNames({ smoke }: { smoke: MutableRefObject<HTMLDivElement | nul
         </div>
         );
       })}
-      {/* Crosshair survey markers — flare sequentially as route dots travel through */}
-      {!IS_TOUCH && positionedNames.map((n, i) => {
-        const c = n.gold ? "rgba(218,175,75" : "rgba(255,235,180";
-        const flareDelay = `${((parseFloat(n.left) / 90) * 12).toFixed(2)}s`;
-        const pulseDelay = `${((i * 0.44) % 3).toFixed(2)}s`;
-        const pulseSpeed = `${(3 + (i % 5) * 0.6).toFixed(1)}s`;
-        return (
-          <span key={`x-${n.label}`} style={{ position:"absolute", left:n.left, top:n.top }}>
-            <span style={{
-              position:"absolute", width:20, height:1,
-              background:`linear-gradient(90deg, transparent 0%, ${c},0.85) 50%, transparent 100%)`,
-              top:"50%", left:"50%", transform:"translate(-50%,-50%)",
-              animation:`cityFlare 12s ${flareDelay} ease-in-out infinite, cityPulse ${pulseSpeed} ${pulseDelay} ease-in-out infinite`,
-            }} />
-            <span style={{
-              position:"absolute", width:1, height:20,
-              background:`linear-gradient(180deg, transparent 0%, ${c},0.85) 50%, transparent 100%)`,
-              top:"50%", left:"50%", transform:"translate(-50%,-50%)",
-              animation:`cityFlare 12s ${flareDelay} ease-in-out infinite, cityPulse ${pulseSpeed} ${pulseDelay} ease-in-out infinite`,
-            }} />
-            <span style={{
-              position:"absolute", width:5, height:5, borderRadius:"50%",
-              background:`${c},1)`,
-              boxShadow:`0 0 6px 2px ${c},0.6)`,
-              top:"50%", left:"50%", transform:"translate(-50%,-50%)",
-              animation:`cityFlare 12s ${flareDelay} ease-in-out infinite, cityPulse ${pulseSpeed} ${pulseDelay} ease-in-out infinite`,
-            }} />
-          </span>
-        );
-      })}
     </div>
   );
 }
 
 // ── Visible white smoke layer — mouse cursor cuts a hole through it ─────────
-function CloudMist({ mouse, smokeRef }: { mouse: MutableRefObject<{ x: number; y: number; inside: boolean }>; smokeRef: MutableRefObject<HTMLDivElement | null> }) {
+function CloudMist({ mouse, smokeRef, isMobile, spotlightRef, travelingSpotlight = false, desktopPreview = false }: { mouse: MutableRefObject<{ x: number; y: number; inside: boolean }>; smokeRef: MutableRefObject<HTMLDivElement | null>; isMobile: boolean; spotlightRef?: MutableRefObject<HTMLDivElement | null>; travelingSpotlight?: boolean; desktopPreview?: boolean }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = wrapperRef.current;
     if (!el) return;
+    const useTravelingSpotlight = isMobile || travelingSpotlight;
     // forward ref for DistrictNames to read hole position
     (smokeRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
-
-    // On touch devices: fade smoke out after intro to reveal the map
-    if (IS_TOUCH) {
-      gsap.to(el, { opacity: 0.25, duration: 2, delay: 4, ease: "power2.out" });
-      return;
-    }
 
     const applyMask = (mx: number, my: number, r = 55) => {
       const mask = `radial-gradient(circle ${r}px at ${mx}px ${my}px, transparent 0%, rgba(0,0,0,0.15) 38%, black 68%)`;
@@ -486,7 +461,7 @@ function CloudMist({ mouse, smokeRef }: { mouse: MutableRefObject<{ x: number; y
     let rafId = 0;
     const tick = () => {
       const p = mouse.current;
-      if (p.inside) {
+      if (p.inside && !useTravelingSpotlight) {
         const rect = el.getBoundingClientRect();
         applyMask(p.x - rect.left, p.y - rect.top);
       }
@@ -494,35 +469,105 @@ function CloudMist({ mouse, smokeRef }: { mouse: MutableRefObject<{ x: number; y
     };
     rafId = requestAnimationFrame(tick);
 
-    // Intro auto-sweep — visits actual city positions so new visitors see the reveal effect
-    const sw = window.innerWidth;
-    const sh = window.innerHeight;
-    // Waypoints matching DistrictNames positions (left% → x, top% → y)
-    const cities = [
-      { x: sw * 0.05, y: sh * 0.20 },   // JUMEIRAH
-      { x: sw * 0.22, y: sh * 0.35 },   // CITY WALK
-      { x: sw * 0.38, y: sh * 0.22 },   // DOWNTOWN
-      { x: sw * 0.56, y: sh * 0.14 },   // PALM JUMEIRAH
-      { x: sw * 0.70, y: sh * 0.46 },   // DUBAI MARINA
-      { x: sw * 0.85, y: sh * 0.55 },   // EMIRATES HILLS
-    ];
-    const sp = { mx: cities[0].x, my: cities[0].y, r: 110 };
+    const cyclePause = useTravelingSpotlight ? 3.6 : 0;
+
+    const cities = desktopPreview
+      ? [
+          { x: 10, y: 16, r: 112 },
+          { x: 20, y: 32, r: 120 },
+          { x: 34, y: 22, r: 120 },
+          { x: 46, y: 54, r: 128 },
+          { x: 61, y: 16, r: 132 },
+          { x: 70, y: 62, r: 136 },
+          { x: 76, y: 76, r: 134 },
+          { x: 78, y: 88, r: 138 },
+          { x: 12, y: 84, r: 118 },
+        ]
+      : isMobile
+      ? [
+          { x: 8, y: 15, r: 100 },
+          { x: 18, y: 32, r: 116 },
+          { x: 56, y: 16, r: 126 },
+          { x: 45, y: 53, r: 120 },
+          { x: 69, y: 64, r: 124 },
+          { x: 58, y: 80, r: 120 },
+          { x: 73, y: 89, r: 132 },
+        ]
+      : [
+          { x: 5, y: 20, r: 110 },
+          { x: 22, y: 35, r: 110 },
+          { x: 38, y: 22, r: 110 },
+          { x: 56, y: 14, r: 110 },
+          { x: 70, y: 46, r: 110 },
+          { x: 85, y: 55, r: 110 },
+        ];
+    const sp = { x: cities[0].x, y: cities[0].y, r: cities[0].r };
     const upd = () => {
-      if (!mouse.current.inside) {
+      if (!mouse.current.inside || useTravelingSpotlight) {
         const rect = el.getBoundingClientRect();
-        applyMask(sp.mx - rect.left, sp.my - rect.top, sp.r);
+        const px = (sp.x / 100) * rect.width;
+        const py = (sp.y / 100) * rect.height;
+        applyMask(px, py, sp.r);
+        if (spotlightRef?.current) {
+          spotlightRef.current.style.left = `${px}px`;
+          spotlightRef.current.style.top = `${py}px`;
+          spotlightRef.current.style.width = `${sp.r * 1.5}px`;
+          spotlightRef.current.style.height = `${sp.r * 1.5}px`;
+          spotlightRef.current.style.opacity = useTravelingSpotlight ? "0.95" : "0";
+        }
       }
     };
-    const tl = gsap.timeline({ delay: 1.5, onStart: upd });
-    cities.slice(1).forEach((city) => {
-      tl.to(sp, { mx: city.x, my: city.y, duration: 0.75, ease: "power1.inOut", onUpdate: upd })
-        .to(sp, { mx: city.x, my: city.y, duration: 0.45, onUpdate: upd }); // hold at city
+    if (useTravelingSpotlight) {
+      gsap.set(el, { opacity: 0.44 });
+      gsap.to(el, { opacity: desktopPreview ? 0.34 : (travelingSpotlight && !isMobile ? 0.34 : 0.3), duration: 1.6, ease: "power2.out" });
+    }
+    const tl = gsap.timeline({
+      delay: useTravelingSpotlight ? 0.8 : 1.5,
+      repeat: useTravelingSpotlight ? -1 : 0,
+      repeatDelay: cyclePause,
+      onStart: upd,
+      onRepeat: () => {
+        if (!useTravelingSpotlight) return;
+        sp.x = cities[0].x;
+        sp.y = cities[0].y;
+        sp.r = cities[0].r;
+        upd();
+      },
     });
-    tl.to(sp, { r: 20, duration: 0.55, ease: "power2.in", onUpdate: upd })
-      .call(() => { if (!mouse.current.inside) clearMask(); });
+    cities.slice(1).forEach((city) => {
+      tl.to(sp, {
+        x: city.x,
+        y: city.y,
+        r: city.r,
+        duration: desktopPreview ? 0.85 : (useTravelingSpotlight ? 1.05 : 0.75),
+        ease: "power1.inOut",
+        onUpdate: upd,
+      }).to(sp, {
+        x: city.x,
+        y: city.y,
+        duration: desktopPreview ? 0.34 : (useTravelingSpotlight ? 0.6 : 0.45),
+        onUpdate: upd,
+      });
+    });
+    if (useTravelingSpotlight) {
+      tl.to(sp, { r: desktopPreview ? 168 : 150, duration: 0.8, ease: "power2.inOut", onUpdate: upd })
+        .to(sp, { r: desktopPreview ? 102 : 92, duration: 0.8, ease: "power2.out", onUpdate: upd })
+        .call(() => {
+          clearMask();
+          if (spotlightRef?.current) spotlightRef.current.style.opacity = "0";
+        });
+    } else {
+      tl.to(sp, { r: 20, duration: 0.55, ease: "power2.in", onUpdate: upd })
+        .call(() => { if (!mouse.current.inside) clearMask(); });
+    }
 
-    return () => { cancelAnimationFrame(rafId); tl.kill(); clearMask(); };
-  }, [mouse]);
+    return () => {
+      cancelAnimationFrame(rafId);
+      tl.kill();
+      clearMask();
+      if (spotlightRef?.current) spotlightRef.current.style.opacity = "0";
+    };
+  }, [desktopPreview, isMobile, mouse, smokeRef, spotlightRef]);
 
   return (
     <div
@@ -576,7 +621,7 @@ function CloudMist({ mouse, smokeRef }: { mouse: MutableRefObject<{ x: number; y
 }
 
 // ── Animated dashed route map with traveling gold dots ────────────────────
-function CityRoutes() {
+function CityRoutes({ isMobile }: { isMobile: boolean }) {
   // Three geographic arcs across the hero — coordinates match city left%/top%
   const pathA = "M3,14 Q18,22 35,18 Q46,16 56,16 Q68,16 76,20 L89,36";
   const pathB = "M5,52 Q18,44 38,44 Q53,50 58,56 Q65,48 68,42 Q76,46 82,52";
@@ -587,7 +632,7 @@ function CityRoutes() {
       className="pointer-events-none absolute inset-0 w-full h-full"
       viewBox="0 0 100 100"
       preserveAspectRatio="none"
-      style={{ zIndex: 22 }}
+      style={{ zIndex: 22, opacity: isMobile ? 0.95 : 1 }}
       aria-hidden="true"
     >
       <defs>
@@ -597,23 +642,23 @@ function CityRoutes() {
         </filter>
       </defs>
       {/* Route A — upper sweep: Jumeirah → Downtown → Palm → Dubai Hills → South Marina */}
-      <path d={pathA} fill="none" stroke="rgba(218,175,75,0.32)" strokeWidth="0.22" strokeDasharray="1.2 2.5" />
-      <circle r="0.65" fill="rgba(255,215,80,1)" filter="url(#routeGlow)">
+      <path d={pathA} fill="none" stroke="rgba(218,175,75,0.32)" strokeWidth={isMobile ? "0.34" : "0.22"} strokeDasharray={isMobile ? "1.4 2.2" : "1.2 2.5"} />
+      <circle r={isMobile ? "0.8" : "0.65"} fill="rgba(255,215,80,1)" filter="url(#routeGlow)">
         <animateMotion dur="10s" repeatCount="indefinite" path={pathA} />
       </circle>
       {/* Route B — middle sweep: Satwa → DIFC → Creek Harbour → Marina → Emirates Hills */}
-      <path d={pathB} fill="none" stroke="rgba(218,175,75,0.26)" strokeWidth="0.22" strokeDasharray="1.2 2.5" />
-      <circle r="0.65" fill="rgba(255,215,80,1)" filter="url(#routeGlow)">
+      <path d={pathB} fill="none" stroke="rgba(218,175,75,0.26)" strokeWidth={isMobile ? "0.34" : "0.22"} strokeDasharray={isMobile ? "1.4 2.2" : "1.2 2.5"} />
+      <circle r={isMobile ? "0.8" : "0.65"} fill="rgba(255,215,80,1)" filter="url(#routeGlow)">
         <animateMotion dur="9s" begin="3.5s" repeatCount="indefinite" path={pathB} />
       </circle>
       {/* Route C — lower sweep: Al Wasl → Business Bay → Dubai Creek → Arabian Ranches → Expo City */}
-      <path d={pathC} fill="none" stroke="rgba(218,175,75,0.22)" strokeWidth="0.22" strokeDasharray="1.2 2.5" />
-      <circle r="0.65" fill="rgba(255,215,80,0.9)" filter="url(#routeGlow)">
+      <path d={pathC} fill="none" stroke="rgba(218,175,75,0.22)" strokeWidth={isMobile ? "0.34" : "0.22"} strokeDasharray={isMobile ? "1.4 2.2" : "1.2 2.5"} />
+      <circle r={isMobile ? "0.8" : "0.65"} fill="rgba(255,215,80,0.9)" filter="url(#routeGlow)">
         <animateMotion dur="11s" begin="6s" repeatCount="indefinite" path={pathC} />
       </circle>
       {/* Route E — right column: Business Bay → JBR → Expo City → Sports City → Motor City */}
-      <path d={pathE} fill="none" stroke="rgba(218,175,75,0.20)" strokeWidth="0.22" strokeDasharray="1.2 2.5" />
-      <circle r="0.65" fill="rgba(255,215,80,0.85)" filter="url(#routeGlow)">
+      <path d={pathE} fill="none" stroke="rgba(218,175,75,0.20)" strokeWidth={isMobile ? "0.34" : "0.22"} strokeDasharray={isMobile ? "1.4 2.2" : "1.2 2.5"} />
+      <circle r={isMobile ? "0.8" : "0.65"} fill="rgba(255,215,80,0.85)" filter="url(#routeGlow)">
         <animateMotion dur="8s" begin="5s" repeatCount="indefinite" path={pathE} />
       </circle>
     </svg>
@@ -621,14 +666,124 @@ function CityRoutes() {
 }
 
 const HeroSection = () => {
+  const isMobile = useIsMobile();
   const sectionRef = useRef<HTMLElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const fogRef = useRef<HTMLDivElement>(null);
   const heroSweepRef = useRef<HTMLDivElement>(null);
   const mouseScreenRef = useRef({ x: 0, y: 0, inside: false });
   const smokeRef = useRef<HTMLDivElement>(null);
+  const spotlightRef = useRef<HTMLDivElement>(null);
+  const mapFrameRef = useRef<HTMLDivElement>(null);
   const portfolioWrapperRef = useRef<HTMLDivElement>(null);
   const portfolioImageRef = useRef<HTMLImageElement>(null);
+  const showDesktopCartographicPreview = !isMobile;
+  const useCartographicPreviewLogic = isMobile || showDesktopCartographicPreview;
+
+  useEffect(() => {
+    if (!useCartographicPreviewLogic) return;
+
+    let frameId = 0;
+    const tick = () => {
+      const smokeEl = smokeRef.current;
+      const textCard = textRef.current;
+      const portraitCard = portfolioWrapperRef.current;
+      const portraitImage = portfolioImageRef.current;
+
+      if (!smokeEl || !textCard || !portraitCard || !portraitImage) {
+        frameId = requestAnimationFrame(tick);
+        return;
+      }
+
+      const mxStr = smokeEl.style.getPropertyValue("--smoke-mx");
+      const myStr = smokeEl.style.getPropertyValue("--smoke-my");
+      const mx = parseFloat(mxStr) || -9999;
+      const my = parseFloat(myStr) || -9999;
+
+      const applyCardEffect = (
+        element: HTMLDivElement,
+        radius: number,
+        onUpdate: (strength: number) => void,
+      ) => {
+        const smokeRect = smokeEl.getBoundingClientRect();
+        const rect = element.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2 - smokeRect.left;
+        const cy = rect.top + rect.height / 2 - smokeRect.top;
+        const dist = Math.hypot(mx - cx, my - cy);
+        const rawStrength = mx > -9000 ? Math.max(0, Math.min(1, 1 - dist / radius)) : 0;
+        onUpdate(Math.min(1, Math.pow(rawStrength, 1.15) * 1.08));
+      };
+
+      applyCardEffect(textCard, showDesktopCartographicPreview ? 360 : 300, (strength) => {
+        textCard.style.backdropFilter = "none";
+        (textCard.style as CSSStyleDeclaration & { WebkitBackdropFilter: string }).WebkitBackdropFilter = "none";
+        textCard.style.background = "transparent";
+        textCard.style.filter = `blur(${(strength * 5.2).toFixed(2)}px)`;
+        textCard.style.opacity = `${1 - strength * 0.24}`;
+        textCard.style.borderColor = `rgba(180,130,40,${0.18 - strength * 0.06})`;
+        textCard.style.boxShadow = `inset 0 1px 0 rgba(255,220,140,${0.08 - strength * 0.03}), 0 0 ${12 + strength * 8}px rgba(255,214,95,${0.05 + strength * 0.03})`;
+        const title = textCard.querySelector('[data-hero-title="true"]');
+        const copy = textCard.querySelector('[data-hero-copy="true"]');
+        const eyebrow = textCard.querySelector('[data-hero-eyebrow="true"]');
+        const accentTop = textCard.querySelector('[data-hero-accent="top"]');
+        const accentCenter = textCard.querySelector('[data-hero-accent="center"]');
+        const veil = textCard.querySelector('[data-hero-accent="veil"]');
+        const corners = textCard.querySelector('[data-hero-accent="corners"]');
+        if (title instanceof HTMLElement) {
+          title.style.filter = `blur(${(strength * 2.6).toFixed(2)}px)`;
+          title.style.opacity = `${1 - strength * 0.22}`;
+          title.style.textShadow = `0 7px 22px rgba(12,8,2,${0.62 + strength * 0.12}), 0 0 ${10 + strength * 14}px rgba(255,228,150,${0.06 + strength * 0.08})`;
+        }
+        if (copy instanceof HTMLElement) {
+          copy.style.filter = `blur(${(strength * 2).toFixed(2)}px)`;
+          copy.style.opacity = `${1 - strength * 0.24}`;
+          copy.style.textShadow = `0 3px 12px rgba(8,5,1,${0.72 + strength * 0.08})`;
+        }
+        if (eyebrow instanceof HTMLElement) {
+          eyebrow.style.filter = `blur(${(strength * 1.8).toFixed(2)}px)`;
+          eyebrow.style.opacity = `${0.96 - strength * 0.2}`;
+          eyebrow.style.textShadow = `0 2px 12px rgba(10,7,2,${0.64 + strength * 0.12}), 0 0 ${7 + strength * 8}px rgba(255,218,120,${0.06 + strength * 0.1})`;
+        }
+        if (accentTop instanceof HTMLElement) {
+          accentTop.style.opacity = `${0.16 - strength * 0.06}`;
+          accentTop.style.transform = `translate(-50%, -50%) scale(${1 + strength * 0.08})`;
+        }
+        if (accentCenter instanceof HTMLElement) {
+          accentCenter.style.opacity = `${0.24 - strength * 0.1}`;
+          accentCenter.style.transform = `translate(-50%, -50%) scale(${1 + strength * 0.1})`;
+        }
+        if (veil instanceof HTMLElement) {
+          veil.style.opacity = `${0.56 - strength * 0.26}`;
+          veil.style.backdropFilter = `blur(${3.4 - strength * 1.8}px)`;
+          (veil.style as CSSStyleDeclaration & { WebkitBackdropFilter: string }).WebkitBackdropFilter = `blur(${3.4 - strength * 1.8}px)`;
+        }
+        if (corners instanceof HTMLElement) {
+          corners.style.opacity = `${0.82 - strength * 0.22}`;
+        }
+      });
+
+      applyCardEffect(portraitCard, showDesktopCartographicPreview ? 320 : 255, (strength) => {
+        portraitCard.style.filter = `blur(${(strength * (showDesktopCartographicPreview ? 6.2 : 4.6)).toFixed(2)}px)`;
+        portraitCard.style.opacity = `${1 - strength * (showDesktopCartographicPreview ? 0.34 : 0.22)}`;
+        portraitCard.style.boxShadow = `0 32px 80px rgba(60,35,8,${0.42 - strength * 0.14}), 0 0 ${30 + strength * 12}px rgba(168,115,34,${0.16 + strength * 0.04}), inset 0 1px 0 rgba(255,220,140,${0.08 - strength * 0.03})`;
+        portraitImage.style.filter = `grayscale(1) contrast(1.12) brightness(${(showDesktopCartographicPreview ? 0.76 : 0.88) + strength * 0.02}) blur(${(strength * (showDesktopCartographicPreview ? 5.2 : 3.4)).toFixed(2)}px)`;
+        const name = portraitCard.querySelector("h2");
+        const portraitVeil = portraitCard.querySelector('[data-portrait-veil="true"]');
+        if (name instanceof HTMLElement) {
+          name.style.filter = `blur(${(strength * (showDesktopCartographicPreview ? 3.1 : 2.2)).toFixed(2)}px)`;
+          name.style.opacity = `${1 - strength * (showDesktopCartographicPreview ? 0.28 : 0.18)}`;
+        }
+        if (portraitVeil instanceof HTMLElement) {
+          portraitVeil.style.opacity = `${(showDesktopCartographicPreview ? 0.72 : 0.56) - strength * (showDesktopCartographicPreview ? 0.34 : 0.22)}`;
+        }
+      });
+
+      frameId = requestAnimationFrame(tick);
+    };
+
+    frameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameId);
+  }, [useCartographicPreviewLogic, showDesktopCartographicPreview]);
 
   // Mouse handler: update fog reveal circle via CSS custom properties
   useEffect(() => {
@@ -653,7 +808,7 @@ const HeroSection = () => {
 
   // Portrait proximity blur (desktop only)
   useEffect(() => {
-    if (IS_TOUCH) return;
+    if (IS_TOUCH || showDesktopCartographicPreview) return;
     const portfolio = portfolioWrapperRef.current;
     const portfolioImage = portfolioImageRef.current ?? (document.querySelector('img[alt="Saad Bin Zain"]') as HTMLImageElement);
     if (!portfolio || !portfolioImage) return;
@@ -668,11 +823,11 @@ const HeroSection = () => {
 
     document.addEventListener("mousemove", onMouseMove, { passive: true });
     return () => document.removeEventListener("mousemove", onMouseMove);
-  }, []);
+  }, [showDesktopCartographicPreview]);
 
   // Heading card proximity blur — same formula as portrait (desktop only)
   useEffect(() => {
-    if (IS_TOUCH) return;
+    if (IS_TOUCH || showDesktopCartographicPreview) return;
     const card = textRef.current;
     if (!card) return;
     const onMouseMove = (event: MouseEvent) => {
@@ -701,7 +856,7 @@ const HeroSection = () => {
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseleave", onMouseLeave);
     };
-  }, []);
+  }, [showDesktopCartographicPreview]);
 
   // GSAP entrance + scroll parallax
   useEffect(() => {
@@ -741,17 +896,23 @@ const HeroSection = () => {
         scrub: 1,
         onUpdate: (self) => {
           if (textRef.current) {
-            gsap.set(textRef.current, { y: self.progress * -22, opacity: 1 - self.progress * 0.22 });
+            gsap.set(textRef.current, { y: self.progress * (isMobile ? -14 : -22), opacity: 1 - self.progress * 0.22 });
+          }
+          if (portfolioWrapperRef.current && isMobile) {
+            gsap.set(portfolioWrapperRef.current, { y: self.progress * 28, opacity: 1 - self.progress * 0.14 });
+          }
+          if (mapFrameRef.current && isMobile) {
+            gsap.set(mapFrameRef.current, { y: self.progress * -20, scale: 1 + self.progress * 0.035 });
           }
           if (fogRef.current) {
-            gsap.set(fogRef.current, { opacity: 1 - self.progress * 0.55 });
+            gsap.set(fogRef.current, { opacity: 1 - self.progress * (isMobile ? 0.42 : 0.55) });
           }
         },
       });
     }, section);
 
     return () => ctx.revert();
-  }, []);
+  }, [isMobile]);
 
   return (
     <section
@@ -764,6 +925,51 @@ const HeroSection = () => {
 
         {/* ── Dark background only ── */}
         <div className="absolute inset-0" style={{ zIndex: 0, background: "#0a0703" }} />
+        <div
+          ref={mapFrameRef}
+          className="absolute inset-0 pointer-events-none"
+          style={{ zIndex: 0, opacity: useCartographicPreviewLogic ? 0.9 : 0.72, mixBlendMode: "screen" }}
+        >
+          <DubaiMapBackground />
+        </div>
+        {useCartographicPreviewLogic && (
+          <>
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                zIndex: 5,
+                background: showDesktopCartographicPreview
+                  ? "radial-gradient(circle at 50% 14%, rgba(219,177,74,0.24) 0%, rgba(120,83,10,0.12) 26%, transparent 58%), radial-gradient(circle at 24% 72%, rgba(219,177,74,0.12) 0%, transparent 30%), linear-gradient(180deg, rgba(11,8,3,0.08) 0%, rgba(11,8,3,0) 18%, rgba(11,8,3,0.18) 100%)"
+                  : "radial-gradient(circle at 50% 18%, rgba(219,177,74,0.22) 0%, rgba(120,83,10,0.1) 24%, transparent 56%), radial-gradient(circle at 28% 78%, rgba(219,177,74,0.1) 0%, transparent 28%), linear-gradient(180deg, rgba(11,8,3,0.1) 0%, rgba(11,8,3,0) 20%, rgba(11,8,3,0.16) 100%)",
+              }}
+            />
+            <div
+              ref={spotlightRef}
+              className="absolute pointer-events-none -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{
+                zIndex: 23,
+                opacity: 0,
+                background: showDesktopCartographicPreview
+                  ? "radial-gradient(circle, rgba(255,224,132,0.42) 0%, rgba(255,213,84,0.24) 30%, rgba(255,213,84,0.08) 55%, rgba(255,213,84,0) 74%)"
+                  : "radial-gradient(circle, rgba(255,224,132,0.34) 0%, rgba(255,213,84,0.18) 30%, rgba(255,213,84,0.05) 55%, rgba(255,213,84,0) 72%)",
+                border: showDesktopCartographicPreview ? "1px solid rgba(255,221,126,0.46)" : "1px solid rgba(255,221,126,0.38)",
+                boxShadow: showDesktopCartographicPreview
+                  ? "0 0 28px rgba(255,214,95,0.24), 0 0 72px rgba(255,214,95,0.16), inset 0 0 30px rgba(255,235,170,0.16)"
+                  : "0 0 18px rgba(255,214,95,0.18), 0 0 44px rgba(255,214,95,0.12), inset 0 0 24px rgba(255,235,170,0.12)",
+                backdropFilter: showDesktopCartographicPreview ? "blur(2px)" : "blur(1px)",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  inset: showDesktopCartographicPreview ? "18%" : "20%",
+                  borderRadius: "50%",
+                  border: showDesktopCartographicPreview ? "1px dashed rgba(255,221,126,0.46)" : "1px dashed rgba(255,221,126,0.38)",
+                }}
+              />
+            </div>
+          </>
+        )}
 
         {/* ── Fog Overlay with CSS-mask reveal at cursor ── */}
         {/* dark base tint — fog layer is now static, CloudMist handles the reveal */}
@@ -778,11 +984,11 @@ const HeroSection = () => {
         />
 
         {/* ── District names: hidden under smoke, revealed at cursor ── */}
-        <DistrictNames smoke={smokeRef} />
+    <DistrictNames smoke={smokeRef} isMobile={useCartographicPreviewLogic} elevate={showDesktopCartographicPreview} />
 
         {/* ── White smoke cloud layer: z:20, mouse cuts a hole ── */}
-        <CloudMist mouse={mouseScreenRef} smokeRef={smokeRef} />
-        <CityRoutes />
+    <CloudMist mouse={mouseScreenRef} smokeRef={smokeRef} isMobile={useCartographicPreviewLogic} spotlightRef={spotlightRef} travelingSpotlight={showDesktopCartographicPreview} desktopPreview={showDesktopCartographicPreview} />
+    <CityRoutes isMobile={useCartographicPreviewLogic} />
 
         {/* ── Horizon Gold Line ── */}
         <div
@@ -796,7 +1002,7 @@ const HeroSection = () => {
         />
 
         {/* ── Animated Gold Sweep ── */}
-        <div
+        {!showDesktopCartographicPreview && <div
           ref={heroSweepRef}
           className="pointer-events-none absolute inset-y-0"
           style={{
@@ -806,10 +1012,10 @@ const HeroSection = () => {
             filter: "blur(3px)",
             willChange: "transform",
           }}
-        />
+        />}
 
         {/* ── Explore hint — desktop only ── */}
-        {!IS_TOUCH && (
+        {!isMobile && !IS_TOUCH && !showDesktopCartographicPreview && (
         <div
           className="pointer-events-none absolute bottom-8 left-1/2 z-[12]"
           style={{ animation: "exploreHint 9s 5.8s ease both", whiteSpace: "nowrap" }}
@@ -826,31 +1032,76 @@ const HeroSection = () => {
 
         {/* ── Main Content ── */}
         <div className="relative z-[28] mx-auto max-w-[1320px] px-4 sm:px-5 md:px-12 lg:px-16" style={{ paddingTop: `${NAVBAR_GUARD}px`, boxSizing: "border-box" }}>
-          <div className="grid min-h-[calc(100vh-80px)] content-start gap-4 pb-8 pt-5 sm:gap-5 sm:pb-10 sm:pt-8 lg:min-h-0 lg:h-full lg:items-center lg:gap-10 lg:grid-cols-[1fr_0.9fr]">
-
-            {/* LEFT: Text */}
-            <div className="flex items-start lg:items-center">
+          {isMobile ? (
+            <div className="relative min-h-[calc(100svh-80px)] px-2 pb-8 pt-5">
               <div
                 ref={textRef}
-                className="relative max-w-[35rem] rounded-[22px] border p-5 sm:rounded-[24px] sm:p-8 md:p-10"
+                className="relative mx-auto"
                 style={{
-                  borderColor: "rgba(180,130,40,0.32)",
-                  background: "linear-gradient(160deg, rgba(6,3,0,0.28), rgba(4,2,0,0.22))",
-                  backdropFilter: "blur(8px)",
-                  WebkitBackdropFilter: "blur(8px)",
-                  boxShadow: "0 16px 50px rgba(40,20,2,0.35), 0 0 30px rgba(168,115,34,0.10), inset 0 1px 0 rgba(255,220,140,0.10)",
+                  width: "100%",
+                  maxWidth: "22.5rem",
+                  padding: "1.35rem 1.1rem 1.45rem",
+                  textAlign: "center",
+                  border: "1px solid rgba(180,130,40,0.12)",
+                  borderRadius: "1.75rem",
+                  background: "transparent",
+                  backdropFilter: "none",
+                  WebkitBackdropFilter: "none",
+                  boxShadow: "inset 0 1px 0 rgba(255,220,140,0.04), 0 0 12px rgba(255,214,95,0.04)",
                 }}
               >
-                <div className="flex items-center gap-4">
-                  <span className="h-px w-12" style={{ background: "linear-gradient(90deg, rgba(180,140,55,0), rgba(180,140,55,0.65))" }} />
+                <div
+                  data-hero-accent="corners"
+                  className="pointer-events-none absolute inset-0 rounded-[inherit]"
+                  style={{
+                    opacity: 0.82,
+                    background: "radial-gradient(circle at 0% 0%, rgba(0,0,0,0.76) 0%, rgba(0,0,0,0.3) 22%, rgba(0,0,0,0) 44%), radial-gradient(circle at 100% 0%, rgba(0,0,0,0.76) 0%, rgba(0,0,0,0.3) 22%, rgba(0,0,0,0) 44%), radial-gradient(circle at 0% 100%, rgba(0,0,0,0.68) 0%, rgba(0,0,0,0.24) 22%, rgba(0,0,0,0) 44%), radial-gradient(circle at 100% 100%, rgba(0,0,0,0.68) 0%, rgba(0,0,0,0.24) 22%, rgba(0,0,0,0) 44%)",
+                  }}
+                />
+                <div
+                  data-hero-accent="veil"
+                  className="pointer-events-none absolute inset-[7%_5%_9%] rounded-[1.5rem]"
+                  style={{
+                    opacity: 0.56,
+                    background: "radial-gradient(circle at 50% 45%, rgba(0,0,0,0.68) 0%, rgba(0,0,0,0.42) 44%, rgba(0,0,0,0.16) 68%, rgba(0,0,0,0) 100%)",
+                    backdropFilter: "blur(3.4px)",
+                    WebkitBackdropFilter: "blur(3.4px)",
+                  }}
+                />
+                <div
+                  data-hero-accent="top"
+                  className="pointer-events-none absolute left-1/2 top-[22%] -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-300 ease-out"
+                  style={{
+                    width: "84%",
+                    height: "28%",
+                    opacity: 0.14,
+                    background: "radial-gradient(circle, rgba(214,170,72,0.24) 0%, rgba(214,170,72,0.08) 36%, rgba(214,170,72,0) 72%)",
+                    filter: "blur(16px)",
+                  }}
+                />
+                <div
+                  data-hero-accent="center"
+                  className="pointer-events-none absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-300 ease-out"
+                  style={{
+                    width: "72%",
+                    height: "32%",
+                    opacity: 0.18,
+                    background: "radial-gradient(circle, rgba(9,6,2,0.42) 0%, rgba(9,6,2,0.18) 40%, rgba(9,6,2,0) 74%)",
+                    filter: "blur(14px)",
+                  }}
+                />
+                <div className="flex items-center justify-center gap-3">
+                  <span className="h-px w-8" style={{ background: "linear-gradient(90deg, rgba(180,140,55,0), rgba(180,140,55,0.65))" }} />
                   <span className="h-px w-1" style={{ background: "rgba(180,140,55,0.55)", boxShadow: "0 0 10px rgba(180,140,55,0.35)" }} />
                   <p
-                    className="text-[11px] sm:text-[clamp(0.76rem,0.9vw,0.9rem)] uppercase"
+                    data-hero-eyebrow="true"
+                    className="uppercase"
                     style={{
                       fontFamily: "'Inter', sans-serif",
-                      color: "rgba(255, 245, 220, 0.95)",
-                      letterSpacing: "clamp(0.14rem, 1vw, 0.32rem)",
-                      textShadow: "0 2px 12px rgba(80,45,8,0.6)",
+                      fontSize: "0.69rem",
+                      color: "rgba(255, 246, 224, 0.98)",
+                      letterSpacing: "0.22rem",
+                      textShadow: "0 2px 12px rgba(10,7,2,0.7), 0 0 6px rgba(255,218,120,0.08)",
                     }}
                   >
                     Global portfolio expertise
@@ -858,21 +1109,22 @@ const HeroSection = () => {
                 </div>
 
                 <h1
-                  className="mt-5 sm:mt-7 uppercase"
+                  data-hero-title="true"
+                  className="mt-5 uppercase"
                   style={{
                     fontFamily: "'Playfair Display', serif",
                     fontWeight: 100,
-                    fontSize: "clamp(2.45rem, 11vw, 5.8rem)",
-                    letterSpacing: "clamp(0.08rem, 0.7vw, 0.62rem)",
-                    lineHeight: 0.88,
+                    fontSize: "clamp(2.15rem, 11.2vw, 3rem)",
+                    letterSpacing: "0.015rem",
+                    lineHeight: 0.94,
                     backgroundImage: "linear-gradient(135deg, hsl(40 80% 96%) 0%, hsl(40 60% 82%) 25%, hsl(40 75% 96%) 50%, hsl(40 60% 82%) 75%, hsl(40 80% 96%) 100%)",
                     backgroundSize: "200% 200%",
                     animation: "shimmerBg 8s ease infinite",
                     backgroundClip: "text",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
-                    textShadow: "none",
-                    filter: "drop-shadow(0 4px 18px rgba(80,45,8,0.32))",
+                    WebkitTextStroke: "0.55px rgba(255,248,234,0.22)",
+                    filter: "drop-shadow(0 5px 18px rgba(0,0,0,0.84)) drop-shadow(0 0 8px rgba(255,222,132,0.08))",
                   }}
                 >
                   <span className="block">Strategic</span>
@@ -880,63 +1132,57 @@ const HeroSection = () => {
                 </h1>
 
                 <p
-                  className="mt-5 sm:mt-7 max-w-[27rem] text-[clamp(0.92rem,1.2vw,1.1rem)] leading-[1.68] sm:max-w-[29rem] sm:leading-[1.85]"
+                  data-hero-copy="true"
+                  className="mx-auto mt-5 max-w-[19rem]"
                   style={{
                     fontFamily: "'Cormorant Garamond', serif",
-                    color: "rgba(255, 245, 218, 0.88)",
-                    textShadow: "0 2px 12px rgba(80,45,8,0.5)",
+                    fontSize: "0.98rem",
+                    lineHeight: 1.6,
+                    color: "rgba(255, 246, 226, 0.96)",
+                    textShadow: "0 3px 12px rgba(0,0,0,0.86)",
                     letterSpacing: "0.02em",
                   }}
                 >
                   Curated placements across Dubai&apos;s most exclusive districts through institutional connections, refined positioning, and sovereign-grade judgment.
                 </p>
               </div>
-            </div>
 
-            {/* RIGHT: Portrait */}
-            <div className="flex justify-center lg:justify-end">
               <div
                 ref={portfolioWrapperRef}
-                className="relative w-full max-w-[19.5rem] overflow-hidden rounded-[26px] border p-4 sm:max-w-[23rem] sm:p-5 md:max-w-[25rem] md:rounded-[30px] md:p-6 transition-opacity duration-300"
+                className="relative mx-auto mt-10 overflow-hidden rounded-[28px] border p-3 transition-opacity duration-300"
                 style={{
-                  borderColor: "rgba(90,55,12,0.38)",
-                  background: "linear-gradient(160deg, rgba(16,10,4,0.72), rgba(10,7,3,0.55))",
+                  width: "min(54vw, 13.2rem)",
+                  borderColor: "rgba(90,55,12,0.42)",
+                  background: "linear-gradient(160deg, rgba(16,10,4,0.8), rgba(10,7,3,0.62))",
                   backdropFilter: "blur(16px)",
                   WebkitBackdropFilter: "blur(16px)",
-                  boxShadow: "0 30px 80px rgba(60,35,8,0.45), 0 0 60px rgba(168,115,34,0.22), inset 0 1px 0 rgba(255,220,140,0.08)",
+                  boxShadow: "0 32px 80px rgba(60,35,8,0.42), 0 0 60px rgba(168,115,34,0.16), inset 0 1px 0 rgba(255,220,140,0.08)",
                   animation: "pulseGlow 5s ease-in-out infinite",
                 }}
               >
-                <div className="relative overflow-hidden rounded-[20px] border sm:rounded-[24px]" style={{ borderColor: "rgba(168,115,34,0.32)" }}>
+                <div className="relative overflow-hidden rounded-[22px] border" style={{ borderColor: "rgba(168,115,34,0.32)" }}>
                   <img
                     ref={portfolioImageRef}
                     src={saadPortrait}
                     alt="Saad Bin Zain"
-                    className="h-[205px] w-full object-cover object-center sm:h-[300px] md:h-[420px] transition-filter duration-150"
-                    style={{ filter: "grayscale(1) contrast(1.12) brightness(0.88)" }}
+                    className="w-full object-cover object-center transition-filter duration-150"
+                    style={{
+                      height: "205px",
+                      filter: "grayscale(1) contrast(1.12) brightness(0.88)",
+                    }}
                   />
-                  <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.52) 100%)" }} />
-                  <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 md:p-6">
+                  <div data-portrait-veil="true" className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.06) 32%, rgba(0,0,0,0.62) 100%)", opacity: 0.56 }} />
+                  <div className="absolute inset-x-0 bottom-0 p-4">
                     <h2
-                      className="text-[clamp(1.7rem,10vw,3rem)] uppercase transition-all duration-300 ease-out"
+                      className="uppercase transition-all duration-300 ease-out"
                       style={{
                         fontFamily: "'Playfair Display', serif",
                         fontWeight: 100,
-                        lineHeight: 0.92,
-                        letterSpacing: "0.14rem",
-                        color: "rgba(215, 170, 80, 0.95)",
-                        textShadow: "0 8px 28px rgba(0,0,0,0.45)",
-                        cursor: "pointer",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = "rgba(240,200,110,1)";
-                        e.currentTarget.style.textShadow = "0 8px 28px rgba(0,0,0,0.45), 0 0 28px rgba(215,170,80,0.5)";
-                        e.currentTarget.style.transform = "scale(1.02)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = "rgba(215,170,80,0.95)";
-                        e.currentTarget.style.textShadow = "0 8px 28px rgba(0,0,0,0.45)";
-                        e.currentTarget.style.transform = "scale(1)";
+                        fontSize: "2.08rem",
+                        lineHeight: 0.9,
+                        letterSpacing: "0.05rem",
+                        color: "rgba(234, 189, 92, 0.98)",
+                        textShadow: "0 8px 28px rgba(0,0,0,0.45), 0 0 14px rgba(234,189,92,0.22)",
                       }}
                     >
                       <span className="block">Saad</span>
@@ -946,8 +1192,170 @@ const HeroSection = () => {
                 </div>
               </div>
             </div>
+          ) : (
+          <div className="grid min-h-[calc(100svh-80px)] items-center gap-10 pb-10 pt-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.8fr)] xl:gap-14">
 
+            <div className="flex items-center">
+              <div
+                ref={textRef}
+                className="relative max-w-[47rem]"
+                style={{
+                  padding: "2.25rem 2.5rem 2.8rem",
+                  border: "1px solid rgba(180,130,40,0.16)",
+                  borderRadius: "2.4rem",
+                  background: "transparent",
+                  backdropFilter: "none",
+                  WebkitBackdropFilter: "none",
+                  boxShadow: "inset 0 1px 0 rgba(255,220,140,0.08), 0 0 14px rgba(255,214,95,0.05)",
+                }}
+              >
+                <div
+                  data-hero-accent="corners"
+                  className="pointer-events-none absolute inset-0 rounded-[inherit]"
+                  style={{
+                    opacity: 0.82,
+                    background: "radial-gradient(circle at 0% 0%, rgba(0,0,0,0.74) 0%, rgba(0,0,0,0.3) 24%, rgba(0,0,0,0) 48%), radial-gradient(circle at 100% 0%, rgba(0,0,0,0.74) 0%, rgba(0,0,0,0.3) 24%, rgba(0,0,0,0) 48%), radial-gradient(circle at 0% 100%, rgba(0,0,0,0.68) 0%, rgba(0,0,0,0.24) 24%, rgba(0,0,0,0) 48%), radial-gradient(circle at 100% 100%, rgba(0,0,0,0.68) 0%, rgba(0,0,0,0.24) 24%, rgba(0,0,0,0) 48%)",
+                  }}
+                />
+                <div
+                  data-hero-accent="veil"
+                  className="pointer-events-none absolute inset-[9%_6%_12%] rounded-[2rem]"
+                  style={{
+                    opacity: 0.56,
+                    background: "radial-gradient(circle at 50% 44%, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.44) 42%, rgba(0,0,0,0.16) 68%, rgba(0,0,0,0) 100%)",
+                    backdropFilter: "blur(3.2px)",
+                    WebkitBackdropFilter: "blur(3.2px)",
+                  }}
+                />
+                <div
+                  data-hero-accent="top"
+                  className="pointer-events-none absolute left-1/2 top-[20%] -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-300 ease-out"
+                  style={{
+                    width: "78%",
+                    height: "26%",
+                    opacity: 0.16,
+                    background: "radial-gradient(circle, rgba(214,170,72,0.26) 0%, rgba(214,170,72,0.08) 36%, rgba(214,170,72,0) 72%)",
+                    filter: "blur(18px)",
+                  }}
+                />
+                <div
+                  data-hero-accent="center"
+                  className="pointer-events-none absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-300 ease-out"
+                  style={{
+                    width: "70%",
+                    height: "32%",
+                    opacity: 0.24,
+                    background: "radial-gradient(circle, rgba(9,6,2,0.46) 0%, rgba(9,6,2,0.2) 40%, rgba(9,6,2,0) 74%)",
+                    filter: "blur(16px)",
+                  }}
+                />
+
+                <div className="flex items-center gap-4">
+                  <span className="h-px w-14" style={{ background: "linear-gradient(90deg, rgba(180,140,55,0), rgba(180,140,55,0.65))" }} />
+                  <span className="h-px w-1.5" style={{ background: "rgba(180,140,55,0.55)", boxShadow: "0 0 10px rgba(180,140,55,0.35)" }} />
+                  <p
+                    data-hero-eyebrow="true"
+                    className="uppercase"
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: "0.82rem",
+                      color: "rgba(255,246,224,0.98)",
+                      letterSpacing: "0.34rem",
+                      textShadow: "0 2px 12px rgba(10,7,2,0.72), 0 0 6px rgba(255,218,120,0.08)",
+                    }}
+                  >
+                    Global portfolio expertise
+                  </p>
+                </div>
+
+                <h1
+                  data-hero-title="true"
+                  className="mt-8 uppercase"
+                  style={{
+                    fontFamily: "'Playfair Display', serif",
+                    fontWeight: 100,
+                    fontSize: "clamp(4rem, 7vw, 6.1rem)",
+                    letterSpacing: "0.1rem",
+                    lineHeight: 0.88,
+                    backgroundImage: "linear-gradient(135deg, hsl(40 80% 96%) 0%, hsl(40 60% 82%) 25%, hsl(40 75% 96%) 50%, hsl(40 60% 82%) 75%, hsl(40 80% 96%) 100%)",
+                    backgroundSize: "200% 200%",
+                    animation: "shimmerBg 8s ease infinite",
+                    backgroundClip: "text",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    WebkitTextStroke: "0.55px rgba(255,248,234,0.2)",
+                    filter: "drop-shadow(0 5px 18px rgba(0,0,0,0.84)) drop-shadow(0 0 8px rgba(255,222,132,0.08))",
+                  }}
+                >
+                  <span className="block">Strategic</span>
+                  <span className="block">Advisory</span>
+                </h1>
+
+                <p
+                  data-hero-copy="true"
+                  className="mt-8 max-w-[34rem]"
+                  style={{
+                    fontFamily: "'Cormorant Garamond', serif",
+                    fontSize: "1.28rem",
+                    lineHeight: 1.72,
+                    color: "rgba(255,246,226,0.96)",
+                    textShadow: "0 3px 12px rgba(0,0,0,0.86)",
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  Curated placements across Dubai&apos;s most exclusive districts through institutional connections, refined positioning, and sovereign-grade judgment.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end">
+              <div
+                ref={portfolioWrapperRef}
+                className="relative overflow-hidden rounded-[34px] border p-4 transition-opacity duration-300"
+                style={{
+                  width: "min(27vw, 22.5rem)",
+                  borderColor: "rgba(90,55,12,0.42)",
+                  background: "linear-gradient(160deg, rgba(16,10,4,0.8), rgba(10,7,3,0.62))",
+                  backdropFilter: "blur(16px)",
+                  WebkitBackdropFilter: "blur(16px)",
+                  boxShadow: "0 32px 80px rgba(60,35,8,0.42), 0 0 60px rgba(168,115,34,0.16), inset 0 1px 0 rgba(255,220,140,0.08)",
+                  animation: "pulseGlow 5s ease-in-out infinite",
+                }}
+              >
+                <div className="relative overflow-hidden rounded-[28px] border" style={{ borderColor: "rgba(168,115,34,0.32)" }}>
+                  <img
+                    ref={portfolioImageRef}
+                    src={saadPortrait}
+                    alt="Saad Bin Zain"
+                    className="w-full object-cover object-center transition-filter duration-150"
+                    style={{
+                      height: "470px",
+                      filter: "grayscale(1) contrast(1.12) brightness(0.76)",
+                    }}
+                  />
+                  <div data-portrait-veil="true" className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.18) 18%, rgba(0,0,0,0.74) 100%)", opacity: 0.72 }} />
+                  <div className="absolute inset-x-0 bottom-0 p-6">
+                    <h2
+                      className="uppercase transition-all duration-300 ease-out"
+                      style={{
+                        fontFamily: "'Playfair Display', serif",
+                        fontWeight: 100,
+                        fontSize: "3.3rem",
+                        lineHeight: 0.9,
+                        letterSpacing: "0.08rem",
+                        color: "rgba(234, 189, 92, 0.98)",
+                        textShadow: "0 8px 28px rgba(0,0,0,0.45), 0 0 14px rgba(234,189,92,0.22)",
+                      }}
+                    >
+                      <span className="block">Saad</span>
+                      <span className="block">Bin Zain</span>
+                    </h2>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+          )}
         </div>
 
       </div>

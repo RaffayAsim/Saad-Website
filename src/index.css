@@ -254,6 +254,27 @@ html.lenis, html.lenis body {
   100% { transform: rotate(360deg); }
 }
 
+@keyframes ctaLightSweepA {
+  0% { transform: translate3d(-3%, 0, 0) rotate(-9deg) scaleY(1); opacity: 0.7; }
+  100% { transform: translate3d(6%, -4%, 0) rotate(-6deg) scaleY(1.08); opacity: 1; }
+}
+
+@keyframes ctaLightSweepB {
+  0% { transform: translate3d(2%, 0, 0) rotate(11deg) scaleY(1); opacity: 0.62; }
+  100% { transform: translate3d(-7%, 5%, 0) rotate(14deg) scaleY(1.06); opacity: 0.96; }
+}
+
+@keyframes ctaOrbFloat {
+  0% { transform: translate3d(0, 0, 0) scale(0.96); opacity: 0.42; }
+  50% { transform: translate3d(14px, -18px, 0) scale(1.04); opacity: 0.74; }
+  100% { transform: translate3d(-10px, 10px, 0) scale(1); opacity: 0.5; }
+}
+
+@keyframes ctaPulseGlow {
+  0% { transform: scale(0.96); opacity: 0.82; }
+  100% { transform: scale(1.06); opacity: 1; }
+}
+
 .command-ghost {
   position: relative;
   overflow: hidden;

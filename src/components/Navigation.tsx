@@ -144,17 +144,18 @@ const Navigation = () => {
               <button
                 key={item.label}
                 onClick={() => handleNavClick(item.section)}
-                className="nav-item text-[11px] uppercase tracking-[0.34em] opacity-0 cursor-pointer"
+                className="nav-item text-[13px] uppercase tracking-[0.22em] opacity-0 cursor-pointer"
                 style={{
                   fontFamily: "'Inter', sans-serif",
-                  color: "hsl(0 0% 70%)",
+                  color: "hsl(0 0% 78%)",
+                  fontWeight: 500,
                   transition: "color 260ms",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.color = "hsl(40 46% 63%)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "hsl(0 0% 70%)";
+                  e.currentTarget.style.color = "hsl(0 0% 78%)";
                 }}
               >
                 {item.label}
@@ -167,10 +168,11 @@ const Navigation = () => {
             <div ref={badgeRef} className="opacity-0 flex items-center gap-3">
               <div className="hidden md:block w-10 h-px" style={{ background: "linear-gradient(90deg, transparent, hsl(40 46% 56% / 0.75))" }} />
               <span
-                className="hidden sm:inline text-[11px] uppercase tracking-[0.32em]"
+                className="hidden sm:inline text-[12px] uppercase tracking-[0.22em]"
                 style={{
                   fontFamily: "'Inter', sans-serif",
                   color: "hsl(40 46% 58%)",
+                  fontWeight: 500,
                   padding: "0.4rem 0.65rem",
                   border: "1px solid hsl(40 46% 56% / 0.2)",
                   background: "hsl(0 0% 5% / 0.34)",
@@ -231,10 +233,11 @@ const Navigation = () => {
           <button
             key={item.label}
             onClick={() => handleNavClick(item.section)}
-            className="mobile-nav-item text-[13px] uppercase tracking-[0.4em] cursor-pointer py-3"
+            className="mobile-nav-item text-[15px] uppercase tracking-[0.24em] cursor-pointer py-3"
             style={{
               fontFamily: "'Inter', sans-serif",
-              color: "hsl(0 0% 70%)",
+              color: "hsl(0 0% 80%)",
+              fontWeight: 500,
               transition: "color 260ms",
             }}
           >
@@ -246,10 +249,11 @@ const Navigation = () => {
         <div className="mt-8 flex items-center gap-3">
           <div className="w-8 h-px" style={{ background: "hsl(40 46% 56% / 0.3)" }} />
           <span
-            className="text-[11px] uppercase tracking-[0.32em]"
+            className="text-[12px] uppercase tracking-[0.22em]"
             style={{
               fontFamily: "'Inter', sans-serif",
               color: "hsl(40 46% 58%)",
+              fontWeight: 500,
               padding: "0.4rem 0.65rem",
               border: "1px solid hsl(40 46% 56% / 0.2)",
               background: "hsl(0 0% 5% / 0.34)",

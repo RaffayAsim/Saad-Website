@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">S.B.Z favicon</title>
+  <desc id="desc">Dark square favicon with serif S, B, Z letters and gold separator dots.</desc>
+  <rect width="128" height="128" rx="18" fill="#080808" />
+  <rect x="1" y="1" width="126" height="126" rx="17" fill="none" stroke="rgba(198,166,95,0.18)" />
+
+  <text x="26" y="76" text-anchor="middle" fill="#f3f0eb" font-family="Playfair Display, Georgia, Times New Roman, serif" font-size="44" font-weight="400" letter-spacing="0.01em">S</text>
+  <circle cx="48" cy="68" r="3.4" fill="#c6a65f" />
+  <text x="64" y="76" text-anchor="middle" fill="#f3f0eb" font-family="Playfair Display, Georgia, Times New Roman, serif" font-size="44" font-weight="400" letter-spacing="0.01em">B</text>
+  <circle cx="84" cy="68" r="3.4" fill="#c6a65f" />
+  <text x="102" y="76" text-anchor="middle" fill="#f3f0eb" font-family="Playfair Display, Georgia, Times New Roman, serif" font-size="44" font-weight="400" letter-spacing="0.01em">Z</text>
+  <rect x="22" y="96" width="84" height="1.5" rx="0.75" fill="rgba(198,166,95,0.22)" />
+</svg>

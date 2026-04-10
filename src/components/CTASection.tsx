@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useIsMobile } from "../hooks/use-mobile";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -10,7 +11,24 @@ const BODY = "'Cormorant Garamond',serif";
 const MONO = "'IBM Plex Mono','SFMono-Regular',monospace";
 const IS_TOUCH = typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
 
+const SKYLINE_BARS = [
+  { left: "6%", width: "4.5%", height: "18%" },
+  { left: "12%", width: "3.1%", height: "30%" },
+  { left: "17%", width: "5.4%", height: "24%" },
+  { left: "24%", width: "3.5%", height: "38%" },
+  { left: "30%", width: "6.2%", height: "22%" },
+  { left: "39%", width: "2.2%", height: "48%" },
+  { left: "44%", width: "4.2%", height: "28%" },
+  { left: "51%", width: "6.4%", height: "34%" },
+  { left: "60%", width: "3.6%", height: "26%" },
+  { left: "66%", width: "2.6%", height: "42%" },
+  { left: "72%", width: "5.5%", height: "21%" },
+  { left: "80%", width: "4.1%", height: "33%" },
+  { left: "87%", width: "5.2%", height: "25%" },
+];
+
 const CTASection = () => {
+  const isMobile = useIsMobile();
   const sectionRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const subRef = useRef<HTMLParagraphElement>(null);
@@ -103,6 +121,91 @@ const CTASection = () => {
         `,
       }}
     >
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        <div
+          className="absolute inset-0 opacity-90"
+          style={{
+            background: `
+              radial-gradient(ellipse at 50% 62%, hsl(40 58% 70% / 0.16) 0%, transparent 34%),
+              radial-gradient(ellipse at 22% 42%, hsl(40 56% 56% / 0.12) 0%, transparent 32%),
+              radial-gradient(ellipse at 78% 38%, hsl(40 46% 48% / 0.11) 0%, transparent 30%)
+            `,
+            filter: isMobile ? "blur(38px)" : "blur(54px)",
+            animation: "ctaPulseGlow 9s ease-in-out infinite alternate",
+          }}
+        />
+
+        <div
+          className="absolute -left-[12%] top-[10%] h-[70%] w-[52%]"
+          style={{
+            background: "linear-gradient(115deg, transparent 0%, hsl(40 56% 62% / 0.06) 38%, hsl(40 62% 76% / 0.16) 52%, hsl(40 50% 58% / 0.07) 66%, transparent 100%)",
+            filter: "blur(18px)",
+            transform: "rotate(-9deg)",
+            animation: "ctaLightSweepA 18s ease-in-out infinite alternate",
+          }}
+        />
+
+        <div
+          className="absolute -right-[10%] top-[6%] h-[78%] w-[46%]"
+          style={{
+            background: "linear-gradient(248deg, transparent 0%, hsl(40 54% 60% / 0.05) 34%, hsl(40 58% 74% / 0.14) 52%, hsl(40 46% 54% / 0.06) 68%, transparent 100%)",
+            filter: "blur(22px)",
+            transform: "rotate(11deg)",
+            animation: "ctaLightSweepB 21s ease-in-out infinite alternate",
+          }}
+        />
+
+        <div className="absolute inset-x-0 bottom-[6%] h-[26%] overflow-hidden opacity-55">
+          {SKYLINE_BARS.map((bar, index) => (
+            <div
+              key={`${bar.left}-${index}`}
+              className="absolute bottom-0 rounded-t-[2px]"
+              style={{
+                left: bar.left,
+                width: bar.width,
+                height: bar.height,
+                background: "linear-gradient(180deg, hsl(40 48% 55% / 0.08), hsl(0 0% 8% / 0.72) 44%, hsl(0 0% 4% / 0.94) 100%)",
+                boxShadow: "0 0 18px hsl(40 46% 56% / 0.04)",
+              }}
+            />
+          ))}
+          <div
+            className="absolute bottom-[44%] left-[39.2%] h-[38%] w-[1px]"
+            style={{
+              background: "linear-gradient(180deg, hsl(40 58% 72% / 0.65), hsl(40 58% 72% / 0.08))",
+              boxShadow: "0 0 12px hsl(40 58% 72% / 0.2)",
+            }}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 h-px"
+            style={{ background: "linear-gradient(90deg, transparent, hsl(40 50% 65% / 0.18), transparent)" }}
+          />
+        </div>
+
+        {Array.from({ length: isMobile ? 3 : 5 }).map((_, index) => (
+          <div
+            key={`orb-${index}`}
+            className="absolute rounded-full"
+            style={{
+              width: `${isMobile ? 140 : 220}px`,
+              height: `${isMobile ? 140 : 220}px`,
+              left: `${10 + index * 18}%`,
+              top: `${index % 2 === 0 ? 18 : 42}%`,
+              background: "radial-gradient(circle, hsl(40 60% 74% / 0.08) 0%, hsl(40 50% 56% / 0.03) 34%, transparent 68%)",
+              filter: "blur(12px)",
+              animation: `ctaOrbFloat ${14 + index * 2.5}s ease-in-out ${index * 1.1}s infinite alternate`,
+            }}
+          />
+        ))}
+
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(180deg, hsl(0 0% 2% / 0.32) 0%, transparent 20%, transparent 80%, hsl(0 0% 2% / 0.42) 100%)",
+          }}
+        />
+      </div>
+
       {/* Top border line */}
       <div
         className="absolute top-0 left-0 right-0 h-px"

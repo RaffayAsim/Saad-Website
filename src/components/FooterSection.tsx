@@ -252,17 +252,17 @@ const FooterSection = () => {
 
             {/* Column 1 — Navigate (same as navbar) */}
             <div className="text-center md:text-left">
-              <p className="text-[10px] tracking-[0.4em] uppercase mb-4"
+              <p className="text-[11px] md:text-xs tracking-[0.34em] uppercase mb-4"
                 style={{ fontFamily: MONO, color: "hsl(40 50% 65%)" }}>
                 Navigate
               </p>
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3.5">
                 {NAV_SECTIONS.map((item) => (
                   <button
                     key={item.label}
                     onClick={() => scrollToSection(item.section, navigate)}
-                    className="text-xs tracking-[0.2em] uppercase transition-colors duration-500 cursor-pointer hover:text-[hsl(40_50%_65%)]"
-                    style={{ fontFamily: BODY, color: "hsl(0 0% 50%)", letterSpacing: "0.15em" }}
+                    className="text-[15px] md:text-[16px] tracking-[0.14em] uppercase transition-colors duration-500 cursor-pointer hover:text-[hsl(40_50%_65%)]"
+                    style={{ fontFamily: BODY, color: "hsl(0 0% 68%)", letterSpacing: "0.12em", fontWeight: 500 }}
                     onMouseMove={handleMouseMove}
                     onMouseLeave={handleMouseLeave}
                   >
@@ -274,7 +274,7 @@ const FooterSection = () => {
 
             {/* Column 2 — Connect (LinkedIn only) */}
             <div className="text-center">
-              <p className="text-[10px] tracking-[0.4em] uppercase mb-4"
+              <p className="text-[11px] md:text-xs tracking-[0.34em] uppercase mb-4"
                 style={{ fontFamily: MONO, color: "hsl(40 50% 65%)" }}>
                 Connect
               </p>
@@ -284,10 +284,10 @@ const FooterSection = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 transition-colors duration-500 hover:text-[hsl(40_50%_65%)]"
-                  style={{ color: "hsl(0 0% 50%)" }}
+                  style={{ color: "hsl(0 0% 64%)" }}
                 >
                   <LinkedInIcon />
-                  <span className="text-xs tracking-[0.15em]" style={{ fontFamily: BODY }}>
+                  <span className="text-[15px] md:text-[16px] tracking-[0.08em]" style={{ fontFamily: BODY, fontWeight: 500 }}>
                     LinkedIn
                   </span>
                 </a>
@@ -296,12 +296,12 @@ const FooterSection = () => {
 
             {/* Column 3 — Credentials */}
             <div className="text-center md:text-right">
-              <p className="text-[10px] tracking-[0.4em] uppercase mb-4"
+              <p className="text-[11px] md:text-xs tracking-[0.34em] uppercase mb-4"
                 style={{ fontFamily: MONO, color: "hsl(40 50% 65%)" }}>
                 Credentials
               </p>
-              <div className="flex flex-col gap-2">
-                <p className="text-xs" style={{ fontFamily: BODY, color: "hsl(0 0% 50%)" }}>
+              <div className="flex flex-col gap-2.5">
+                <p className="text-[15px] md:text-[16px]" style={{ fontFamily: BODY, color: "hsl(0 0% 66%)", fontWeight: 500 }}>
                   RERA Licensed Broker
                 </p>
                 <p className="text-xl" style={{
@@ -311,7 +311,7 @@ const FooterSection = () => {
                 }}>
                   ID 37460
                 </p>
-                <p className="text-xs" style={{ fontFamily: BODY, color: "hsl(0 0% 42%)" }}>
+                <p className="text-[14px] md:text-[15px]" style={{ fontFamily: BODY, color: "hsl(0 0% 48%)" }}>
                   Dubai, United Arab Emirates
                 </p>
               </div>
@@ -340,9 +340,9 @@ const FooterSection = () => {
                 <LinkedInIcon size={15} />
               </a>
               <div className="w-px h-3" style={{ background: "hsl(0 0% 15%)" }} />
-              <p className="text-[9px] tracking-[0.25em] uppercase"
-                style={{ fontFamily: MONO, color: "hsl(0 0% 28%)" }}>
-                Crafted with Precision
+              <p className="text-[10px] md:text-[11px] tracking-[0.16em] uppercase text-center"
+                style={{ fontFamily: MONO, color: "hsl(0 0% 38%)" }}>
+                Design and Developed by Quantum Arc
               </p>
             </div>
           </div>

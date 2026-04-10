@@ -1,10 +1,13 @@
 ﻿import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useIsMobile } from "../hooks/use-mobile";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const IS_TOUCH = typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
+const interpolate = (start: number, end: number, progress: number) => start + (end - start) * progress;
 
 /* -- Typography -- */
 const MONO = "'IBM Plex Mono','SFMono-Regular',monospace";
@@ -19,6 +22,30 @@ interface Phase {
   title: string;
   body: string;
 }
+
+const getMobileStatFrameWidth = (stat: string) => {
+  if (stat.length >= 5) return "17rem";
+  if (stat.length >= 3) return "15rem";
+  return "11rem";
+};
+
+const getMobileStatFontSize = (stat: string) => {
+  if (stat.length >= 5) return "clamp(3.4rem, 16vw, 4.8rem)";
+  if (stat.length >= 3) return "clamp(4rem, 18vw, 5.4rem)";
+  return "clamp(4.9rem, 24vw, 6.4rem)";
+};
+
+const getMobileStatTracking = (stat: string) => {
+  if (stat.length >= 5) return "-0.055em";
+  if (stat.length >= 3) return "-0.05em";
+  return "-0.035em";
+};
+
+const getMobileStatOffset = (stat: string) => {
+  if (stat.length >= 5) return "translateY(2%)";
+  if (stat.length >= 3) return "translateY(1%)";
+  return "translateY(4%)";
+};
 
 const PHASES: Phase[] = [
   {
@@ -51,6 +78,7 @@ const PHASES: Phase[] = [
    ------------------------------------------- */
 
 const BankingAdvantage = () => {
+  const isMobile = useIsMobile();
   const sectionRef = useRef<HTMLDivElement>(null);
   const pinRef = useRef<HTMLDivElement>(null);
   const timelineTrackRef = useRef<HTMLDivElement>(null);
@@ -61,16 +89,108 @@ const BankingAdvantage = () => {
     if (!section || !pin) return;
 
     const ctx = gsap.context(() => {
-      const SCROLL_END = IS_TOUCH ? "+=200%" : "+=300%";
+      const SCROLL_END = isMobile ? "bottom bottom" : (IS_TOUCH ? "+=200%" : "+=300%");
+      const phases = Array.from(section.querySelectorAll<HTMLElement>(".ba-phase"));
 
-      /* Pin the viewport */
-      ScrollTrigger.create({
-        trigger: section,
-        start: "top top",
-        end: SCROLL_END,
-        pin: pin,
-        pinSpacing: true,
-      });
+      if (isMobile) {
+        const phaseSegments = [
+          { start: -0.08, end: 0.34 },
+          { start: 0.24, end: 0.72 },
+          { start: 0.62, end: 1.08 },
+        ];
+
+        phases.forEach((phase) => {
+          const els = Array.from(phase.querySelectorAll<HTMLElement>(".ba-r"));
+          const bigNum = phase.querySelector<HTMLElement>(".ba-big");
+          const dot = phase.querySelector<HTMLElement>(".ba-dot");
+
+          gsap.set(phase, { opacity: 0 });
+          gsap.set(els, { opacity: 0, y: 28 });
+          if (bigNum) gsap.set(bigNum, { opacity: 0, scale: 0.84, rotateX: 18 });
+          if (dot) gsap.set(dot, { scale: 0.72, opacity: 0 });
+        });
+
+        const updateMobilePhases = (progress: number) => {
+          phases.forEach((phase, i) => {
+            const segment = phaseSegments[i];
+            const local = clamp01((progress - segment.start) / (segment.end - segment.start));
+            const reveal = local < 0.18 ? local / 0.18 : local > 0.82 ? (1 - local) / 0.18 : 1;
+            const clampedReveal = clamp01(reveal);
+            const els = Array.from(phase.querySelectorAll<HTMLElement>(".ba-r"));
+            const bigNum = phase.querySelector<HTMLElement>(".ba-big");
+            const dot = phase.querySelector<HTMLElement>(".ba-dot");
+
+            gsap.set(phase, {
+              opacity: clampedReveal > 0.01 ? 1 : 0,
+              zIndex: Math.round(clampedReveal * 10) + i,
+            });
+
+            if (bigNum) {
+              gsap.set(bigNum, {
+                opacity: clampedReveal,
+                scale: interpolate(0.84, 1, clampedReveal),
+                rotateX: interpolate(18, 0, clampedReveal),
+                filter: `drop-shadow(0 0 ${18 + clampedReveal * 20}px rgba(194,160,91,${0.08 + clampedReveal * 0.08}))`,
+              });
+            }
+
+            if (dot) {
+              gsap.set(dot, {
+                opacity: clampedReveal,
+                scale: interpolate(0.72, 1, clampedReveal),
+              });
+            }
+
+            els.forEach((el, idx) => {
+              const staggered = clamp01(clampedReveal * 1.18 - idx * 0.09);
+              gsap.set(el, {
+                opacity: staggered,
+                y: interpolate(28, 0, staggered),
+              });
+            });
+          });
+        };
+
+        if (timelineTrackRef.current) {
+          ScrollTrigger.create({
+            trigger: section,
+            start: "top top",
+            end: SCROLL_END,
+            scrub: 1,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => {
+              gsap.set(timelineTrackRef.current, { scaleY: self.progress });
+              updateMobilePhases(self.progress);
+            },
+          });
+        } else {
+          ScrollTrigger.create({
+            trigger: section,
+            start: "top top",
+            end: SCROLL_END,
+            scrub: 1,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => {
+              updateMobilePhases(self.progress);
+            },
+          });
+        }
+
+        updateMobilePhases(0);
+        return;
+      }
+
+      if (!isMobile) {
+        /* Pin the viewport */
+        ScrollTrigger.create({
+          trigger: section,
+          start: "top top",
+          end: SCROLL_END,
+          pin: pin,
+          pinSpacing: true,
+          invalidateOnRefresh: true,
+        });
+      }
 
       /* Timeline track fill */
       if (timelineTrackRef.current) {
@@ -85,13 +205,13 @@ const BankingAdvantage = () => {
               start: "top top",
               end: SCROLL_END,
               scrub: 1,
+              invalidateOnRefresh: true,
             },
           },
         );
       }
 
       /* Phase reveals */
-      const phases = section.querySelectorAll<HTMLElement>(".ba-phase");
       phases.forEach((phase, i) => {
         const els = phase.querySelectorAll<HTMLElement>(".ba-r");
         const bigNum = phase.querySelector<HTMLElement>(".ba-big");
@@ -114,6 +234,7 @@ const BankingAdvantage = () => {
             start: `top+=${enterStart}% top`,
             end: `top+=${enterEnd}% top`,
             scrub: 1,
+            invalidateOnRefresh: true,
           },
         });
 
@@ -138,6 +259,7 @@ const BankingAdvantage = () => {
               start: `top+=${exitStart}% top`,
               end: `top+=${exitEnd}% top`,
               scrub: 1,
+              invalidateOnRefresh: true,
             },
           });
 
@@ -158,13 +280,13 @@ const BankingAdvantage = () => {
     }, section);
 
     return () => ctx.revert();
-  }, []);
+  }, [isMobile]);
 
   return (
-    <section ref={sectionRef} className="relative" data-section="banking-advantage">
+    <section ref={sectionRef} className="relative" data-section="banking-advantage" style={{ minHeight: isMobile ? "360dvh" : undefined }}>
       <div
         ref={pinRef}
-        className="relative h-screen overflow-hidden"
+        className={isMobile ? "sticky top-0 relative h-[100dvh] overflow-hidden" : "relative h-screen overflow-hidden"}
         style={{
           background: `
             radial-gradient(ellipse at 30% 40%, hsl(40 30% 10% / 0.2) 0%, transparent 55%),
@@ -207,6 +329,29 @@ const BankingAdvantage = () => {
               "linear-gradient(90deg, transparent 8%, hsl(40 46% 56% / 0.04) 35%, hsl(40 46% 56% / 0.07) 50%, hsl(40 46% 56% / 0.04) 65%, transparent 92%)",
           }}
         />
+
+        {isMobile && (
+          <>
+            <div
+              className="absolute pointer-events-none z-[3]"
+              style={{ left: "10px", top: "74px", bottom: "88px", width: "18px" }}
+            >
+              <div style={{ position: "absolute", inset: 0, borderLeft: "1px solid hsl(40 46% 56% / 0.14)", borderRight: "1px solid hsl(40 46% 56% / 0.08)", background: "linear-gradient(180deg, hsl(40 46% 56% / 0.03), hsl(40 46% 56% / 0.08), hsl(40 46% 56% / 0.02))" }} />
+              <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: "1px", transform: "translateX(-50%)", background: "linear-gradient(180deg, hsl(40 46% 56% / 0.08), hsl(40 50% 65% / 0.18), hsl(40 46% 56% / 0.08))" }} />
+              <div style={{ position: "absolute", top: "-16px", left: "50%", width: "18px", height: "18px", transform: "translateX(-50%) rotate(45deg)", border: "1px solid hsl(40 46% 56% / 0.2)", background: "hsl(0 0% 3%)" }} />
+              <div style={{ position: "absolute", bottom: "-10px", left: "50%", width: "24px", height: "10px", transform: "translateX(-50%)", border: "1px solid hsl(40 46% 56% / 0.18)", background: "hsl(40 46% 56% / 0.05)" }} />
+            </div>
+            <div
+              className="absolute pointer-events-none z-[3]"
+              style={{ right: "10px", top: "74px", bottom: "88px", width: "18px" }}
+            >
+              <div style={{ position: "absolute", inset: 0, borderLeft: "1px solid hsl(40 46% 56% / 0.08)", borderRight: "1px solid hsl(40 46% 56% / 0.14)", background: "linear-gradient(180deg, hsl(40 46% 56% / 0.03), hsl(40 46% 56% / 0.08), hsl(40 46% 56% / 0.02))" }} />
+              <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: "1px", transform: "translateX(-50%)", background: "linear-gradient(180deg, hsl(40 46% 56% / 0.08), hsl(40 50% 65% / 0.18), hsl(40 46% 56% / 0.08))" }} />
+              <div style={{ position: "absolute", top: "-16px", left: "50%", width: "18px", height: "18px", transform: "translateX(-50%) rotate(45deg)", border: "1px solid hsl(40 46% 56% / 0.2)", background: "hsl(0 0% 3%)" }} />
+              <div style={{ position: "absolute", bottom: "-10px", left: "50%", width: "24px", height: "10px", transform: "translateX(-50%)", border: "1px solid hsl(40 46% 56% / 0.18)", background: "hsl(40 46% 56% / 0.05)" }} />
+            </div>
+          </>
+        )}
 
         {/* ── Arabian Pillar — LEFT (hidden on small screens) ── */}
         <div
@@ -372,18 +517,17 @@ const BankingAdvantage = () => {
         </div>
 
         {/* -- Section header + Phase cards in one flex column -- */}
-        <div className="absolute inset-0 flex flex-col justify-center px-6 md:px-10 lg:px-14 z-10 md:ml-[clamp(48px,8vw,110px)]"
-        >
+        <div className={isMobile ? "absolute inset-0 z-10 flex flex-col justify-start px-8 pb-16 pt-[6.5rem] text-center" : "absolute inset-0 flex flex-col justify-center px-6 md:px-10 lg:px-14 z-10 md:ml-[clamp(48px,8vw,110px)]"}>
           {/* Header — fixed at top of the centered block */}
-          <div className="mb-10">
+          <div className={isMobile ? "mb-8 mx-auto max-w-[18rem] flex-shrink-0" : "mb-10"}>
             <p
-              className="text-[10px] uppercase tracking-[0.6em]"
+              className={isMobile ? "text-[9px] uppercase tracking-[0.42em]" : "text-[10px] uppercase tracking-[0.6em]"}
               style={{ fontFamily: MONO, color: "hsl(40 46% 56%)" }}
             >
               The Credential
             </p>
             <h2
-              className="mt-2 text-[1.8rem] leading-[1.1] md:text-[2.4rem] lg:text-[2.8rem]"
+              className={isMobile ? "mt-3 text-[2rem] leading-[1.04]" : "mt-2 text-[1.8rem] leading-[1.1] md:text-[2.4rem] lg:text-[2.8rem]"}
               style={{
                 fontFamily: SERIF,
                 fontWeight: 200,
@@ -406,7 +550,7 @@ const BankingAdvantage = () => {
           </div>
 
           {/* Phase cards — stacked below heading */}
-          <div className="relative w-full max-w-5xl" style={{ perspective: "1200px" }}>
+          <div className={isMobile ? "relative mx-auto w-full max-w-[21rem]" : "relative w-full max-w-5xl"} style={{ perspective: "1200px" }}>
             {PHASES.map((phase, i) => (
               <div
                 key={i}
@@ -415,17 +559,19 @@ const BankingAdvantage = () => {
                   position: i === 0 ? "relative" : "absolute",
                   inset: i === 0 ? undefined : 0,
                   display: "flex",
+                  flexDirection: isMobile ? "column" : "row",
                   alignItems: "center",
-                  gap: "clamp(24px, 5vw, 80px)",
+                  justifyContent: isMobile ? "center" : undefined,
+                  gap: isMobile ? "1rem" : "clamp(24px, 5vw, 80px)",
                   flexWrap: "wrap",
                 }}
               >
                 {/* Phase number indicator */}
                 <div
-                  className="ba-dot absolute -left-8 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center"
+                  className={isMobile ? "ba-dot flex items-center justify-center" : "ba-dot absolute -left-8 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center"}
                   style={{
-                    width: "24px",
-                    height: "24px",
+                    width: isMobile ? "28px" : "24px",
+                    height: isMobile ? "28px" : "24px",
                     borderRadius: "50%",
                     background: "hsl(40 46% 56% / 0.08)",
                     border: "1px solid hsl(40 46% 56% / 0.25)",
@@ -440,10 +586,10 @@ const BankingAdvantage = () => {
                   className="ba-big flex-shrink-0"
                   style={{
                     fontFamily: SERIF,
-                    fontSize: "clamp(4rem, 14vw, 14rem)",
+                    fontSize: isMobile ? getMobileStatFontSize(phase.stat) : "clamp(4rem, 14vw, 14rem)",
                     fontWeight: 100,
-                    lineHeight: 0.85,
-                    letterSpacing: "-0.04em",
+                    lineHeight: isMobile ? 1 : 0.85,
+                    letterSpacing: isMobile ? getMobileStatTracking(phase.stat) : "-0.04em",
                     color: "transparent",
                     WebkitTextStroke: "1.5px hsl(40 46% 56% / 0.3)",
                     backgroundImage:
@@ -454,22 +600,44 @@ const BankingAdvantage = () => {
                     transformStyle: "preserve-3d",
                     willChange: "transform, opacity",
                     userSelect: "none",
+                    padding: isMobile ? "0" : undefined,
+                    borderRadius: isMobile ? "1.6rem" : undefined,
+                    backgroundColor: isMobile ? "rgba(16,12,6,0.34)" : undefined,
+                    border: isMobile ? "1px solid rgba(194,160,91,0.12)" : undefined,
+                    boxShadow: isMobile ? "0 16px 44px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,223,162,0.08)" : undefined,
+                    width: isMobile ? `min(100%, ${getMobileStatFrameWidth(phase.stat)})` : undefined,
+                    maxWidth: isMobile ? getMobileStatFrameWidth(phase.stat) : undefined,
+                    minWidth: isMobile ? "10rem" : undefined,
+                    height: isMobile ? "8rem" : undefined,
+                    textAlign: isMobile ? "center" : undefined,
+                    justifyContent: isMobile ? "center" : undefined,
+                    display: isMobile ? "flex" : undefined,
+                    alignItems: isMobile ? "center" : undefined,
+                    overflow: isMobile ? "hidden" : undefined,
                   }}
                 >
-                  {phase.stat}
+                  <span style={{ transform: isMobile ? getMobileStatOffset(phase.stat) : undefined, display: "block" }}>
+                    {phase.stat}
+                  </span>
                 </div>
 
                 {/* Text content */}
-                <div className="flex-1 min-w-0 sm:min-w-[260px] max-w-[460px]">
+                <div className={isMobile ? "w-full max-w-[18.5rem] rounded-[1.6rem] border px-5 py-5" : "flex-1 min-w-0 sm:min-w-[260px] max-w-[460px]"} style={isMobile ? {
+                  borderColor: "hsl(40 46% 56% / 0.12)",
+                  background: "linear-gradient(180deg, rgba(16,12,6,0.72), rgba(9,7,4,0.54))",
+                  backdropFilter: "blur(10px)",
+                  WebkitBackdropFilter: "blur(10px)",
+                  boxShadow: "0 24px 60px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,223,162,0.06)",
+                } : undefined}>
                   <p
-                    className="ba-r text-[10px] uppercase tracking-[0.5em]"
+                    className={isMobile ? "ba-r text-[9px] uppercase tracking-[0.32em]" : "ba-r text-[10px] uppercase tracking-[0.5em]"}
                     style={{ fontFamily: MONO, color: "hsl(40 46% 56%)" }}
                   >
                     {phase.eyebrow}
                   </p>
 
                   <h3
-                    className="ba-r mt-3 text-[1.6rem] md:text-[2rem] leading-[1.1]"
+                    className={isMobile ? "ba-r mt-3 text-[1.6rem] leading-[1.02]" : "ba-r mt-3 text-[1.6rem] md:text-[2rem] leading-[1.1]"}
                     style={{
                       fontFamily: SERIF,
                       fontWeight: 300,
@@ -487,7 +655,7 @@ const BankingAdvantage = () => {
                       style={{ background: "hsl(40 46% 56% / 0.3)" }}
                     />
                     <span
-                      className="text-[10px] uppercase tracking-[0.35em]"
+                      className={isMobile ? "text-[9px] uppercase tracking-[0.24em]" : "text-[10px] uppercase tracking-[0.35em]"}
                       style={{ fontFamily: MONO, color: "hsl(40 46% 56% / 0.6)" }}
                     >
                       {phase.unit}
@@ -495,14 +663,14 @@ const BankingAdvantage = () => {
                   </div>
 
                   <p
-                    className="ba-r mt-5 text-[1.05rem] md:text-[1.15rem] leading-[1.7]"
+                    className={isMobile ? "ba-r mt-4 text-[1.02rem] leading-[1.52]" : "ba-r mt-5 text-[1.05rem] md:text-[1.15rem] leading-[1.7]"}
                     style={{ fontFamily: BODY, color: "hsl(0 0% 58%)" }}
                   >
                     {phase.body}
                   </p>
 
                   <div
-                    className="ba-r mt-6 inline-flex items-center gap-2.5 border px-5 py-2.5"
+                    className={isMobile ? "ba-r mt-5 inline-flex items-center gap-2.5 border px-4 py-2" : "ba-r mt-6 inline-flex items-center gap-2.5 border px-5 py-2.5"}
                     style={{
                       borderColor: "hsl(40 46% 56% / 0.12)",
                       background: "hsl(40 46% 56% / 0.03)",
@@ -516,7 +684,7 @@ const BankingAdvantage = () => {
                       }}
                     />
                     <span
-                      className="text-[10px] uppercase tracking-[0.3em]"
+                      className={isMobile ? "text-[9px] uppercase tracking-[0.22em]" : "text-[10px] uppercase tracking-[0.3em]"}
                       style={{ fontFamily: MONO, color: "hsl(40 46% 56%)" }}
                     >
                       {phase.title}
@@ -541,7 +709,7 @@ const BankingAdvantage = () => {
         </div>
 
         {/* Scroll hint */}
-        <div className="pointer-events-none absolute bottom-8 left-1/2 z-[5] -translate-x-1/2 text-center">
+        <div className={isMobile ? "pointer-events-none absolute bottom-6 left-1/2 z-[5] -translate-x-1/2 text-center" : "pointer-events-none absolute bottom-8 left-1/2 z-[5] -translate-x-1/2 text-center"}>
           <div
             className="mx-auto mb-2 h-6 w-px"
             style={{

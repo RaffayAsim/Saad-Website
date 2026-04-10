@@ -15,6 +15,8 @@ import FooterSection from "@/components/FooterSection";
 
 gsap.registerPlugin(ScrollTrigger);
 
+const IS_TOUCH_DEVICE = typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+
 const Index = () => {
   const [loaded, setLoaded] = useState(false);
   const handleLoadingComplete = useCallback(() => setLoaded(true), []);
@@ -35,6 +37,11 @@ const Index = () => {
 
   // Lenis smooth scroll + GSAP ScrollTrigger integration
   useEffect(() => {
+    if (IS_TOUCH_DEVICE) {
+      ScrollTrigger.refresh();
+      return;
+    }
+
     const lenis = new Lenis({
       duration: 2.25,
       easing: (t: number) => 1 - Math.pow(1 - t, 3.2),
@@ -52,6 +59,19 @@ const Index = () => {
       lenis.destroy();
     };
   }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+
+    const refresh = () => ScrollTrigger.refresh();
+    const timeout = window.setTimeout(refresh, 80);
+
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(refresh);
+    }
+
+    return () => window.clearTimeout(timeout);
+  }, [loaded]);
 
   return (
     <div className="bg-background">
