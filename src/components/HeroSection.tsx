@@ -1033,13 +1033,13 @@ const HeroSection = () => {
         {/* ── Main Content ── */}
         <div className="relative z-[28] mx-auto max-w-[1320px] px-4 sm:px-5 md:px-12 lg:px-16" style={{ paddingTop: `${NAVBAR_GUARD}px`, boxSizing: "border-box" }}>
           {isMobile ? (
-            <div className="relative min-h-[calc(100svh-80px)] px-2 pb-8 pt-5">
+            <div className="flex min-h-[calc(100svh-96px)] flex-col items-center justify-center px-2 pb-10 pt-8">
               <div
                 ref={textRef}
                 className="relative mx-auto"
                 style={{
                   width: "100%",
-                  maxWidth: "22.5rem",
+                  maxWidth: "21.75rem",
                   padding: "1.35rem 1.1rem 1.45rem",
                   textAlign: "center",
                   border: "1px solid rgba(180,130,40,0.12)",
@@ -1136,8 +1136,8 @@ const HeroSection = () => {
                   className="mx-auto mt-5 max-w-[19rem]"
                   style={{
                     fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: "0.98rem",
-                    lineHeight: 1.6,
+                    fontSize: "0.96rem",
+                    lineHeight: 1.56,
                     color: "rgba(255, 246, 226, 0.96)",
                     textShadow: "0 3px 12px rgba(0,0,0,0.86)",
                     letterSpacing: "0.02em",
@@ -1149,9 +1149,9 @@ const HeroSection = () => {
 
               <div
                 ref={portfolioWrapperRef}
-                className="relative mx-auto mt-10 overflow-hidden rounded-[28px] border p-3 transition-opacity duration-300"
+                className="relative mx-auto mt-8 overflow-hidden rounded-[28px] border p-3 transition-opacity duration-300"
                 style={{
-                  width: "min(54vw, 13.2rem)",
+                  width: "min(52vw, 12.8rem)",
                   borderColor: "rgba(90,55,12,0.42)",
                   background: "linear-gradient(160deg, rgba(16,10,4,0.8), rgba(10,7,3,0.62))",
                   backdropFilter: "blur(16px)",
@@ -1167,7 +1167,7 @@ const HeroSection = () => {
                     alt="Saad Bin Zain"
                     className="w-full object-cover object-center transition-filter duration-150"
                     style={{
-                      height: "205px",
+                      height: "198px",
                       filter: "grayscale(1) contrast(1.12) brightness(0.88)",
                     }}
                   />
